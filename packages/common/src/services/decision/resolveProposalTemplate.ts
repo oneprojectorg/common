@@ -1,21 +1,13 @@
 import { db } from '@op/db/client';
+import type { ProcessInstance } from '@op/db/schema';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import type { ProposalTemplateSchema } from './types';
 
 /**
- * Resolves the proposal template schema for a proposal.
- *
- * Row first: when `formSchemaId` is set, the template is that
- * `decision_form_schemas` row's schema. A missing row throws `NotFoundError`
- * (the FK guarantees it exists, so falling back would validate against the
- * wrong template); a row whose schema is not a proposal template throws
- * `ValidationError`.
- *
- * Otherwise checks `instanceData.proposalTemplate` (written when a proposal
- * form is configured per-instance), then falls back to
- * `decisionProcesses.processSchema` (the process-level default).
- * `processId` is null once the template has been deleted; there is no fallback then.
+ * Resolves a proposal's template: the `formSchemaId` row when set, otherwise
+ * `instanceData.proposalTemplate`, then the process schema.
+ * A missing form schema row throws; there is no fallback to another template.
  */
 export async function resolveProposalTemplate(
   instanceData: unknown,
@@ -38,56 +30,59 @@ export async function resolveProposalTemplate(
   return resolveInstanceTemplate({ instanceData, processId });
 }
 
-/**
- * List form of `resolveProposalTemplate`: one query over the distinct non-null
- * `formSchemaIds` and at most one instance → process resolution for null.
- * Returns a lookup that gives each row its own template; it throws
- * `NotFoundError` for an id that was not passed in.
- */
-export async function resolveProposalTemplatesByFormSchemaId({
-  formSchemaIds,
-  instanceData,
-  processId,
+/** List form of `resolveProposalTemplate`. Returns a lookup by proposal id. */
+export async function resolveProposalTemplates({
+  proposals,
+  instance,
 }: {
-  formSchemaIds: ReadonlyArray<string | null>;
-  instanceData: unknown;
-  processId: string | null;
-}): Promise<(formSchemaId: string | null) => ProposalTemplateSchema | null> {
-  const ids = [
-    ...new Set(formSchemaIds.filter((id): id is string => id !== null)),
+  proposals: ReadonlyArray<{ id: string; formSchemaId: string | null }>;
+  instance: Pick<ProcessInstance, 'instanceData' | 'processId'>;
+}): Promise<(proposalId: string) => ProposalTemplateSchema | null> {
+  const formSchemaIds = [
+    ...new Set(
+      proposals
+        .map((proposal) => proposal.formSchemaId)
+        .filter((id): id is string => id !== null),
+    ),
   ];
-  const needsInstanceTemplate = formSchemaIds.some((id) => id === null);
+  const needsInstanceTemplate = proposals.some(
+    (proposal) => proposal.formSchemaId === null,
+  );
 
   const [rows, instanceTemplate] = await Promise.all([
-    ids.length > 0
+    formSchemaIds.length > 0
       ? db.query.formSchemas.findMany({
-          where: { id: { in: ids } },
+          where: { id: { in: formSchemaIds } },
           columns: { id: true, schema: true },
         })
       : [],
-    needsInstanceTemplate
-      ? resolveInstanceTemplate({ instanceData, processId })
-      : null,
+    needsInstanceTemplate ? resolveInstanceTemplate(instance) : null,
   ]);
 
-  const templates = new Map<string, ProposalTemplateSchema>();
+  const formTemplates = new Map<string, ProposalTemplateSchema>();
   for (const row of rows) {
-    templates.set(row.id, asProposalTemplate(row.schema));
+    formTemplates.set(row.id, asProposalTemplate(row.schema));
   }
 
-  const missing = ids.find((id) => !templates.has(id));
-  if (missing) {
-    throw new NotFoundError('Form schema', missing);
-  }
-
-  return (formSchemaId) => {
-    if (formSchemaId === null) {
-      return instanceTemplate;
+  const templates = new Map<string, ProposalTemplateSchema | null>();
+  for (const proposal of proposals) {
+    if (proposal.formSchemaId === null) {
+      templates.set(proposal.id, instanceTemplate);
+      continue;
     }
 
-    const template = templates.get(formSchemaId);
+    const template = formTemplates.get(proposal.formSchemaId);
     if (!template) {
-      throw new NotFoundError('Form schema', formSchemaId);
+      throw new NotFoundError('Form schema', proposal.formSchemaId);
+    }
+
+    templates.set(proposal.id, template);
+  }
+
+  return (proposalId) => {
+    const template = templates.get(proposalId);
+    if (template === undefined) {
+      throw new NotFoundError('Proposal', proposalId);
     }
 
     return template;

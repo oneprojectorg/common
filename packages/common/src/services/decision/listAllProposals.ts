@@ -54,7 +54,7 @@ import {
   excludeRejectedUnlessAsked,
   isLikedByProfile,
 } from './proposalVisibility';
-import { resolveProposalTemplatesByFormSchemaId } from './resolveProposalTemplate';
+import { resolveProposalTemplates } from './resolveProposalTemplate';
 import type { AllProposalsFilter } from './schemas/proposal';
 
 /**
@@ -237,10 +237,9 @@ export const listAllProposals = async ({
   const hasMore = proposalList.length > limit;
   const pageItems = hasMore ? proposalList.slice(0, limit) : proposalList;
 
-  const templateFor = await resolveProposalTemplatesByFormSchemaId({
-    formSchemaIds: pageItems.map((proposal) => proposal.formSchemaId),
-    instanceData: instance.instanceData,
-    processId: instance.processId,
+  const templateFor = await resolveProposalTemplates({
+    proposals: pageItems,
+    instance,
   });
 
   const profileIds = pageItems
@@ -254,7 +253,7 @@ export const listAllProposals = async ({
         pageItems.map((proposal) => ({
           id: proposal.id,
           proposalData: proposal.proposalData,
-          proposalTemplate: templateFor(proposal.formSchemaId),
+          proposalTemplate: templateFor(proposal.id),
           // Everything here is submitted (drafts are excluded above), so the
           // pinned version keys the immutable collab-doc cache.
           collaborationDocVersionId: parseProposalData(proposal.proposalData)
@@ -287,7 +286,7 @@ export const listAllProposals = async ({
       : proposal.profile;
     const relationshipInfo = relationshipData.get(proposal.profileId);
 
-    const proposalTemplate = templateFor(proposal.formSchemaId);
+    const proposalTemplate = templateFor(proposal.id);
 
     // List rows ship a precomputed plain-text preview plus fragment-resolved
     // system fields instead of the full document fragments.

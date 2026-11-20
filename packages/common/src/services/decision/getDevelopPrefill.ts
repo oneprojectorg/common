@@ -28,7 +28,7 @@ import {
 } from './proposalVisibility';
 import {
   resolveProposalTemplate,
-  resolveProposalTemplatesByFormSchemaId,
+  resolveProposalTemplates,
 } from './resolveProposalTemplate';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
@@ -391,17 +391,16 @@ const getAssembledProposalData = async ({
     formSchemaId: string | null;
   }>;
 }): Promise<Map<string, unknown>> => {
-  const templateFor = await resolveProposalTemplatesByFormSchemaId({
-    formSchemaIds: proposals.map((proposal) => proposal.formSchemaId),
-    instanceData: instance.instanceData,
-    processId: instance.processId,
+  const templateFor = await resolveProposalTemplates({
+    proposals,
+    instance,
   });
 
   const documents = await getProposalDocumentsContent(
     proposals.map((proposal) => ({
       id: proposal.id,
       proposalData: proposal.proposalData,
-      proposalTemplate: templateFor(proposal.formSchemaId),
+      proposalTemplate: templateFor(proposal.id),
       collaborationDocVersionId: parseProposalData(proposal.proposalData)
         .collaborationDocVersionId,
     })),
@@ -424,7 +423,7 @@ const getAssembledProposalData = async ({
         return [proposal.id, {}];
       }
 
-      const proposalTemplate = templateFor(proposal.formSchemaId);
+      const proposalTemplate = templateFor(proposal.id);
       return [
         proposal.id,
         resolveDocumentFieldValues({

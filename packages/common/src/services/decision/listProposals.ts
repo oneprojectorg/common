@@ -32,7 +32,7 @@ import {
 import { parseProposalData } from './proposalDataSchema';
 import { buildProposalListPreview } from './proposalListPreview';
 import { resolveProposalListScope } from './resolveProposalListScope';
-import { resolveProposalTemplatesByFormSchemaId } from './resolveProposalTemplate';
+import { resolveProposalTemplates } from './resolveProposalTemplate';
 import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 
 export interface ListProposalsInput {
@@ -269,10 +269,9 @@ export const listProposals = async ({
   type ProposalListItem = (typeof proposalList)[number];
 
   const [templateFor, advanceTarget] = await Promise.all([
-    resolveProposalTemplatesByFormSchemaId({
-      formSchemaIds: proposalList.map((proposal) => proposal.formSchemaId),
-      instanceData: instance.instanceData,
-      processId: instance.processId,
+    resolveProposalTemplates({
+      proposals: proposalList,
+      instance,
     }),
     advanceTargetPromise,
   ]);
@@ -290,7 +289,7 @@ export const listProposals = async ({
           return {
             id: proposal.id,
             proposalData: proposal.proposalData,
-            proposalTemplate: templateFor(proposal.formSchemaId),
+            proposalTemplate: templateFor(proposal.id),
             collaborationDocVersionId:
               proposal.status === ProposalStatus.DRAFT
                 ? undefined
@@ -345,7 +344,7 @@ export const listProposals = async ({
     // List rows ship a precomputed plain-text preview plus fragment-resolved
     // system fields instead of the full document fragments; the fragments
     // themselves only ride along for trusted full-content consumers.
-    const proposalTemplate = templateFor(proposal.formSchemaId);
+    const proposalTemplate = templateFor(proposal.id);
     const documentContent = documentContentMap.get(proposal.id);
     const parsedProposalData = parseProposalData(proposal.proposalData);
     const { previewText, systemFieldOverrides } = buildProposalListPreview({
