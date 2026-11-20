@@ -6,6 +6,8 @@ import {
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
+  ProposalStatus,
+  Visibility,
   contentTranslations,
   processInstances,
   proposals,
@@ -106,10 +108,12 @@ describe('translation.translateProposals', () => {
       throw new Error('No instance created');
     }
 
+    // Submitted, not a draft: a visitor only ever sees published proposals.
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Public Batch Proposal' },
+      status: ProposalStatus.SUBMITTED,
     });
 
     const { collaborationDocId } = proposal.proposalData as {
@@ -830,5 +834,175 @@ describe('translation.translateProposals across instances of one process', () =>
     expect(result.translations[notesProposal.profileId]?.preview).toBe(
       '[ES] Text from the notes field',
     );
+  });
+});
+
+// Mirrors the `getProposal` gate: instance read access alone must not reveal
+// another member's draft, a hidden proposal, or a deleted one. Unreadable
+// proposals are dropped from the batch rather than rejected, so a caller
+// can't probe which profile ids exist.
+describe('translation.translateProposals proposal-level visibility', () => {
+  async function createGatedSetup(
+    testData: TestDecisionsDataManager,
+    opts: { title: string; status?: ProposalStatus },
+  ) {
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+
+    const [author, otherMember] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    const proposal = await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: opts.title, description: 'Body text' },
+      status: opts.status,
+    });
+
+    return { setup, instance, author, otherMember, proposal };
+  }
+
+  async function translateFor(email: string, profileId: string) {
+    const caller = await createAuthenticatedCaller(email);
+    const result = await caller.translation.translateProposals({
+      profileIds: [profileId],
+      targetLocale: 'es',
+    });
+    return result.translations[profileId];
+  }
+
+  function cleanupBatchTranslations(
+    onTestFinished: (fn: () => Promise<void>) => void,
+    profileId: string,
+  ) {
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(like(contentTranslations.contentKey, `batch:${profileId}:%`));
+    });
+  }
+
+  it('should translate a draft for its author but omit it for other readers and instance admins', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, author, otherMember, proposal } = await createGatedSetup(
+      testData,
+      { title: 'Unfinished Draft' },
+    );
+    cleanupBatchTranslations(onTestFinished, proposal.profileId);
+
+    expect(await translateFor(otherMember.email, proposal.profileId)).toBe(
+      undefined,
+    );
+    expect(await translateFor(setup.userEmail, proposal.profileId)).toBe(
+      undefined,
+    );
+
+    const authorTranslation = await translateFor(
+      author.email,
+      proposal.profileId,
+    );
+    expect(authorTranslation?.title).toBe('[ES] Unfinished Draft');
+  });
+
+  it('should translate a hidden proposal for its owner and instance admins but omit it for other readers', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, author, otherMember, proposal } = await createGatedSetup(
+      testData,
+      { title: 'Hidden Idea', status: ProposalStatus.SUBMITTED },
+    );
+    cleanupBatchTranslations(onTestFinished, proposal.profileId);
+
+    await db
+      .update(proposals)
+      .set({ visibility: Visibility.HIDDEN })
+      .where(eq(proposals.id, proposal.id));
+
+    expect(await translateFor(otherMember.email, proposal.profileId)).toBe(
+      undefined,
+    );
+
+    const ownerTranslation = await translateFor(
+      author.email,
+      proposal.profileId,
+    );
+    expect(ownerTranslation?.title).toBe('[ES] Hidden Idea');
+
+    const adminTranslation = await translateFor(
+      setup.userEmail,
+      proposal.profileId,
+    );
+    expect(adminTranslation?.title).toBe('[ES] Hidden Idea');
+  });
+
+  it('should omit a deleted proposal for everyone, including its owner and instance admins', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, author, proposal } = await createGatedSetup(testData, {
+      title: 'Removed Idea',
+      status: ProposalStatus.SUBMITTED,
+    });
+    cleanupBatchTranslations(onTestFinished, proposal.profileId);
+
+    await db
+      .update(proposals)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(proposals.id, proposal.id));
+
+    expect(await translateFor(author.email, proposal.profileId)).toBe(
+      undefined,
+    );
+    expect(await translateFor(setup.userEmail, proposal.profileId)).toBe(
+      undefined,
+    );
+  });
+
+  it('should keep translating the readable proposals in a batch that also names an unreadable one', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instance, author, otherMember, proposal } = await createGatedSetup(
+      testData,
+      { title: 'Private Draft' },
+    );
+    cleanupBatchTranslations(onTestFinished, proposal.profileId);
+
+    const submitted = await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Shared Idea', description: 'Body text' },
+      status: ProposalStatus.SUBMITTED,
+    });
+    cleanupBatchTranslations(onTestFinished, submitted.profileId);
+
+    const caller = await createAuthenticatedCaller(otherMember.email);
+    const result = await caller.translation.translateProposals({
+      profileIds: [proposal.profileId, submitted.profileId],
+      targetLocale: 'es',
+    });
+
+    expect(result.translations[submitted.profileId]?.title).toBe(
+      '[ES] Shared Idea',
+    );
+    expect(result.translations[proposal.profileId]).toBe(undefined);
   });
 });
