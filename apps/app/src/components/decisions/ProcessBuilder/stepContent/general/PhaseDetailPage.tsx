@@ -113,7 +113,7 @@ function PhaseDetailForm({
     (s) => s.instances[decisionProfileId]?.phases,
   );
   const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
-  const lockState = usePastPhaseLock(instanceId)(phaseId);
+  const lockState = usePastPhaseLock(instanceId).getLock(phaseId);
   const isPast = lockState === 'past';
   const isCurrent = lockState === 'current';
   const lockNoteId = useId();
@@ -209,6 +209,9 @@ function PhaseDetailForm({
   // Validation
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const markTouched = (field: string) => {
+    if (isPast) {
+      return;
+    }
     setTouchedFields((prev) => new Set(prev).add(field));
   };
 
@@ -357,9 +360,16 @@ function PhaseDetailForm({
             {t('decisions.processBuilder.phaseAdditionalInfoHint')}
           </p>
         </div>
-        <div className="flex flex-wrap gap-4">
+        <div
+          className="flex flex-wrap gap-4"
+          role={isCurrent ? 'group' : undefined}
+          aria-labelledby={
+            isCurrent ? 'phase-start-date-description' : undefined
+          }
+        >
           <div className="flex-1">
             <DatePicker
+              id="phase-start-date"
               label={t('decisions.processBuilder.startDateLabel')}
               value={safeParseLocal(phase.startDate)}
               maxDate={safeParseLocal(phase.endDate)}
