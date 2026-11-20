@@ -30,6 +30,7 @@ function Textarea({
       dir={resolvedDir}
       value={value}
       data-slot="textarea"
+      data-unstyled={unstyled || undefined}
       className={cn(
         // Uncontrolled only — see `Input` for why this can't cover an empty
         // control that has no placeholder.

@@ -174,19 +174,19 @@
 /* Read-only controls: a tinted surface with the normal border and
  * full-contrast text, so a fixed value reads as a record rather than as
  * disabled. Keyed on data-slot so the generated primitives stay untouched.
- * `:read-only` also matches disabled inputs, hence `:not(:disabled)`. */
+ * `[readonly]`, not `:read-only`, which also matches file inputs. */
 @layer utilities {
-  [data-slot='input']:read-only:not(:disabled),
-  [data-slot='textarea']:read-only:not(:disabled),
+  [data-slot='input'][readonly]:not(:disabled, [data-unstyled]),
+  [data-slot='textarea'][readonly]:not(:disabled, [data-unstyled]),
   [data-slot='input-group']:has(
-      [data-slot='input-group-control']:read-only:not(:disabled)
+      [data-slot='input-group-control'][readonly]:not(:disabled)
     ),
   [data-slot='select-trigger'][data-readonly] {
     background-color: var(--secondary);
     color: var(--foreground);
     cursor: default;
   }
-  [data-slot='input-group-control']:read-only:not(:disabled) {
+  [data-slot='input-group-control'][readonly]:not(:disabled) {
     cursor: default;
   }
   [data-slot='select-trigger'][data-readonly] > svg {

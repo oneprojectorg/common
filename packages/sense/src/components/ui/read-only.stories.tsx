@@ -1,4 +1,5 @@
 import { DatePicker, DatePickerButton } from '@op/sense/DatePicker';
+import { Header2 } from '@op/sense/Header';
 import { Input } from '@op/sense/Input';
 import { Label } from '@op/sense/Label';
 import {
@@ -54,7 +55,7 @@ export const Comparison: Story = {
     <div className="grid grid-cols-3 gap-8">
       {MODES.map(({ mode, heading }) => (
         <section key={mode} className="flex w-64 flex-col gap-6">
-          <h2 className="font-strong">{heading}</h2>
+          <Header2 className="text-title">{heading}</Header2>
           <LabelledField id={`${mode}-name`} label="Phase name">
             <Input
               id={`${mode}-name`}

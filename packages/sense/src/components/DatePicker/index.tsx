@@ -9,6 +9,7 @@ import { RequiredAsterisk } from '../RequiredAsterisk';
 import { Button } from '../ui/button';
 import { Calendar } from '../ui/calendar';
 import { FieldDescription, FieldError, FieldLabel } from '../ui/field';
+import { Input } from '../ui/input';
 import {
   InputGroup,
   InputGroupAddon,
@@ -95,7 +96,7 @@ function DatePicker({
           {required ? <RequiredAsterisk /> : null}
         </FieldLabel>
       ) : null}
-      <Popover open={open} onOpenChange={readOnly ? undefined : setOpen}>
+      <Popover open={open && !readOnly} onOpenChange={setOpen}>
         <InputGroup>
           <InputGroupInput
             id={inputId}
@@ -147,6 +148,9 @@ function DatePicker({
             defaultMonth={value}
             disabled={dateBounds(minDate, maxDate)}
             onSelect={(date) => {
+              if (readOnly) {
+                return;
+              }
               onChange?.(date);
               setOpen(false);
             }}
@@ -172,7 +176,7 @@ interface DatePickerButtonProps {
   /** Button text while no date is selected. */
   placeholder?: string;
   disabled?: boolean;
-  /** Shows the value as a fixed record: focusable and announced, but it can't change and the calendar won't open. */
+  /** Shows the value as a fixed record: renders a read-only text field in place of the button, so it stays focusable and is announced as read-only. */
   readOnly?: boolean;
   required?: boolean;
   id?: string;
@@ -214,41 +218,50 @@ function DatePickerButton({
           {required ? <RequiredAsterisk /> : null}
         </FieldLabel>
       ) : null}
-      <Popover open={open} onOpenChange={readOnly ? undefined : setOpen}>
-        <PopoverTrigger
-          render={
-            <Button
-              id={buttonId}
-              variant="outline"
-              disabled={disabled}
-              data-readonly={readOnly || undefined}
-              aria-invalid={errorMessage ? true : undefined}
-              className={cn(
-                'justify-start font-normal',
-                !value && 'text-muted-foreground',
-                readOnly &&
-                  'cursor-default bg-secondary text-foreground hover:bg-secondary hover:text-foreground',
-              )}
+      {readOnly ? (
+        <Input
+          id={buttonId}
+          value={value ? format(value, 'PPP') : ''}
+          placeholder={placeholder}
+          readOnly
+          disabled={disabled}
+          required={required}
+          aria-invalid={errorMessage ? true : undefined}
+        />
+      ) : (
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger
+            render={
+              <Button
+                id={buttonId}
+                variant="outline"
+                disabled={disabled}
+                aria-invalid={errorMessage ? true : undefined}
+                className={cn(
+                  'justify-start font-normal',
+                  !value && 'text-muted-foreground',
+                )}
+              />
+            }
+          >
+            <LuCalendar />
+            {value ? format(value, 'PPP') : <span>{placeholder}</span>}
+          </PopoverTrigger>
+          {/* Portaled outside the .sense scope — re-scope so sense tokens apply. */}
+          <PopoverContent align="start" className="sense w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={value}
+              defaultMonth={value}
+              disabled={dateBounds(minDate, maxDate)}
+              onSelect={(date) => {
+                onChange?.(date);
+                setOpen(false);
+              }}
             />
-          }
-        >
-          {readOnly ? null : <LuCalendar />}
-          {value ? format(value, 'PPP') : <span>{placeholder}</span>}
-        </PopoverTrigger>
-        {/* Portaled outside the .sense scope — re-scope so sense tokens apply. */}
-        <PopoverContent align="start" className="sense w-auto p-0">
-          <Calendar
-            mode="single"
-            selected={value}
-            defaultMonth={value}
-            disabled={dateBounds(minDate, maxDate)}
-            onSelect={(date) => {
-              onChange?.(date);
-              setOpen(false);
-            }}
-          />
-        </PopoverContent>
-      </Popover>
+          </PopoverContent>
+        </Popover>
+      )}
       {description ? <FieldDescription>{description}</FieldDescription> : null}
       {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
     </div>
