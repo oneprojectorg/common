@@ -1,3 +1,4 @@
+import { invalidate } from '@op/cache';
 import { saveProfileImage as saveProfileImageService } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
@@ -25,6 +26,12 @@ export const saveProfileImageRouter = router({
       const { storagePath, hadPreviousImage } = await saveProfileImageService({
         input,
         user: ctx.user,
+      });
+      // getMyAccount serves the cached user, whose profile/currentProfile
+      // carry the avatar and banner shown in the header and edit form.
+      await invalidate({
+        type: 'user',
+        params: [ctx.user.id],
       });
       waitUntil(
         trackImageUpload(
