@@ -127,68 +127,70 @@ export const UsersTable = () => {
 
   return (
     <div className="mt-8">
-      <FilterBar>
-        <FilterBarStart>
-          <Header2 className="text-title">{t('admin.allUsersTitle')}</Header2>
-          <FilterBarSearch
-            label={t('admin.searchUsersLabel')}
-            value={searchQuery}
-            onChange={setSearchQuery}
-          />
-        </FilterBarStart>
-        <FilterBarEnd>
-          <Select
-            items={anonFilterItems}
-            value={anonFilter}
-            onValueChange={(value) => {
-              if (value) {
-                setAnonFilter(value);
-              }
-            }}
-          >
-            <SelectTrigger
-              aria-label={t('admin.filterAnonymousUsersLabel')}
-              className="min-w-36 flex-1 sm:w-36 sm:flex-none"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {anonFilterItems.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-          <FilterBarActions>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label={t('admin.userOptionsLabel')}
-                    className="me-1"
-                  >
-                    <LuEllipsis />
-                  </Button>
+      <div className="mb-4">
+        <FilterBar>
+          <FilterBarStart>
+            <Header2 className="text-title">{t('admin.allUsersTitle')}</Header2>
+            <FilterBarSearch
+              label={t('admin.searchUsersLabel')}
+              value={searchQuery}
+              onChange={setSearchQuery}
+            />
+          </FilterBarStart>
+          <FilterBarEnd>
+            <Select
+              items={anonFilterItems}
+              value={anonFilter}
+              onValueChange={(value) => {
+                if (value) {
+                  setAnonFilter(value);
                 }
-              />
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={handleExportAllUsers}
-                  disabled={isExporting}
-                >
-                  <LuDownload className="size-4" />
-                  {t('admin.exportUsersAction')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </FilterBarActions>
-        </FilterBarEnd>
-      </FilterBar>
+              }}
+            >
+              <SelectTrigger
+                aria-label={t('admin.filterAnonymousUsersLabel')}
+                className="min-w-36 flex-1 sm:w-36 sm:flex-none"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {anonFilterItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <FilterBarActions>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      aria-label={t('admin.userOptionsLabel')}
+                      className="me-1"
+                    >
+                      <LuEllipsis />
+                    </Button>
+                  }
+                />
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={handleExportAllUsers}
+                    disabled={isExporting}
+                  >
+                    <LuDownload className="size-4" />
+                    {t('admin.exportUsersAction')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </FilterBarActions>
+          </FilterBarEnd>
+        </FilterBar>
+      </div>
       <Suspense fallback={<UsersTableSkeleton />}>
         <UsersTableContent
           searchQuery={debouncedQuery}

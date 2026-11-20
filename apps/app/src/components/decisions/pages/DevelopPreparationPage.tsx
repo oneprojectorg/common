@@ -207,7 +207,9 @@ function PreparationProposals({
     <div className="flex flex-col gap-10">
       <FilterBar>
         <FilterBarStart>
-          <ProposalsListHeader count={total} total={unfilteredData.total} />
+          <div className="flex min-h-11 items-center">
+            <ProposalsListHeader count={total} total={unfilteredData.total} />
+          </div>
         </FilterBarStart>
         {currentProfileId ? (
           <FilterBarEnd>

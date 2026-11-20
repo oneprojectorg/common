@@ -53,7 +53,6 @@ import { Link, useRouter, useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
 
-import { FilterBar } from '../FilterBar';
 import { useOpenProposalInSheet } from '../ProposalSheet/proposalSheetState';
 import {
   decisionProposalDevelopHref,
@@ -167,13 +166,11 @@ function SourcesPanelShell({
   if (!sourcePhase) {
     return (
       <div className="flex flex-col gap-10">
-        <FilterBar>
-          <div className="flex min-h-11 items-center">
-            <Header2 className="text-title font-normal">
-              {t('sourcesCount', { count: 0 })}
-            </Header2>
-          </div>
-        </FilterBar>
+        <div className="flex min-h-11 items-center">
+          <Header2 className="text-title font-normal">
+            {t('sourcesCount', { count: 0 })}
+          </Header2>
+        </div>
         <NoSourcesEmpty scope={scope} />
       </div>
     );
@@ -378,13 +375,11 @@ function SourcesTable({
     <div className="flex flex-col gap-10">
       {/* The Entries tab's search row's height, so the count holds still
           across tabs. */}
-      <FilterBar>
-        <div aria-live="polite" className="flex min-h-11 items-center">
-          <Header2 className="text-title font-normal">
-            {t('develop.sourcesCount', { count: total })}
-          </Header2>
-        </div>
-      </FilterBar>
+      <div aria-live="polite" className="flex min-h-11 items-center">
+        <Header2 className="text-title font-normal">
+          {t('develop.sourcesCount', { count: total })}
+        </Header2>
+      </div>
 
       {sources.length === 0 ? (
         <NoSourcesEmpty scope={scope} />

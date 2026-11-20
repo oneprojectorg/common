@@ -33,18 +33,20 @@ export const OrgsTable = () => {
 
   return (
     <div className="mt-8">
-      <FilterBar>
-        <FilterBarStart>
-          <Header2 className="text-title">
-            {t('admin.allOrganizationsTitle')}
-          </Header2>
-          <FilterBarSearch
-            label={t('admin.searchOrganizationsLabel')}
-            value={searchQuery}
-            onChange={setSearchQuery}
-          />
-        </FilterBarStart>
-      </FilterBar>
+      <div className="mb-4">
+        <FilterBar>
+          <FilterBarStart>
+            <Header2 className="text-title">
+              {t('admin.allOrganizationsTitle')}
+            </Header2>
+            <FilterBarSearch
+              label={t('admin.searchOrganizationsLabel')}
+              value={searchQuery}
+              onChange={setSearchQuery}
+            />
+          </FilterBarStart>
+        </FilterBar>
+      </div>
       <Suspense fallback={<OrgsTableSkeleton />}>
         <OrgsTableContent searchQuery={debouncedQuery} />
       </Suspense>

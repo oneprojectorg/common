@@ -67,13 +67,11 @@ export function DevelopAdminSourcesPanel({
   if (!sourcePhase) {
     return (
       <div className="flex flex-col gap-10">
-        <FilterBar>
-          <div className="flex min-h-11 items-center">
-            <Header2 className="text-title font-normal">
-              {t('sourcesCount', { count: 0 })}
-            </Header2>
-          </div>
-        </FilterBar>
+        <div className="flex min-h-11 items-center">
+          <Header2 className="text-title font-normal">
+            {t('sourcesCount', { count: 0 })}
+          </Header2>
+        </div>
         <NoSourcesEmpty scope="all" />
       </div>
     );

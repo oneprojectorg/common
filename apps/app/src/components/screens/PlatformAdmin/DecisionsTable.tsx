@@ -33,18 +33,20 @@ export const DecisionsTable = () => {
 
   return (
     <div className="mt-8">
-      <FilterBar>
-        <FilterBarStart>
-          <Header2 className="text-title">
-            {t('admin.allDecisionsTitle')}
-          </Header2>
-          <FilterBarSearch
-            label={t('admin.searchDecisionsLabel')}
-            value={searchQuery}
-            onChange={setSearchQuery}
-          />
-        </FilterBarStart>
-      </FilterBar>
+      <div className="mb-4">
+        <FilterBar>
+          <FilterBarStart>
+            <Header2 className="text-title">
+              {t('admin.allDecisionsTitle')}
+            </Header2>
+            <FilterBarSearch
+              label={t('admin.searchDecisionsLabel')}
+              value={searchQuery}
+              onChange={setSearchQuery}
+            />
+          </FilterBarStart>
+        </FilterBar>
+      </div>
       <Suspense fallback={<DecisionsTableSkeleton />}>
         <DecisionsTableContent searchQuery={debouncedQuery} />
       </Suspense>
