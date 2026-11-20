@@ -1363,6 +1363,8 @@
       "createProposalError": "فشل إنشاء المقترح",
       "submitProposalError": "فشل تقديم المقترح",
       "updateProposalError": "فشل تحديث المقترح",
+      "editingClosedTitle": "التحرير مغلق",
+      "editingClosedDescription": "لم يعد بإمكانك تعديل هذا المقترح. التغييرات التي تجريها الآن لن تُحفظ.",
       "submitFormError": "فشل تقديم النموذج",
       "unexpectedError": "حدث خطأ غير متوقع",
       "anonymousAuthor": "مجهول",

@@ -1363,6 +1363,8 @@
       "createProposalError": "Échec de la création de la proposition",
       "submitProposalError": "Échec de la soumission de la proposition",
       "updateProposalError": "Échec de la mise à jour de la proposition",
+      "editingClosedTitle": "La modification est fermée",
+      "editingClosedDescription": "Vous ne pouvez plus modifier cette proposition. Les modifications que vous faites maintenant ne sont pas enregistrées.",
       "submitFormError": "Échec de l'envoi du formulaire",
       "unexpectedError": "Une erreur inattendue s'est produite",
       "anonymousAuthor": "Anonyme",

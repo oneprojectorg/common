@@ -1363,6 +1363,8 @@
       "createProposalError": "Error al crear la propuesta",
       "submitProposalError": "Error al enviar la propuesta",
       "updateProposalError": "Error al actualizar la propuesta",
+      "editingClosedTitle": "La edición está cerrada",
+      "editingClosedDescription": "Ya no puedes editar esta propuesta. Los cambios que hagas ahora no se guardan.",
       "submitFormError": "Error al enviar el formulario",
       "unexpectedError": "Ocurrió un error inesperado",
       "anonymousAuthor": "Anónimo",

@@ -34,10 +34,13 @@ export function useProposalDraft({
   proposal,
   isEditMode,
   collaborationDocId,
+  isAutoSaveBlocked = false,
 }: {
   proposal: Proposal;
   isEditMode: boolean;
   collaborationDocId: string;
+  /** Skip autosave, e.g. once the server has closed editing. */
+  isAutoSaveBlocked?: boolean;
 }) {
   // -- Parsed server state --------------------------------------------------
 
@@ -103,7 +106,7 @@ export function useProposalDraft({
 
   const saveFields = useCallback(
     (nextDraft?: ProposalDraftFields) => {
-      if (!proposal) {
+      if (!proposal || isAutoSaveBlocked) {
         return;
       }
       const draftToPersist = nextDraft ?? draftRef.current;
@@ -116,7 +119,7 @@ export function useProposalDraft({
         },
       });
     },
-    [proposal, autoSaveMutation, buildProposalData],
+    [proposal, isAutoSaveBlocked, autoSaveMutation, buildProposalData],
   );
 
   const debouncedAutoSave = useDebouncedCallback(saveFields, 1500);

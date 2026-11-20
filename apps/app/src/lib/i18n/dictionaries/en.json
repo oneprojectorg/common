@@ -1363,6 +1363,8 @@
       "createProposalError": "Failed to create proposal",
       "submitProposalError": "Failed to submit proposal",
       "updateProposalError": "Failed to update proposal",
+      "editingClosedTitle": "Editing is closed",
+      "editingClosedDescription": "You can no longer edit this proposal. Changes you make now are not saved.",
       "submitFormError": "Failed to submit form",
       "unexpectedError": "An unexpected error occurred",
       "anonymousAuthor": "Anonymous",
