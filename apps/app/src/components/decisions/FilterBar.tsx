@@ -23,7 +23,6 @@ interface FilterBarSearchControl {
   label: string;
 }
 
-/** `children` are a `FilterBarStart` box and a `FilterBarEnd` box. */
 export const FilterBar = ({
   pinOffset,
   children,
@@ -32,18 +31,15 @@ export const FilterBar = ({
   children: ReactNode;
 }) => <StickyFilterBar pinOffset={pinOffset}>{children}</StickyFilterBar>;
 
-// Two boxes, not one wrapping row, so the search field stays one instance
-// (and keeps focus). The header's large grow keeps the search next to the filters.
+// A box apart from `FilterBarEnd`, not one wrapping row, so the search stays one instance and keeps focus.
 export const FilterBarStart = ({ children }: { children: ReactNode }) => (
   <div className="flex grow-999 flex-wrap items-center justify-between gap-4">
     {children}
   </div>
 );
 
-/** `children` are the filter selects, followed by `FilterBarActions` groups. */
 export const FilterBarEnd = ({ children }: { children: ReactNode }) => (
-  // Below `sm` the controls wrap onto more rows. From `sm` an auto margin on
-  // the first child, not `justify-end`, because it collapses when the row overflows.
+  // An auto margin on the first child, not `justify-end`, which collapses when the row overflows.
   <div className="scrollbar-none flex grow flex-wrap items-center gap-4 sm:-mx-8 sm:flex-nowrap sm:overflow-x-scroll sm:px-8 sm:[&>*:first-child]:ms-auto">
     {children}
   </div>
