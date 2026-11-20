@@ -143,7 +143,7 @@ export function ReviewSettingsContent({
           )}
           <RadioGroup
             value={settings.scope}
-            disabled={isScopeLocked}
+            readOnly={isScopeLocked}
             aria-describedby={isScopeLocked ? scopeLockNoteId : undefined}
             onValueChange={(value) => {
               posthog.capture(

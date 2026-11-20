@@ -373,7 +373,7 @@ function PhaseDetailForm({
               label={t('decisions.processBuilder.startDateLabel')}
               value={safeParseLocal(phase.startDate)}
               maxDate={safeParseLocal(phase.endDate)}
-              disabled={isPast || isCurrent}
+              readOnly={isPast || isCurrent}
               description={
                 isCurrent
                   ? t('decisions.processBuilder.currentPhaseStartLockedNote')
@@ -407,7 +407,7 @@ function PhaseDetailForm({
               required
               value={safeParseLocal(phase.endDate)}
               minDate={safeParseLocal(phase.startDate)}
-              disabled={isPast}
+              readOnly={isPast}
               onChange={(date) => {
                 if (date) {
                   updatePhase({ endDate: date.toISOString() });
@@ -424,7 +424,7 @@ function PhaseDetailForm({
           description={t('decisions.processBuilder.proposalSubmissionHint')}
         >
           <Switch
-            disabled={isPast}
+            readOnly={isPast}
             checked={phase.rules?.proposals?.submit ?? false}
             onCheckedChange={(val) =>
               updateRules({
@@ -439,7 +439,7 @@ function PhaseDetailForm({
             description={t('decisions.processBuilder.hideProposalsHint')}
           >
             <Switch
-              disabled={isPast}
+              readOnly={isPast}
               checked={phase.rules?.proposals?.defaults?.hidden ?? false}
               onCheckedChange={(val) =>
                 updateRules({
@@ -460,7 +460,7 @@ function PhaseDetailForm({
           description={t('decisions.processBuilder.proposalEditingHint')}
         >
           <Switch
-            disabled={isPast}
+            readOnly={isPast}
             checked={phase.rules?.proposals?.edit ?? false}
             onCheckedChange={(val) =>
               updateRules({
@@ -474,7 +474,7 @@ function PhaseDetailForm({
           description={t('decisions.processBuilder.proposalReviewHint')}
         >
           <Switch
-            disabled={isPast}
+            readOnly={isPast}
             checked={isReviewPhase(phase)}
             onCheckedChange={(val) => {
               const nextReviews: PhaseRules['reviews'] = {
@@ -497,7 +497,7 @@ function PhaseDetailForm({
             description={t('decisions.processBuilder.openReviewsHint')}
           >
             <Switch
-              disabled={isPast}
+              readOnly={isPast}
               checked={phase.rules?.reviews?.openReviews ?? false}
               onCheckedChange={(val) => {
                 // Turning ON is confirmed via a dialog; turning OFF is immediate.
@@ -518,7 +518,7 @@ function PhaseDetailForm({
           description={t('decisions.processBuilder.votingHint')}
         >
           <Switch
-            disabled={isPast}
+            readOnly={isPast}
             checked={isVotingPhase(phase)}
             onCheckedChange={(val) => {
               const nextVoting: PhaseRules['voting'] = {
@@ -540,7 +540,7 @@ function PhaseDetailForm({
             description={t('decisions.processBuilder.votingLimitHint')}
           >
             <VoteLimitSelect
-              disabled={isPast}
+              readOnly={isPast}
               maxVotes={phase.rules?.voting?.maxVotesPerMember}
               onChange={(maxVotesPerMember) =>
                 updateRules({
@@ -555,7 +555,7 @@ function PhaseDetailForm({
           description={t('decisions.processBuilder.commentsHint')}
         >
           <Switch
-            disabled={isPast}
+            readOnly={isPast}
             checked={allowsComments(phase)}
             onCheckedChange={(val) =>
               updateRules({
@@ -605,11 +605,11 @@ const VOTE_LIMIT_OPTIONS = ['none', '1', '2', '3', '4', '5', '10'] as const;
 function VoteLimitSelect({
   maxVotes,
   onChange,
-  disabled,
+  readOnly,
 }: {
   maxVotes: number | undefined;
   onChange: (maxVotes: number | undefined) => void;
-  disabled?: boolean;
+  readOnly?: boolean;
 }) {
   const t = useTranslations();
   const selectedKey = maxVotes === undefined ? 'none' : String(maxVotes);
@@ -631,7 +631,7 @@ function VoteLimitSelect({
   return (
     <Select
       value={selectedKey}
-      disabled={disabled}
+      readOnly={readOnly}
       // Value→label map so SelectValue renders the label, not the raw id.
       items={Object.fromEntries(options.map((key) => [key, labelFor(key)]))}
       onValueChange={(key) => {
