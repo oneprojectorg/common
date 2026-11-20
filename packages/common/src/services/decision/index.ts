@@ -144,6 +144,7 @@ export * from './listReviewAssignmentLocations';
 export * from './listCategoryReviewers';
 export * from './publishDevelopedProposals';
 export * from './getDevelopConfirmState';
+export * from './getDevelopEntryLock';
 export * from './listEligibleReviewers';
 export * from './listReviewerCategories';
 export * from './addCategoryReviewer';

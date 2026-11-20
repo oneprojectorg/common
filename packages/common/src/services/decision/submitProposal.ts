@@ -7,6 +7,7 @@ import { assertProfileAccess } from '../assert';
 import { assertProposalsAllowed } from './assertProposalsAllowed';
 import { finalizeProposalSubmission } from './finalizeProposalSubmission';
 import { getPhases } from './instancePhases';
+import { isDevelopedProposal } from './isDevelopedProposal';
 import { decisionPermission } from './permissions';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
@@ -59,6 +60,13 @@ export const submitProposal = async ({
       { decisions: decisionPermission.SUBMIT_PROPOSALS },
     ],
   });
+
+  // An entry advances only through `submitDevelopedProposal`, which applies the develop rule and lock.
+  if (await isDevelopedProposal(existingProposal.id)) {
+    throw new ValidationError(
+      'A developed proposal is advanced from the develop screen',
+    );
+  }
 
   const instanceData = instance.instanceData as DecisionInstanceData;
   const currentPhaseId = instance.currentStateId;

@@ -44,6 +44,9 @@ vi.mock('./pages/ReviewSelectionPage', () => ({
 vi.mock('./pages/DevelopProposalsPage', () => ({
   DevelopProposalsPage: () => <div>develop page</div>,
 }));
+vi.mock('./pages/DevelopCoauthorPage', () => ({
+  DevelopCoauthorPage: () => <div>develop co-author page</div>,
+}));
 vi.mock('./pages/DevelopPreparationPage', () => ({
   DevelopPreparationPage: () => <div>develop preparation page</div>,
 }));
@@ -161,13 +164,14 @@ describe('DecisionStateRouter', () => {
     expect(screen.queryByText('develop admin page')).toBeNull();
   });
 
-  it('sends a reviewer without develop access to the develop preparation page', () => {
+  it('sends a reviewer without develop access to the develop co-author page', () => {
     renderRouter({
       phases: reviewThenDevelop,
       currentStateId: 'develop',
       access: { review: true },
     });
-    expect(screen.getByText('develop preparation page')).toBeTruthy();
+    expect(screen.getByText('develop co-author page')).toBeTruthy();
+    expect(screen.queryByText('develop preparation page')).toBeNull();
     expect(screen.queryByText('standard page')).toBeNull();
     expect(screen.queryByText('develop page')).toBeNull();
     expect(screen.queryByText('develop admin page')).toBeNull();

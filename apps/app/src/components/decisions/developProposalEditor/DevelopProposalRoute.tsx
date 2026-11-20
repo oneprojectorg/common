@@ -26,7 +26,10 @@ import { compileProposalSchema } from '../forms/proposal';
 import { ProposalFormRenderer } from '../proposalEditor/ProposalFormRenderer';
 import { decisionRootHref } from '../proposalHrefs';
 import { useLiveProposalDocument } from '../useLiveProposalDocument';
-import { DevelopProposalEditor } from './DevelopProposalEditor';
+import {
+  DevelopCoauthorEditor,
+  DevelopProposalEditor,
+} from './DevelopProposalEditor';
 import { DevelopProposalFrame } from './DevelopProposalFrame';
 import { DevelopSourceColumn } from './DevelopSourceColumn';
 import { getDevelopEntryHeading } from './getDevelopEntryHeading';
@@ -37,10 +40,12 @@ type DevelopSources = ComponentProps<typeof DevelopSourceColumn>['sources'];
 /**
  * Opens a proposal developed from sources beside its source. A source of the
  * current develop phase with no entry opens beside the note that it has none
- * yet; any other proposal is not found. The entry's form is editable only for
- * a caller who may develop proposals, while the server reports the proposal
- * editable and the caller has no develop lock. A draft entry that a
- * developer's lock keeps from advancing shows as not advanced, without its form.
+ * yet; any other proposal is not found. The entry's form is editable while the
+ * server reports the proposal editable and no develop lock holds it: for a
+ * caller who may develop proposals, their own lock; for a co-author who may
+ * not, the lock of the entry's owner, and without the Advance action. A draft
+ * entry that a developer's lock keeps from advancing shows as not advanced,
+ * without its form.
  */
 export function DevelopProposalRoute({
   instance,
@@ -132,7 +137,27 @@ export function DevelopProposalRoute({
   );
 
   if (!canDevelop) {
-    return readOnlyEntry;
+    if (proposal.isEditable !== true) {
+      return readOnlyEntry;
+    }
+
+    return (
+      <CoauthorEntryByLockSuspense
+        proposal={proposal}
+        editor={
+          <DevelopCoauthorEditor
+            instance={instance}
+            proposal={proposal}
+            backHref={backHref}
+            source={source}
+            sourceLabel={sourceLabel}
+            heading={heading}
+            description={description}
+          />
+        }
+        readOnlyEntry={readOnlyEntry}
+      />
+    );
   }
 
   return (
@@ -195,6 +220,26 @@ function DevelopEntryByLock({
   }
 
   return readOnlyEntry;
+}
+
+/**
+ * A co-author's entry by the lock of the entry's owner: the editor while the
+ * owner may still develop, otherwise the read-only entry.
+ */
+function CoauthorEntryByLockSuspense({
+  proposal,
+  editor,
+  readOnlyEntry,
+}: {
+  proposal: Proposal;
+  editor: ReactNode;
+  readOnlyEntry: ReactNode;
+}) {
+  const [{ lock }] = trpc.decision.getDevelopEntryLock.useSuspenseQuery({
+    proposalId: proposal.id,
+  });
+
+  return lock === null ? editor : readOnlyEntry;
 }
 
 /**

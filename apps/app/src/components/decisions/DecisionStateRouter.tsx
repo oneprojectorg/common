@@ -16,6 +16,7 @@ import { ProposalSheetProvider } from './ProposalSheet/ProposalSheetProvider';
 import { ReadOnlyProposalSheet } from './ProposalSheet/ReadOnlyProposalSheet';
 import { ReviewProgressProposalSheet } from './ProposalSheet/ReviewProgressProposalSheet';
 import { DevelopAdminPage } from './pages/DevelopAdminPage';
+import { DevelopCoauthorPage } from './pages/DevelopCoauthorPage';
 import { DevelopPreparationPage } from './pages/DevelopPreparationPage';
 import { DevelopProposalsPage } from './pages/DevelopProposalsPage';
 import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
@@ -132,8 +133,9 @@ function DecisionPage({
     // which entries are developed from the previous phase's proposals. This
     // branch must come first: without it an admin lands on the
     // review-selection screen below, which advances the previous phase's
-    // proposals as they are. An admin wins over develop access; anyone else
-    // reads the proposals under consideration.
+    // proposals as they are. An admin wins over develop access, which wins
+    // over review access; anyone else reads the proposals under
+    // consideration.
     if (currentPhase && isDevelopPhase(currentPhase) && decisionSlug) {
       if (isAdmin) {
         return (
@@ -144,6 +146,15 @@ function DecisionPage({
       if (instance.access?.developProposals) {
         return (
           <DevelopProposalsPage
+            instance={instance}
+            decisionSlug={decisionSlug}
+          />
+        );
+      }
+
+      if (instance.access?.review) {
+        return (
+          <DevelopCoauthorPage
             instance={instance}
             decisionSlug={decisionSlug}
           />
@@ -248,7 +259,7 @@ function DecisionPage({
   );
 }
 
-/** A develop phase awaits its selection and the reader may not develop. */
+/** A develop phase awaits its selection and the reader may neither develop nor review. */
 function isDevelopPreparation(instance: Instance): boolean {
   const currentPhase = instance.instanceData?.phases?.find(
     (phase) => phase.phaseId === instance.currentStateId,
@@ -258,7 +269,8 @@ function isDevelopPreparation(instance: Instance): boolean {
     !!currentPhase &&
     isDevelopPhase(currentPhase) &&
     !instance.access?.admin &&
-    !instance.access?.developProposals
+    !instance.access?.developProposals &&
+    !instance.access?.review
   );
 }
 

@@ -13,6 +13,7 @@ export {
 
 export { TestDecisionsDataManager } from './helpers/TestDecisionsDataManager';
 export {
+  createAssignedSourceReviewer,
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
   openDevelopWindow,
