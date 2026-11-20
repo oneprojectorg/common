@@ -1,3 +1,4 @@
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, sql } from '@op/db/client';
 import { decisionBoundaries, profiles, users } from '@op/db/schema';
 import { inArray } from 'drizzle-orm';
@@ -82,6 +83,23 @@ const SAMPLE_MULTIPOLYGON = `ST_SetSRID(
 )`;
 
 describe.concurrent('decision.listBoundaryShapes', () => {
+  it('rejects a caller who cannot read the decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const decision = await testData.createDecisionSetup({ instanceCount: 1 });
+    const outsider = await testData.createDecisionSetup();
+    const { session } = await createIsolatedSession(outsider.userEmail);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.decision.listBoundaryShapes({
+        profileId: decision.instance.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
   it('returns each boundary owned by the scoped profile as a parsed GeoJSON MultiPolygon', async ({
     onTestFinished,
   }) => {

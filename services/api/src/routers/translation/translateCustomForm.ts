@@ -5,8 +5,8 @@ import { authenticatedProcedure, router } from '../../trpcFactory';
 import { translateOutput } from './translateProposal';
 
 export const translateCustomFormRouter = router({
-  // Same tier as `customForm.getForProfile`, which already returns the form's
-  // text to any signed-in caller.
+  // Same tier as `customForm.getForProfile`. Both require read access to the
+  // decision the form belongs to.
   translateCustomForm: authenticatedProcedure()
     .input(
       z.object({
@@ -15,8 +15,9 @@ export const translateCustomFormRouter = router({
       }),
     )
     .output(translateOutput)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       return translateCustomForm({
+        user: ctx.user,
         customFormId: input.customFormId,
         targetLocale: input.targetLocale,
       });

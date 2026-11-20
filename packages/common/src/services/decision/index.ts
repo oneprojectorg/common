@@ -182,6 +182,7 @@ export * from './setProposalCategories';
 export * from './boundaryCategory';
 export * from './linkBoundaryToCategory';
 export * from './resolveBoundary';
+export * from './getBoundaryAtPoint';
 export * from './listBoundaryShapes';
 export * from './reverseGeocode';
 export * from './templateLocation';

@@ -1,6 +1,10 @@
 import { db, sql } from '@op/db/client';
 import { decisionBoundaries } from '@op/db/schema';
+import { permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
+
+import type { AccessUser } from '../access';
+import { assertProfileAccess } from '../assert';
 
 /**
  * Position is `[lng, lat]` (GeoJSON axis order, RFC 7946). The boundary geometry
@@ -29,10 +33,18 @@ export interface BoundaryShape {
  * to avoid round-tripping the WKB through the Node layer.
  */
 export async function listBoundaryShapes({
+  user,
   profileId,
 }: {
+  user: AccessUser;
   profileId: string;
 }): Promise<BoundaryShape[]> {
+  await assertProfileAccess({
+    user,
+    profileId,
+    permissions: { decisions: permission.READ },
+  });
+
   const rows = await db
     .select({
       id: decisionBoundaries.id,

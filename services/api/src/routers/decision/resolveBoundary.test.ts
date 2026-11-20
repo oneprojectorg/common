@@ -1,4 +1,6 @@
+import { TestDecisionsDataManager } from '@op/common/testing';
 import { randomUUID } from 'node:crypto';
+import { describe, expect, it } from 'vitest';
 
 import {
   accessTierGatingCell,
@@ -6,6 +8,7 @@ import {
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
+import { createAuthenticatedCaller } from '../../test/supabase-utils';
 
 const input = { lat: 40.7128, lng: -74.006, profileId: randomUUID() };
 
@@ -44,4 +47,41 @@ describeAccessTierGating('decision.resolveBoundary', {
       await expectPassesAccessTierGate(caller.decision.resolveBoundary(input));
     },
   ),
+});
+
+describe.concurrent('decision.resolveBoundary authorization', () => {
+  it('rejects a caller who cannot read the decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const decision = await testData.createDecisionSetup({ instanceCount: 1 });
+    const outsider = await testData.createDecisionSetup();
+    const caller = await createAuthenticatedCaller(outsider.userEmail);
+
+    await expect(
+      caller.decision.resolveBoundary({
+        ...input,
+        profileId: decision.instance.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('admits any caller on a public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const decision = await testData.createDecisionSetup({ instanceCount: 1 });
+    await testData.makeDecisionPublic(decision.instance.profileId);
+    const outsider = await testData.createDecisionSetup();
+    const caller = await createAuthenticatedCaller(outsider.userEmail);
+
+    await expect(
+      caller.decision.resolveBoundary({
+        ...input,
+        profileId: decision.instance.profileId,
+      }),
+    ).resolves.toEqual({ boundary: null, boundariesConfigured: false });
+  });
 });

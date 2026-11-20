@@ -53,6 +53,23 @@ async function attachForm(
 }
 
 describe.concurrent('customForm.getForProfile', () => {
+  it('rejects a caller who cannot read the decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const decision = await testData.createDecisionSetup({ instanceCount: 1 });
+    await attachForm(decision.instance.profileId, onTestFinished);
+    const outsider = await testData.createDecisionSetup();
+    const caller = await createAuthenticatedCaller(outsider.userEmail);
+
+    await expect(
+      caller.customForm.getForProfile({
+        profileId: decision.instance.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
   it('returns the form attached to a profile', async ({
     task,
     onTestFinished,
