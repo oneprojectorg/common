@@ -11,7 +11,7 @@ const uuidSchema = z.uuid();
 export function extractProposalIds(pastedText: string): Array<string> {
   const ids = new Set<string>();
   for (const token of pastedText.split(/[^0-9a-fA-F-]+/)) {
-    if (uuidSchema.safeParse(token).success) {
+    if (uuidSchema.validate(token)) {
       ids.add(token.toLowerCase());
     }
   }

@@ -34,7 +34,7 @@ export const validateChannelValue = (
 
   const normalized = normalizePhoneNumber(trimmed);
 
-  if (!phoneNumberSchema.safeParse(normalized).success) {
+  if (!phoneNumberSchema.validate(normalized)) {
     return 'invalid';
   }
 

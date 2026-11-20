@@ -111,7 +111,7 @@ export const ResourceDropZone = ({
       return;
     }
     const url = extractDropUrl(event.dataTransfer);
-    if (url && httpUrlSchema.safeParse(url).success) {
+    if (url && httpUrlSchema.validate(url)) {
       void dropLink(url, upperNeighborId, slot);
     }
   };

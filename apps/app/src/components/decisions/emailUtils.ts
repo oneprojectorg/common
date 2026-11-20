@@ -2,8 +2,7 @@ import { z } from 'zod';
 
 const emailSchema = z.string().email();
 
-export const isValidEmail = (email: string) =>
-  emailSchema.safeParse(email).success;
+export const isValidEmail = (email: string) => emailSchema.validate(email);
 
 /**
  * Parse a pasted string of comma/semicolon/newline-separated emails into

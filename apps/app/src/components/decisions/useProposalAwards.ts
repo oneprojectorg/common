@@ -170,8 +170,7 @@ const requestedOf = (proposal: AwardProposal): MoneyAmount | undefined => {
 export const isValidAwardAmount = (
   amount: number | null | undefined,
 ): amount is number =>
-  amount != null &&
-  proposalAllocationSchema.shape.amount.safeParse(amount).success;
+  amount != null && proposalAllocationSchema.shape.amount.validate(amount);
 
 const singleCurrency = (currencies: readonly string[]): string | undefined => {
   const distinct = new Set(currencies);

@@ -223,8 +223,7 @@ const refineNestedFieldKeys = (
     }
 
     for (const key of Object.keys(nested)) {
-      const result = customFormFieldKeySchema.safeParse(key);
-      if (!result.success) {
+      if (!customFormFieldKeySchema.validate(key)) {
         ctx.addIssue({
           code: 'custom',
           message: `Field "${fieldKey}" has an invalid key "${key}"`,

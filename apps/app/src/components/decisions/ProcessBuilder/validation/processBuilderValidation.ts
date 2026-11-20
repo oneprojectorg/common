@@ -100,10 +100,10 @@ function validateTemplateEditor(
 }
 
 const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
-  generalInformation: (data) => processSettingsSchema.safeParse(data).success,
+  generalInformation: (data) => processSettingsSchema.validate(data),
   // Overview content (headline, description, body) is optional
   overview: () => true,
-  phases: (data) => phasesSchema.safeParse(data).success,
+  phases: (data) => phasesSchema.validate(data),
   proposalCategories: () => true,
   templateEditor: validateTemplateEditor,
   criteria: (data) =>
@@ -135,7 +135,7 @@ const LAUNCH_CHECKLIST: ChecklistItem[] = [
   {
     id: 'processNameDescription',
     labelKey: 'decisions.processBuilder.checklistProcessDetails',
-    validate: (data) => processSettingsSchema.safeParse(data).success,
+    validate: (data) => processSettingsSchema.validate(data),
   },
   {
     id: 'atLeastOnePhase',
@@ -150,7 +150,7 @@ const LAUNCH_CHECKLIST: ChecklistItem[] = [
       if (!phases?.length) {
         return true;
       }
-      return z.array(phaseSchema).safeParse(phases).success;
+      return z.array(phaseSchema).validate(phases);
     },
   },
   {
@@ -204,7 +204,7 @@ export function isPhaseValid(phase: {
   description?: string | null;
   endDate?: string | null;
 }): boolean {
-  return phaseSchema.safeParse(phase).success;
+  return phaseSchema.validate(phase);
 }
 
 // ============ Validation ============
