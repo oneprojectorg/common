@@ -30,11 +30,8 @@ interface StickyFilterBarProps {
 }
 
 /**
- * The pinning shell around the `FilterBar` row. A zero-height sentinel just above the bar,
- * observed against the nearest scroll container (rootMargin shrunk by
- * `pinOffset`), flips `data-pinned` exactly as the bar locks; once pinned, the
- * full-bleed hairlines and white backing fade in. Requires a `relative`
- * ancestor for the sentinel to anchor to.
+ * Pins the `FilterBar` row. Requires a `relative` ancestor for the pin sentinel
+ * to anchor to.
  */
 export const StickyFilterBar = ({
   pinOffset = 0,
