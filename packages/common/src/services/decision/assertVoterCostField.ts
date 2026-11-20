@@ -20,9 +20,18 @@ export async function assertVoterCostField({
     return;
   }
 
-  const template = await resolveProposalTemplate(instanceData, processId, null);
+  const checks = await Promise.all(
+    capped.map(async (phase) => ({
+      phase,
+      template: await resolveProposalTemplate(
+        instanceData,
+        processId,
+        phase.formSchemaId ?? null,
+      ),
+    })),
+  );
 
-  for (const phase of capped) {
+  for (const { phase, template } of checks) {
     const voterCostField = getVoterCostField(phase);
 
     if (!getFieldUnit(template?.properties?.[voterCostField])) {

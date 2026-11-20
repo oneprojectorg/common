@@ -23,14 +23,17 @@ import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
 import { getFieldUnit } from './fieldUnit';
 import { getBallotProposalFilter } from './getBallotProposalFilter';
-import { type ProposalCosts, getProposalCosts } from './getProposalCosts';
+import type { ProposalCosts } from './getProposalCosts';
+import {
+  getAmountsInUnit,
+  getProposalCostsByForm,
+} from './getProposalCostsByForm';
 import { resolvePhases } from './instancePhases';
 import { decisionPermission } from './permissions';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteBudget, validateVoteSelection } from './schemaValidators';
 import type { PhaseInstanceData } from './schemas/instanceData';
-import type { ProposalTemplateSchema } from './types';
 import {
   getVoterBudget,
   getVoterCostField,
@@ -50,6 +53,7 @@ interface PhaseConfig {
   voterCostField: string;
   ranked: boolean;
   enrolment: ReturnType<typeof getVoterEnrolment>;
+  voterBudgetFormSchemaId: string | null;
 }
 
 /** Extract voting/proposal rules for the current phase. */
@@ -82,6 +86,7 @@ function getCurrentPhaseConfig(processInstance: {
     voterCostField: getVoterCostField(currentPhase),
     ranked: isRankedVoting(currentPhase),
     enrolment: getVoterEnrolment(currentPhase),
+    voterBudgetFormSchemaId: currentPhase.formSchemaId ?? null,
   };
 }
 
@@ -90,7 +95,6 @@ interface VoteCap {
   voterCostField: string;
   /** Undefined when the rules name a field the template no longer prices. */
   unit: AmountUnit | undefined;
-  proposalTemplate: ProposalTemplateSchema | null;
 }
 
 // Undefined when the phase sets no cap.
@@ -106,9 +110,9 @@ async function getVoteCap({
   }
 
   const proposalTemplate = await resolveProposalTemplate(
-    processInstance.instanceData as Record<string, unknown> | null,
+    processInstance.instanceData,
     processInstance.processId,
-    null,
+    phaseConfig.voterBudgetFormSchemaId,
   );
 
   return {
@@ -117,11 +121,10 @@ async function getVoteCap({
     unit: getFieldUnit(
       proposalTemplate?.properties?.[phaseConfig.voterCostField],
     ),
-    proposalTemplate,
   };
 }
 
-type PricedBallot = Omit<VoteCap, 'unit' | 'proposalTemplate'> & {
+type PricedBallot = Omit<VoteCap, 'unit'> & {
   unit: AmountUnit;
   costs: ProposalCosts;
 };
@@ -139,7 +142,11 @@ async function getBallotPricing({
     instanceData: unknown;
     processId: string | null;
   };
-  eligibleProposals: Array<{ id: string; proposalData: unknown }>;
+  eligibleProposals: Array<{
+    id: string;
+    proposalData: unknown;
+    formSchemaId: string | null;
+  }>;
   selectedProposalIds: string[];
 }): Promise<PricedBallot | undefined> {
   const cap = await getVoteCap({ phaseConfig, processInstance });
@@ -148,7 +155,7 @@ async function getBallotPricing({
     return undefined;
   }
 
-  const { unit, proposalTemplate, ...rest } = cap;
+  const { unit, ...rest } = cap;
 
   // Fail closed: an uncapped ballot on a capped phase is the worse outcome.
   if (!unit) {
@@ -165,15 +172,24 @@ async function getBallotPricing({
   }
 
   const selected = new Set(selectedProposalIds);
+  const selectedProposals = eligibleProposals.filter((p) => selected.has(p.id));
+  const costs = await getProposalCostsByForm({
+    instanceData: processInstance.instanceData,
+    processId: processInstance.processId,
+    proposals: selectedProposals,
+    voterCostField: cap.voterCostField,
+    unreadable: 'throw',
+  });
 
   return {
     ...rest,
     unit,
-    costs: await getProposalCosts({
-      proposals: eligibleProposals.filter((p) => selected.has(p.id)),
-      proposalTemplate,
-      voterCostField: cap.voterCostField,
+    costs: getAmountsInUnit({
+      proposals: selectedProposals,
+      costs,
       unit,
+      voterCostField: cap.voterCostField,
+      unreadable: 'throw',
     }),
   };
 }
@@ -212,7 +228,11 @@ async function getValidatedBallot({
     instanceData: unknown;
     processId: string | null;
   };
-  eligibleProposals: Array<{ id: string; proposalData: unknown }>;
+  eligibleProposals: Array<{
+    id: string;
+    proposalData: unknown;
+    formSchemaId: string | null;
+  }>;
 }): Promise<{
   pricing: PricedBallot | undefined;
   selections: BallotSelections;

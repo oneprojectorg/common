@@ -1,7 +1,7 @@
 import { mockCollab, textFragment } from '@op/collab/testing';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db } from '@op/db/client';
-import { ProcessStatus } from '@op/db/schema';
+import { ProcessStatus, ProposalStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { getBallotProposalByCode } from './getBallotProposalByCode';
@@ -115,6 +115,120 @@ const seedVotingDecision = async (
     );
   }
   return { setup, instanceId, submitted };
+};
+
+const entryVotingSchema: DecisionSchemaDefinition = {
+  ...votingSchema,
+  id: 'sms-ballot-entry-reads',
+  phases: [
+    {
+      id: 'submission',
+      name: 'Submission',
+      rules: { proposals: { submit: true }, voting: { submit: false } },
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [{ id: 'all', type: 'limit', count: 10 }],
+      },
+    },
+    {
+      id: 'voting',
+      name: 'Voting',
+      rules: {
+        proposals: { submit: false },
+        voting: {
+          submit: true,
+          voterBudget: 1_000_000,
+          voterCostField: 'cost',
+        },
+      },
+    },
+  ],
+};
+
+// The entries' form: its cost field and body field are not on the instance template.
+const entryForm = {
+  type: 'object',
+  required: ['title'],
+  'x-field-order': ['title', 'cost', 'entryDescription'],
+  properties: {
+    title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+    cost: {
+      type: 'object',
+      title: 'Cost',
+      'x-format': 'money',
+      properties: {
+        amount: { type: 'number' },
+        currency: { type: 'string', default: 'USD' },
+      },
+    },
+    entryDescription: {
+      type: 'string',
+      title: 'Entry description',
+      'x-format': 'long-text',
+    },
+  },
+};
+
+/**
+ * A voting phase that charges from `cost`, holding one submitted proposal per
+ * item, each written under `entryForm`. The voting phase names `entryForm` for
+ * its budget unless `votingPhaseForm` is false.
+ */
+const seedEntryVoting = async (
+  testData: TestDecisionsDataManager,
+  items: ReadonlyArray<{
+    title: string;
+    cost: number;
+    description: string;
+  }>,
+  { votingPhaseForm = true }: { votingPhaseForm?: boolean } = {},
+) => {
+  const setup = await testData.createDecisionSetup({
+    instanceCount: 1,
+    grantAccess: true,
+    status: ProcessStatus.PUBLISHED,
+    processSchema: entryVotingSchema,
+    proposalTemplate,
+  });
+  const instanceId = setup.instance.instance.id;
+  const form = await testData.createFormSchema({
+    processInstanceId: instanceId,
+    name: 'Ballot entry',
+    schema: entryForm,
+  });
+  if (votingPhaseForm) {
+    await testData.setPhaseFormSchemaId({
+      instanceId,
+      phaseId: 'voting',
+      formSchemaId: form.id,
+    });
+  }
+  for (const { title, cost, description } of items) {
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title },
+      status: ProposalStatus.SUBMITTED,
+      formSchemaId: form.id,
+    });
+    const { collaborationDocId } = parseProposalData(proposal.proposalData);
+    if (!collaborationDocId) {
+      throw new Error(
+        `Proposal ${proposal.id} was created without a collaboration document`,
+      );
+    }
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment(title),
+      cost: textFragment(JSON.stringify({ amount: cost, currency: 'USD' })),
+      entryDescription: textFragment(description),
+    });
+  }
+  await testData.advancePhase({
+    instanceId,
+    fromPhaseId: 'submission',
+    toPhaseId: 'voting',
+  });
+  return { instanceId };
 };
 
 describe.concurrent('listBallotProposals', () => {
@@ -247,6 +361,62 @@ describe.concurrent('listBallotProposals', () => {
 
     expect(page.items.map(({ title }) => title)).toEqual(['Kept']);
   });
+
+  it('given entries written under a form whose cost field the instance template lacks, when the ballot is listed, then each entry is priced from that form', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId } = await seedEntryVoting(testData, [
+      {
+        title: 'Crosswalk lighting',
+        cost: 85_000,
+        description: 'Lights at the crossing.',
+      },
+      {
+        title: 'Tree planting',
+        cost: 150_000,
+        description: 'Shade on the main street.',
+      },
+    ]);
+
+    const page = await listBallotProposals({
+      instance: await readInstance(instanceId),
+      limit: 10,
+    });
+
+    expect(page.items.map(({ title, cost }) => [title, cost])).toEqual([
+      ['Crosswalk lighting', '$85,000'],
+      ['Tree planting', '$150,000'],
+    ]);
+  });
+
+  it('given an entry whose row names a form its voting phase does not, when the ballot is listed, then its cost comes from the form on the row', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId } = await seedEntryVoting(
+      testData,
+      [
+        {
+          title: 'Crosswalk lighting',
+          cost: 85_000,
+          description: 'Lights at the crossing.',
+        },
+      ],
+      { votingPhaseForm: false },
+    );
+
+    const page = await listBallotProposals({
+      instance: await readInstance(instanceId),
+      limit: 10,
+    });
+
+    expect(page.items.map(({ title, cost }) => [title, cost])).toEqual([
+      ['Crosswalk lighting', '$85,000'],
+    ]);
+  });
 });
 
 describe.concurrent('getBallotProposalByCode', () => {
@@ -325,5 +495,31 @@ describe.concurrent('getBallotProposalByCode', () => {
         code: 101,
       }),
     ).resolves.toBeNull();
+  });
+
+  it('given an entry written under a form the instance template does not match, when its code is looked up, then its cost and summary come from that form', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId } = await seedEntryVoting(testData, [
+      {
+        title: 'Crosswalk lighting',
+        cost: 85_000,
+        description: 'Lights at the crossing.',
+      },
+    ]);
+
+    const proposal = await getBallotProposalByCode({
+      instance: await readInstance(instanceId),
+      code: 101,
+    });
+
+    expect(proposal).toMatchObject({
+      code: 101,
+      title: 'Crosswalk lighting',
+      cost: '$85,000',
+      summary: 'Lights at the crossing.',
+    });
   });
 });
