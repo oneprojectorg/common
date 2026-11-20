@@ -171,6 +171,43 @@
   }
 }
 
+/* Read-only controls: a tinted surface with the normal border and
+ * full-contrast text, so a fixed value reads as a record rather than as
+ * disabled. Keyed on data-slot so the generated primitives stay untouched.
+ * `:read-only` also matches disabled inputs, hence `:not(:disabled)`. */
+@layer utilities {
+  [data-slot='input']:read-only:not(:disabled),
+  [data-slot='textarea']:read-only:not(:disabled),
+  [data-slot='input-group']:has(
+      [data-slot='input-group-control']:read-only:not(:disabled)
+    ),
+  [data-slot='select-trigger'][data-readonly] {
+    background-color: var(--secondary);
+    color: var(--foreground);
+    cursor: default;
+  }
+  [data-slot='input-group-control']:read-only:not(:disabled) {
+    cursor: default;
+  }
+  [data-slot='select-trigger'][data-readonly] > svg {
+    display: none;
+  }
+  [data-slot='switch'][data-readonly] {
+    cursor: default;
+  }
+  [data-slot='switch'][data-readonly][data-checked] {
+    background-color: var(--muted-foreground);
+  }
+  [data-slot='switch'][data-readonly][data-unchecked] {
+    background-color: var(--secondary);
+    border-color: var(--input);
+  }
+  [data-slot='switch'][data-readonly][data-unchecked]
+    > [data-slot='switch-thumb'] {
+    box-shadow: 0 0 0 1px var(--input);
+  }
+}
+
 /* Semantic type scale from the Figma "Typography" collection. The collection
  * has Default and Mobile modes; these are mobile-first with the Default
  * (desktop) values applied from `md` up — breakpoint is our assumption, the

@@ -57,6 +57,12 @@ export const States: Story = {
     <div className="flex w-72 flex-col gap-6">
       <DatePicker label="Disabled" disabled value={new Date(2026, 5, 15)} />
       <DatePicker
+        label="Read-only with description"
+        description="The start date can't change once the phase has begun."
+        readOnly
+        value={new Date(2026, 5, 15)}
+      />
+      <DatePicker
         label="With error"
         errorMessage="The end date must come after the start date."
         value={new Date(2026, 5, 15)}
@@ -82,4 +88,15 @@ const ButtonDemo = () => {
 
 export const ButtonVariant: Story = {
   render: () => <ButtonDemo />,
+};
+
+export const ButtonReadOnly: Story = {
+  render: () => (
+    <DatePickerButton
+      label="Date"
+      readOnly
+      value={new Date(2026, 5, 15)}
+      className="w-44"
+    />
+  ),
 };

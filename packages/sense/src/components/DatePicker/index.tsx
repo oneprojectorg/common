@@ -29,6 +29,8 @@ interface DatePickerProps {
   errorMessage?: React.ReactNode;
   placeholder?: string;
   disabled?: boolean;
+  /** Shows the value as a fixed record: focusable and announced, but it can't change and the calendar won't open. */
+  readOnly?: boolean;
   required?: boolean;
   id?: string;
   className?: string;
@@ -44,6 +46,7 @@ function DatePicker({
   errorMessage,
   placeholder = 'Select date',
   disabled,
+  readOnly,
   required,
   id,
   className,
@@ -92,7 +95,7 @@ function DatePicker({
           {required ? <RequiredAsterisk /> : null}
         </FieldLabel>
       ) : null}
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={readOnly ? undefined : setOpen}>
         <InputGroup>
           <InputGroupInput
             id={inputId}
@@ -103,29 +106,32 @@ function DatePicker({
             // would steal focus. Calendar opens via the icon or ArrowDown,
             // matching the upstream shadcn date-picker input example.
             onKeyDown={(event) => {
-              if (event.key === 'ArrowDown') {
+              if (event.key === 'ArrowDown' && !readOnly) {
                 event.preventDefault();
                 setOpen(true);
               }
             }}
             placeholder={placeholder}
             disabled={disabled}
+            readOnly={readOnly}
             required={required}
             aria-invalid={errorMessage ? true : undefined}
           />
-          <InputGroupAddon align="inline-end">
-            <PopoverTrigger
-              render={
-                <InputGroupButton
-                  size="icon-sm"
-                  aria-label="Open calendar"
-                  disabled={disabled}
-                />
-              }
-            >
-              <LuCalendar />
-            </PopoverTrigger>
-          </InputGroupAddon>
+          {readOnly ? null : (
+            <InputGroupAddon align="inline-end">
+              <PopoverTrigger
+                render={
+                  <InputGroupButton
+                    size="icon-sm"
+                    aria-label="Open calendar"
+                    disabled={disabled}
+                  />
+                }
+              >
+                <LuCalendar />
+              </PopoverTrigger>
+            </InputGroupAddon>
+          )}
         </InputGroup>
         {/* Portaled outside the .sense scope — re-scope so sense tokens apply. */}
         {/* End-aligned to the calendar icon, per the upstream input example. */}
@@ -166,6 +172,8 @@ interface DatePickerButtonProps {
   /** Button text while no date is selected. */
   placeholder?: string;
   disabled?: boolean;
+  /** Shows the value as a fixed record: focusable and announced, but it can't change and the calendar won't open. */
+  readOnly?: boolean;
   required?: boolean;
   id?: string;
   className?: string;
@@ -185,6 +193,7 @@ function DatePickerButton({
   errorMessage,
   placeholder = 'Pick a date',
   disabled,
+  readOnly,
   required,
   id,
   className,
@@ -205,22 +214,25 @@ function DatePickerButton({
           {required ? <RequiredAsterisk /> : null}
         </FieldLabel>
       ) : null}
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={readOnly ? undefined : setOpen}>
         <PopoverTrigger
           render={
             <Button
               id={buttonId}
               variant="outline"
               disabled={disabled}
+              data-readonly={readOnly || undefined}
               aria-invalid={errorMessage ? true : undefined}
               className={cn(
                 'justify-start font-normal',
                 !value && 'text-muted-foreground',
+                readOnly &&
+                  'cursor-default bg-secondary text-foreground hover:bg-secondary hover:text-foreground',
               )}
             />
           }
         >
-          <LuCalendar />
+          {readOnly ? null : <LuCalendar />}
           {value ? format(value, 'PPP') : <span>{placeholder}</span>}
         </PopoverTrigger>
         {/* Portaled outside the .sense scope — re-scope so sense tokens apply. */}
