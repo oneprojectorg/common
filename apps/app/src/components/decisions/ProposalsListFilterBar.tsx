@@ -6,13 +6,13 @@ import { useTranslations } from '@/lib/i18n';
 
 import { CategoryFilterSelect } from './CategoryFilterSelect';
 import {
-  FilterBar,
   FilterBarEnd,
   FilterBarSearch,
   FilterBarSelect,
   type FilterBarSelectControl,
   FilterBarStart,
 } from './FilterBar';
+import { StickyFilterBar } from './StickyFilterBar';
 
 export interface ProposalControls {
   search: string;
@@ -42,7 +42,7 @@ export const ProposalsListFilterBar = ({
   const t = useTranslations();
 
   return (
-    <FilterBar pinOffset={pinOffset}>
+    <StickyFilterBar pinOffset={pinOffset}>
       <FilterBarStart>
         {header}
         <FilterBarSearch
@@ -72,6 +72,6 @@ export const ProposalsListFilterBar = ({
         />
         {children}
       </FilterBarEnd>
-    </FilterBar>
+    </StickyFilterBar>
   );
 };

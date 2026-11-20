@@ -7,7 +7,6 @@ import type { ReactNode } from 'react';
 import { SearchField } from '@/components/SearchField';
 
 import { ResponsiveSelect } from './ResponsiveSelect';
-import { StickyFilterBar } from './StickyFilterBar';
 
 export interface FilterBarSelectControl {
   items: { id: string; label: string; isDisabled?: boolean }[];
@@ -23,13 +22,12 @@ interface FilterBarSearchControl {
   label: string;
 }
 
-export const FilterBar = ({
-  pinOffset,
-  children,
-}: {
-  pinOffset?: number;
-  children: ReactNode;
-}) => <StickyFilterBar pinOffset={pinOffset}>{children}</StickyFilterBar>;
+export const filterBarRowClassName =
+  'flex flex-wrap items-center justify-between gap-4 py-3';
+
+export const FilterBar = ({ children }: { children: ReactNode }) => (
+  <div className={filterBarRowClassName}>{children}</div>
+);
 
 // A box apart from `FilterBarEnd`, not one wrapping row, so the search stays one instance and keeps focus.
 export const FilterBarStart = ({ children }: { children: ReactNode }) => (

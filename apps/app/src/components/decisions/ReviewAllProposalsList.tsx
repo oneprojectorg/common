@@ -13,7 +13,6 @@ import { useTranslations } from '@/lib/i18n';
 import { CategoryFilterSelect } from './CategoryFilterSelect';
 import { ExportProposalsButton } from './ExportProposalsButton';
 import {
-  FilterBar,
   FilterBarActions,
   FilterBarEnd,
   FilterBarSearch,
@@ -36,6 +35,7 @@ import {
   useProposalsLoaderRenderProps,
 } from './ProposalsList';
 import { ProposalsLoadError } from './ProposalsLoadError';
+import { StickyFilterBar } from './StickyFilterBar';
 import {
   ProposalReviewDecorationProvider,
   useReportProposalsForReviewDecoration,
@@ -203,7 +203,7 @@ function ReviewAllProposalsContent({
       aria-busy={filters.isFilterFetching || undefined}
       className="relative flex flex-col gap-6 pb-12"
     >
-      <FilterBar pinOffset={pinOffset}>
+      <StickyFilterBar pinOffset={pinOffset}>
         <FilterBarStart>
           <ProposalsListHeader count={total} total={totalProposalCount} />
           <FilterBarSearch
@@ -277,7 +277,7 @@ function ReviewAllProposalsContent({
             </FilterBarActions>
           )}
         </FilterBarEnd>
-      </FilterBar>
+      </StickyFilterBar>
 
       {allProposals.length === 0 ? (
         <NoProposalsFound
