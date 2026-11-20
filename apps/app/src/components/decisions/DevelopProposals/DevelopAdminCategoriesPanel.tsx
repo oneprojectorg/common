@@ -22,6 +22,7 @@ import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { FilterBar } from '../FilterBar';
 import { getCategoryConfirmedAt } from './developCategoryStatus';
 
 export function DevelopAdminCategoriesPanel({
@@ -31,16 +32,22 @@ export function DevelopAdminCategoriesPanel({
 }) {
   return (
     <div className="flex flex-col gap-10">
-      <div className="flex min-h-11 items-center">
-        {/* Outside Suspense so the live region exists before the count changes. */}
-        <div role="status" aria-live="polite">
-          <APIErrorBoundary fallbacks={{ default: () => null }}>
-            <Suspense fallback={<Skeleton aria-hidden className="h-7 w-40" />}>
-              <CategoriesCountSuspense processInstanceId={processInstanceId} />
-            </Suspense>
-          </APIErrorBoundary>
+      <FilterBar>
+        <div className="flex min-h-11 items-center">
+          {/* Outside Suspense so the live region exists before the count changes. */}
+          <div role="status" aria-live="polite">
+            <APIErrorBoundary fallbacks={{ default: () => null }}>
+              <Suspense
+                fallback={<Skeleton aria-hidden className="h-7 w-40" />}
+              >
+                <CategoriesCountSuspense
+                  processInstanceId={processInstanceId}
+                />
+              </Suspense>
+            </APIErrorBoundary>
+          </div>
         </div>
-      </div>
+      </FilterBar>
 
       <APIErrorBoundary fallbacks={{ default: () => <CategoriesLoadError /> }}>
         <Suspense fallback={<CategoriesTableSkeleton />}>

@@ -24,6 +24,7 @@ import { Link, useTranslations } from '@/lib/i18n';
 
 import { DecisionActionBar } from '../DecisionActionBar';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
+import { FilterBar, FilterBarEnd, FilterBarStart } from '../FilterBar';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
 import { useProposalCardData } from '../ProposalCard';
 import { ProposalListSkeletonGrid } from '../ProposalListSkeleton';
@@ -204,27 +205,31 @@ function PreparationProposals({
 
   return (
     <div className="flex flex-col gap-10">
-      <div className="flex min-h-11 flex-wrap items-center justify-between gap-3">
-        <ProposalsListHeader count={total} total={unfilteredData.total} />
+      <FilterBar>
+        <FilterBarStart>
+          <ProposalsListHeader count={total} total={unfilteredData.total} />
+        </FilterBarStart>
         {currentProfileId ? (
-          <Select
-            items={filterItems}
-            value={filter}
-            onValueChange={handleValueChange}
-          >
-            <SelectTrigger aria-label={t('proposals.filterProposalsLabel')}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {filterItems.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <FilterBarEnd>
+            <Select
+              items={filterItems}
+              value={filter}
+              onValueChange={handleValueChange}
+            >
+              <SelectTrigger aria-label={t('proposals.filterProposalsLabel')}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {filterItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FilterBarEnd>
         ) : null}
-      </div>
+      </FilterBar>
 
       {proposals.length === 0 ? (
         <NoPreparationProposals />
@@ -306,10 +311,10 @@ function NoPreparationProposals() {
 function PreparationProposalsSkeleton() {
   return (
     <div className="flex flex-col gap-10" aria-hidden>
-      <div className="flex min-h-11 items-center justify-between gap-3">
+      <FilterBar>
         <Skeleton className="h-7 w-40" />
-        <Skeleton className="h-10 w-40" />
-      </div>
+        <Skeleton className="h-11 w-40" />
+      </FilterBar>
       <ProposalListSkeletonGrid />
     </div>
   );
