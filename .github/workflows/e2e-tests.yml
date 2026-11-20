@@ -216,7 +216,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: 2.95.4
+          version: 2.99.0
 
       - name: Use E2E Supabase config
         run: cp supabase/supabase-e2e.toml supabase/config.toml
@@ -440,7 +440,7 @@ jobs:
           # rest moved, so it has been booting a different Supabase — different
           # default images, different config handling — from everything that
           # runs beside it.
-          version: 2.95.4
+          version: 2.99.0
 
       - name: Use E2E Supabase config
         run: cp supabase/supabase-e2e.toml supabase/config.toml

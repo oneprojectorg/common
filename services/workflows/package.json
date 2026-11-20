@@ -27,7 +27,7 @@
     "@op/supabase": "workspace:*",
     "drizzle-orm": "catalog:",
     "inngest": "3.54.0",
-    "inngest-cli": "^1.12.1",
+    "inngest-cli": "^1.53.0",
     "zod": "catalog:"
   },
   "devDependencies": {
