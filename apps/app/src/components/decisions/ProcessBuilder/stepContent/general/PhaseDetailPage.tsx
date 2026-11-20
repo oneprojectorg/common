@@ -702,7 +702,6 @@ function PhaseField({
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
           readOnly={readOnly}
-          className={cn(readOnly && 'bg-muted')}
           aria-invalid={isInvalid || undefined}
         />
       ) : (
@@ -713,7 +712,6 @@ function PhaseField({
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
           readOnly={readOnly}
-          className={cn(readOnly && 'bg-muted')}
           aria-invalid={isInvalid || undefined}
         />
       )}
