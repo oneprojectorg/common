@@ -12,6 +12,11 @@ export type PhaseLockState = 'past' | 'current' | 'free';
 
 export type GetPhaseLock = (phaseId: string) => PhaseLockState;
 
+export interface PastPhaseLock {
+  getLock: GetPhaseLock;
+  canAddPhases: boolean;
+}
+
 /**
  * Mirrors the server's `assertPastPhasesUnchanged`: on a decision past draft,
  * the phases before the current one are fixed, and the current phase keeps its
@@ -25,23 +30,36 @@ export const getPastPhaseLock = ({
   isDraft: boolean;
   currentStateId: string | null | undefined;
   phases: readonly { phaseId: string }[] | undefined;
-}): GetPhaseLock => {
+}): PastPhaseLock => {
   if (isDraft || !currentStateId) {
-    return () => 'free';
+    return { getLock: () => 'free', canAddPhases: true };
   }
 
   const source = { phases };
   // The server refuses every phase write when the current phase is missing.
   if (getPhaseIndex(source, currentStateId) === -1) {
-    return () => 'past';
+    return { getLock: () => 'past', canAddPhases: false };
   }
 
-  return (phaseId) => {
-    if (hasPhaseEnded(source, phaseId, currentStateId)) {
-      return 'past';
-    }
-    return isPhaseAtOrBefore(source, phaseId, currentStateId)
-      ? 'current'
-      : 'free';
+  return {
+    getLock: (phaseId) => {
+      if (hasPhaseEnded(source, phaseId, currentStateId)) {
+        return 'past';
+      }
+      return isPhaseAtOrBefore(source, phaseId, currentStateId)
+        ? 'current'
+        : 'free';
+    },
+    canAddPhases: true,
   };
 };
+
+/** Locked phases stay a fixed prefix in their saved order; only free phases move. */
+export const reorderFreePhases = <Phase extends { id: string }>(
+  phases: readonly Phase[],
+  reorderedFree: readonly Phase[],
+  getLock: GetPhaseLock,
+): Phase[] => [
+  ...phases.filter((phase) => getLock(phase.id) !== 'free'),
+  ...reorderedFree.filter((phase) => getLock(phase.id) === 'free'),
+];

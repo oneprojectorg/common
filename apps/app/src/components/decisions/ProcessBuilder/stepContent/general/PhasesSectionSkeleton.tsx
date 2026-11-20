@@ -14,7 +14,7 @@ export function PhasesSectionSkeleton() {
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="flex items-center gap-2 rounded-lg border bg-white px-3 py-3"
+            className="flex items-center gap-2 rounded-lg border bg-card px-3 py-3"
           >
             <Skeleton className="size-6" />
             <div className="flex flex-1 items-center justify-between gap-3">

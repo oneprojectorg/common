@@ -61,7 +61,7 @@ export function ReviewSettingsContent({
   // Scope is a per-phase review setting: there is exactly one review-capable
   // phase today (the Reviews step is only shown when one exists).
   const reviewPhase = sourcePhases.find(isReviewPhase);
-  const getLock = usePastPhaseLock(instanceId);
+  const { getLock } = usePastPhaseLock(instanceId);
   const isScopeLocked =
     !!reviewPhase && getLock(reviewPhase.phaseId) === 'past';
   const scopeLockNoteId = useId();

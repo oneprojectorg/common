@@ -36,6 +36,7 @@ import { LockNote } from '../../components/LockNote';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
 import { phaseToSectionId } from '../../navigationConfig';
+import { reorderFreePhases } from '../../pastPhaseLock';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 import { usePastPhaseLock } from '../../usePastPhaseLock';
 
@@ -51,8 +52,7 @@ export function PhasesSectionContent({
     (s) => s.instances[decisionProfileId]?.phases,
   );
   const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
-  const getLock = usePastPhaseLock(instanceId);
-  const isPhaseLocked = (phaseId: string) => getLock(phaseId) !== 'free';
+  const { getLock, canAddPhases } = usePastPhaseLock(instanceId);
   const lockNoteId = useId();
 
   const initialPhases: PhaseDefinition[] = (() => {
@@ -126,15 +126,11 @@ export function PhasesSectionContent({
     });
   };
 
-  // Locked phases stay a fixed prefix, so only the free ones can move.
-  const lockedPhases = phases.filter((p) => isPhaseLocked(p.id));
-  const freePhases = phases.filter((p) => !isPhaseLocked(p.id));
+  const lockedPhases = phases.filter((p) => getLock(p.id) !== 'free');
+  const freePhases = phases.filter((p) => getLock(p.id) === 'free');
 
-  const reorderFreePhases = (reordered: PhaseDefinition[]) =>
-    updatePhases((prev) => [
-      ...prev.filter((p) => isPhaseLocked(p.id)),
-      ...reordered,
-    ]);
+  const reorderPhases = (reordered: PhaseDefinition[]) =>
+    updatePhases((prev) => reorderFreePhases(prev, reordered, getLock));
 
   const addPhase = () => {
     const newPhase: PhaseDefinition = {
@@ -151,7 +147,7 @@ export function PhasesSectionContent({
   const [phaseToDelete, setPhaseToDelete] = useState<string | null>(null);
 
   const confirmRemovePhase = () => {
-    if (!phaseToDelete || isPhaseLocked(phaseToDelete)) {
+    if (!phaseToDelete || getLock(phaseToDelete) !== 'free') {
       return;
     }
     const updated = phases.filter((p) => p.id !== phaseToDelete);
@@ -159,9 +155,6 @@ export function PhasesSectionContent({
     savePhasesPayload(updated);
     setPhaseToDelete(null);
   };
-
-  const editLabel = (configured: boolean) =>
-    configured ? t('Edit') : t('decisions.processBuilder.configureAction');
 
   /** Check if a phase has its required fields filled in */
   const isPhaseConfigured = (phase: PhaseDefinition) => {
@@ -195,14 +188,16 @@ export function PhasesSectionContent({
               {t('decisions.processBuilder.noPhasesDefined')}
             </p>
           </div>
-          <Button
-            variant="ghost"
-            className="text-primary hover:text-teal-600"
-            onClick={addPhase}
-          >
-            <LuPlus className="size-4" />
-            {t('decisions.processBuilder.addPhaseAction')}
-          </Button>
+          {canAddPhases && (
+            <Button
+              variant="ghost"
+              className="text-primary hover:text-teal-600"
+              onClick={addPhase}
+            >
+              <LuPlus className="size-4" />
+              {t('decisions.processBuilder.addPhaseAction')}
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -259,7 +254,7 @@ export function PhasesSectionContent({
                           size="sm"
                           onClick={() => setSection(phaseToSectionId(phase.id))}
                         >
-                          {isPast ? t('View') : editLabel(configured)}
+                          {isPast ? t('View') : getEditLabel(t, configured)}
                         </Button>
                       </PhaseRow>
                     </li>
@@ -271,7 +266,7 @@ export function PhasesSectionContent({
           {freePhases.length > 0 && (
             <Sortable
               items={freePhases}
-              onChange={reorderFreePhases}
+              onChange={reorderPhases}
               dragTrigger="handle"
               getItemLabel={(phase) => phase.name}
               aria-label={t('decisions.processBuilder.phasesLabel')}
@@ -308,7 +303,7 @@ export function PhasesSectionContent({
                       size="sm"
                       onClick={() => setSection(phaseToSectionId(phase.id))}
                     >
-                      {editLabel(configured)}
+                      {getEditLabel(t, configured)}
                     </Button>
                     <Button
                       variant="destructive"
@@ -325,10 +320,12 @@ export function PhasesSectionContent({
               }}
             </Sortable>
           )}
-          <Button variant="outline" className="w-full" onClick={addPhase}>
-            <LuPlus className="size-4" />
-            {t('decisions.processBuilder.addPhaseAction')}
-          </Button>
+          {canAddPhases && (
+            <Button variant="outline" className="w-full" onClick={addPhase}>
+              <LuPlus className="size-4" />
+              {t('decisions.processBuilder.addPhaseAction')}
+            </Button>
+          )}
         </div>
       )}
 
@@ -389,7 +386,7 @@ function PhaseRow({
   return (
     <div
       className={cn(
-        'flex items-center gap-2 rounded-lg border bg-white px-3 py-3',
+        'flex items-center gap-2 rounded-lg border bg-card px-3 py-3',
         className,
       )}
     >
@@ -445,9 +442,7 @@ const PhaseDragPreview = ({
         leading={<DragHandle tabIndex={-1} aria-hidden />}
       >
         <Button variant="outline" size="sm" tabIndex={-1}>
-          {configured
-            ? t('Edit')
-            : t('decisions.processBuilder.configureAction')}
+          {getEditLabel(t, configured)}
         </Button>
         <Button
           variant="destructive"
@@ -461,6 +456,9 @@ const PhaseDragPreview = ({
     </div>
   );
 };
+
+const getEditLabel = (t: TranslateFn, configured: boolean) =>
+  configured ? t('Edit') : t('decisions.processBuilder.configureAction');
 
 /** DropIndicator to show when a phase is being dragged */
 const PhaseDropIndicator = ({
