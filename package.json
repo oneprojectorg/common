@@ -138,8 +138,7 @@
       "esbuild",
       "inngest-cli",
       "protobufjs",
-      "sharp",
-      "supabase"
+      "sharp"
     ],
     "overrides": {
       "@opentelemetry/sdk-metrics": "^2.2.0",
