@@ -145,6 +145,7 @@ export const ProfileFeedCards = ({
                 withLinks={false}
                 onLikeClick={onLikeClick}
                 onCommentClick={onCommentClick}
+                stacked
               />
             </HorizontalListItem>
           ))
@@ -194,7 +195,9 @@ export const ProfileFeedList = ({
                 withLinks={false}
                 onLikeClick={onLikeClick}
                 onCommentClick={onCommentClick}
-                className="p-4"
+                className="p-4 sm:px-0"
+                avatarClassName="size-10"
+                stacked
               />
               <hr />
             </Fragment>

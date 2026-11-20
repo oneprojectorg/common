@@ -57,6 +57,8 @@
   --color-ring: var(--ring);
   --color-overlay: var(--overlay);
   --color-mark: var(--mark);
+  --color-hero: var(--hero);
+  --color-hero-foreground: var(--hero-foreground);
 
   /* Sidebar */
   --color-sidebar: var(--sidebar);
@@ -376,6 +378,10 @@
   /* Modal/drawer scrim. Same value the `bg-black/15` overlays used before —
    * gray-900, not true black — but named for the job it does. */
   --overlay: var(--color-gray-900);
+
+  /* Profile cover: the fallback when no banner is set, and the text over it. */
+  --hero: var(--color-gray-900);
+  --hero-foreground: var(--color-white);
 
   /* Rich-text highlight mark. Off-ramp: #dceff1 sits between teal-50
    * (#eff7f9) and teal-100 (#d7ebef), so it has no Colors Scale equivalent.

@@ -40,7 +40,7 @@ export const UpdateOrganizationModal = ({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger
         render={
-          <Button className="min-w-full sm:min-w-fit">
+          <Button variant="outline" className="min-w-full sm:min-w-fit">
             <LuPencil className="size-4" />
             {t('editTitle')}
           </Button>
