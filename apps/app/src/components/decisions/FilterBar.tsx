@@ -7,7 +7,6 @@ import type { ReactNode } from 'react';
 import { SearchField } from '@/components/SearchField';
 
 import { ResponsiveSelect } from './ResponsiveSelect';
-import { StickyFilterBar } from './StickyFilterBar';
 
 export interface FilterBarSelectControl {
   items: { id: string; label: string; isDisabled?: boolean }[];
@@ -23,38 +22,41 @@ interface FilterBarSearchControl {
   label: string;
 }
 
-/** `children` are the filter selects, followed by `FilterBarActions` groups. */
-export const FilterBar = ({
-  pinOffset,
-  header,
-  search,
-  children,
-}: {
-  pinOffset?: number;
-  header: ReactNode;
-  search: FilterBarSearchControl;
-  children: ReactNode;
-}) => (
-  <StickyFilterBar pinOffset={pinOffset}>
-    {/* Two boxes, not one wrapping row, so the search field stays one instance
-        (and keeps focus). The header's large grow keeps the search next to the filters. */}
-    <div className="flex grow-999 flex-wrap items-center justify-between gap-4">
-      {header}
-      <SearchField
-        className="ms-auto"
-        value={search.value}
-        onChange={search.onChange}
-        isPending={search.isPending}
-        label={search.label}
-        maxLength={SEARCH_MAX_LENGTH}
-      />
-    </div>
-    {/* Below `sm` the controls wrap onto more rows. From `sm` an auto margin on
-        the first child, not `justify-end`, because it collapses when the row overflows. */}
-    <div className="scrollbar-none flex grow flex-wrap items-center gap-4 sm:-mx-8 sm:flex-nowrap sm:overflow-x-scroll sm:px-8 sm:[&>*:first-child]:ms-auto">
-      {children}
-    </div>
-  </StickyFilterBar>
+export const filterBarRowClassName =
+  'flex flex-wrap items-center justify-between gap-4';
+
+export const FilterBar = ({ children }: { children: ReactNode }) => (
+  <div className={filterBarRowClassName}>{children}</div>
+);
+
+// A box apart from `FilterBarEnd`, not one wrapping row, so the search stays one instance and keeps focus.
+export const FilterBarStart = ({ children }: { children: ReactNode }) => (
+  <div className="flex grow-999 flex-wrap items-center justify-between gap-4">
+    {children}
+  </div>
+);
+
+export const FilterBarEnd = ({ children }: { children: ReactNode }) => (
+  // An auto margin on the first child, not `justify-end`, which collapses when the row overflows.
+  <div className="scrollbar-none flex grow flex-wrap items-center gap-4 sm:-mx-8 sm:flex-nowrap sm:overflow-x-scroll sm:px-8 sm:[&>*:first-child]:ms-auto">
+    {children}
+  </div>
+);
+
+export const FilterBarSearch = ({
+  value,
+  onChange,
+  isPending,
+  label,
+}: FilterBarSearchControl) => (
+  <SearchField
+    className="ms-auto"
+    value={value}
+    onChange={onChange}
+    isPending={isPending}
+    label={label}
+    maxLength={SEARCH_MAX_LENGTH}
+  />
 );
 
 export const FilterBarSelect = ({
