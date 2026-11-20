@@ -34,7 +34,39 @@ interface DevelopProposalEditorProps {
  * Edits a proposal developed from sources: a draft is advanced, and an advanced
  * entry is saved while the server reports it editable.
  */
-export function DevelopProposalEditor({
+export function DevelopProposalEditor(props: DevelopProposalEditorProps) {
+  return (
+    <DevelopEditorShell
+      {...props}
+      actions={
+        <DevelopHeaderActions
+          proposal={props.proposal}
+          backHref={props.backHref}
+        />
+      }
+    />
+  );
+}
+
+/**
+ * Edits an entry for a co-author who may not develop: it saves the entry and
+ * never advances it.
+ */
+export function DevelopCoauthorEditor(props: DevelopProposalEditorProps) {
+  return (
+    <DevelopEditorShell
+      {...props}
+      actions={
+        <>
+          <CollaborativePresence />
+          <SaveChangesButton backHref={props.backHref} />
+        </>
+      }
+    />
+  );
+}
+
+function DevelopEditorShell({
   instance,
   proposal,
   backHref,
@@ -42,7 +74,8 @@ export function DevelopProposalEditor({
   sourceLabel,
   heading,
   description,
-}: DevelopProposalEditorProps) {
+  actions,
+}: DevelopProposalEditorProps & { actions: ReactNode }) {
   return (
     <ProposalFormProvider
       instance={instance}
@@ -52,9 +85,7 @@ export function DevelopProposalEditor({
     >
       <DevelopProposalFrame
         backHref={backHref}
-        actions={
-          <DevelopHeaderActions proposal={proposal} backHref={backHref} />
-        }
+        actions={actions}
         source={source}
         sourceLabel={sourceLabel}
         heading={heading}
@@ -128,7 +159,7 @@ function AdvanceButton({
   );
 }
 
-/** Saves an advanced entry, editable until the develop window closes. */
+/** Saves the entry and goes back to the develop screen. */
 function SaveChangesButton({ backHref }: { backHref: string }) {
   const t = useTranslations();
   const router = useRouter();

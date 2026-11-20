@@ -4,6 +4,7 @@ import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import { invalidateProfileUserAccessCache } from '../access';
+import { addDevelopedEntryCoauthors } from './addDevelopedEntryCoauthors';
 import { assertDevelopSources } from './assertDevelopSources';
 import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
 import { assertDevelopUnlocked } from './developLock';
@@ -31,7 +32,8 @@ export interface CreateDevelopedProposalInput {
  * Creates a draft proposal in a develop phase, developed from proposals of
  * any phase of the instance. Writes one `developed` edge per source in the same
  * transaction as the draft. With prefill mappings on the phase, the draft
- * starts from its sources (`getDevelopedEntryPrefill`).
+ * starts from its sources (`getDevelopedEntryPrefill`). The reviewers
+ * assigned to the sources become co-authors (`addDevelopedEntryCoauthors`).
  */
 export const createDevelopedProposal = async ({
   data,
@@ -89,34 +91,46 @@ export const createDevelopedProposal = async ({
     proposalData,
   });
 
-  const createdProposal = await db.transaction(async (tx) => {
-    const proposal = await insertProposalDraft({
-      tx,
-      user,
-      processInstanceId: instance.id,
-      proposalData,
-      attachmentIds: data.attachmentIds,
-      ...draftInputs,
-    });
-
-    await tx.insert(proposalRelationships).values(
-      sourceProposalIds.map((sourceProposalId) => ({
+  const { createdProposal, coauthorAuthUserIds } = await db.transaction(
+    async (tx) => {
+      const proposal = await insertProposalDraft({
+        tx,
+        user,
         processInstanceId: instance.id,
-        sourceProposalId,
-        targetProposalId: proposal.id,
-        relationshipType: ProposalRelationshipType.DEVELOPED,
-      })),
-    );
+        proposalData,
+        attachmentIds: data.attachmentIds,
+        ...draftInputs,
+      });
 
-    return proposal;
-  });
+      await tx.insert(proposalRelationships).values(
+        sourceProposalIds.map((sourceProposalId) => ({
+          processInstanceId: instance.id,
+          sourceProposalId,
+          targetProposalId: proposal.id,
+          relationshipType: ProposalRelationshipType.DEVELOPED,
+        })),
+      );
+
+      const coauthorAuthUserIds = await addDevelopedEntryCoauthors({
+        tx,
+        processInstanceId: instance.id,
+        sourceProposalIds,
+        proposalProfileId: proposal.profileId,
+        authorAuthUserId: authUserId,
+      });
+
+      return { createdProposal: proposal, coauthorAuthUserIds };
+    },
+  );
 
   await Promise.all([
-    // The author's cached `user` entry predates this membership.
-    invalidateProfileUserAccessCache({
-      authUserId,
-      profileId: createdProposal.profileId,
-    }),
+    // The cached `user` entries of the author and co-authors predate these memberships.
+    ...[authUserId, ...coauthorAuthUserIds].map((memberAuthUserId) =>
+      invalidateProfileUserAccessCache({
+        authUserId: memberAuthUserId,
+        profileId: createdProposal.profileId,
+      }),
+    ),
     seedDevelopedEntryDocument({
       collaborationDocId: parseProposalData(createdProposal.proposalData)
         .collaborationDocId,

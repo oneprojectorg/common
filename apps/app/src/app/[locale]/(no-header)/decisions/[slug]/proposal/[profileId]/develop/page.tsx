@@ -91,6 +91,12 @@ const DevelopProposalPage = async ({
           .fetch({ processInstanceId: instance.id })
           .catch(() => null)
       : null,
+    // A co-author's editor follows the lock of the entry's owner.
+    proposal && !canDevelop && proposal.isEditable === true
+      ? utils.decision.getDevelopEntryLock
+          .fetch({ proposalId: proposal.id })
+          .catch(() => null)
+      : null,
   ]);
 
   if (

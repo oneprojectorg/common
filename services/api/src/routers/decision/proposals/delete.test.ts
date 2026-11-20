@@ -1,5 +1,12 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
-import { expect } from 'vitest';
+import {
+  TestDecisionsDataManager,
+  createAssignedSourceReviewer,
+  createDevelopPhaseSetup,
+  createDevelopProposalsMember,
+} from '@op/common/testing';
+import { users } from '@op/db/schema';
+import { db, eq } from '@op/db/test';
+import { describe, expect, it } from 'vitest';
 
 import {
   accessTierGatingCell,
@@ -7,6 +14,7 @@ import {
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 describeDecisionAccessTierGating('deleteProposal', {
   noJwtNonPublic: accessTierGatingCell(
@@ -103,4 +111,48 @@ describeDecisionAccessTierGating('deleteProposal', {
       expect(result.deletedId).toBe(proposal.id);
     },
   ),
+});
+
+describe.concurrent('deleteProposal', () => {
+  it('refuses a co-author of a developed draft whose current profile is the draft’s submitter profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const [developer, coauthor] = await Promise.all([
+      createDevelopProposalsMember({ testData, setup }),
+      createAssignedSourceReviewer({
+        testData,
+        setup,
+        sourceProposalId: source.id,
+      }),
+    ]);
+    const developerCaller = await createAuthenticatedCaller(developer.email);
+    const draft = await developerCaller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: { title: 'Developed' },
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+    const stored = await db.query.proposals.findFirst({
+      where: { id: draft.id },
+      columns: { submittedByProfileId: true },
+    });
+    if (!stored) {
+      throw new Error('Expected the stored draft');
+    }
+    // An organization profile both members switched to matches the submitter arm.
+    await db
+      .update(users)
+      .set({ currentProfileId: stored.submittedByProfileId })
+      .where(eq(users.authUserId, coauthor.authUserId));
+    const coauthorCaller = await createAuthenticatedCaller(coauthor.email);
+
+    await expect(
+      coauthorCaller.decision.deleteProposal({ proposalId: draft.id }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
 });

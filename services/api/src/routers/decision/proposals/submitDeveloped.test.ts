@@ -1,5 +1,6 @@
 import {
   TestDecisionsDataManager,
+  createAssignedSourceReviewer,
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
 } from '@op/common/testing';
@@ -82,6 +83,38 @@ describe.concurrent('submitDevelopedProposal', () => {
         message: expect.stringContaining('Only an author'),
       },
     });
+  });
+
+  it('refuses a co-author who holds Review but not Develop Proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const [developer, coauthor] = await Promise.all([
+      createDevelopProposalsMember({ testData, setup }),
+      createAssignedSourceReviewer({
+        testData,
+        setup,
+        sourceProposalId: source.id,
+      }),
+    ]);
+    const [developerCaller, coauthorCaller] = await Promise.all([
+      createAuthenticatedCaller(developer.email),
+      createAuthenticatedCaller(coauthor.email),
+    ]);
+    const draft = await developerCaller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: { title: 'Developed' },
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    await expect(
+      coauthorCaller.decision.submitDevelopedProposal({ proposalId: draft.id }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('refuses a draft with no developed edge', async ({

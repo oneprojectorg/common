@@ -11,6 +11,7 @@ import {
   ValidationError,
 } from '../../utils';
 import { getProfileAccessRoles, getUserSession } from '../access';
+import { isDevelopedProposal } from './isDevelopedProposal';
 
 export const deleteProposal = async ({
   proposalId,
@@ -79,8 +80,12 @@ export const deleteProposal = async ({
     const isSubmitter =
       existingProposal.submittedByProfileId === dbUser.currentProfileId;
 
-    if (!isSubmitter && !hasProposalAdmin && !hasInstanceAdmin) {
-      throw new UnauthorizedError('Not authorized to delete this proposal');
+    if (!hasProposalAdmin && !hasInstanceAdmin) {
+      // `submittedByProfileId` can be an organization profile its other
+      // members share, co-authors of an entry included.
+      if (!isSubmitter || (await isDevelopedProposal(proposalId))) {
+        throw new UnauthorizedError('Not authorized to delete this proposal');
+      }
     }
 
     const [deletedProposal] = await db

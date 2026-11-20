@@ -128,6 +128,21 @@ export function DevelopSourcesReadOnlyPanel(props: DevelopSourcesPanelProps) {
   );
 }
 
+/**
+ * The Proposals tab for a reviewer who may not develop: the sources assigned
+ * to them, each with the state of its entry. A source with an entry shows
+ * Edit, which opens the entry, where its co-authors edit it; a source with no
+ * entry shows no action, as only a developer prepares one.
+ */
+export function DevelopSourcesCoauthorPanel(props: DevelopSourcesPanelProps) {
+  return (
+    <SourcesPanelShell
+      {...props}
+      renderTable={(tableProps) => <CoauthorSourcesTable {...tableProps} />}
+    />
+  );
+}
+
 export function DevelopSourcesTableSkeleton() {
   return (
     <div className="flex flex-col gap-10" aria-hidden>
@@ -317,6 +332,53 @@ function ReadOnlySourcesTable(props: SourcesTableProps) {
           <SourceDecisionBadge advancing={isSourceAdvancing(source)} />
         </EntryActions>
       )}
+    />
+  );
+}
+
+function CoauthorSourcesTable(props: SourcesTableProps) {
+  const { decisionSlug } = props;
+  const openInSheet = useOpenProposalInSheet();
+  const sourcesPage = useDevelopSourcesPage(props);
+
+  return (
+    <SourcesTable
+      {...props}
+      sourcesPage={sourcesPage}
+      renderTitle={(source, title) => (
+        <SourceTitleLink
+          title={title}
+          href={decisionProposalHref({
+            decisionSlug,
+            profileId: source.profileId,
+          })}
+          onClick={openInSheet(source.profileId)}
+        />
+      )}
+      renderActions={(source, title) => {
+        const developedEntry = source.developedProposals[0];
+
+        if (!developedEntry) {
+          return (
+            <EntryActions>
+              <NoEntryBadge />
+            </EntryActions>
+          );
+        }
+
+        return (
+          <EntryActions>
+            <SourceDecisionBadge advancing={isSourceAdvancing(source)} />
+            <EditEntryLink
+              title={title}
+              href={decisionProposalDevelopHref({
+                decisionSlug,
+                profileId: developedEntry.profileId,
+              })}
+            />
+          </EntryActions>
+        );
+      }}
     />
   );
 }
@@ -526,7 +588,7 @@ function SourceTitleLink({
   );
 }
 
-/** Whether a source's entry is advancing, once the caller confirmed their work. */
+/** Whether a source's entry is advancing. */
 function SourceDecisionBadge({ advancing }: { advancing: boolean }) {
   const t = useTranslations('decisions.develop');
 
@@ -537,6 +599,16 @@ function SourceDecisionBadge({ advancing }: { advancing: boolean }) {
   ) : (
     <StatusBadge variant="inactive" icon={false}>
       {t('entryNotAdvancedStatus')}
+    </StatusBadge>
+  );
+}
+
+function NoEntryBadge() {
+  const t = useTranslations('decisions.develop');
+
+  return (
+    <StatusBadge variant="inactive" icon={false}>
+      {t('noEntryStatus')}
     </StatusBadge>
   );
 }
