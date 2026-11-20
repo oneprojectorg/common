@@ -20,7 +20,10 @@ import { ensureBallotDraft, findBallotDraft } from '../ballotDraft';
 import { ensureChatSession } from '../chatSession';
 import { getFieldUnit, isAtMost, sumAmounts } from '../fieldUnit';
 import { getBallotProposalByCode } from '../getBallotProposalByCode';
-import { getProposalCosts } from '../getProposalCosts';
+import {
+  getAmountsInUnit,
+  getProposalCostsByForm,
+} from '../getProposalCostsByForm';
 import type { InstanceWithPhases } from '../instancePhases';
 import { resolveProposalTemplate } from '../resolveProposalTemplate';
 import { getInstanceCurrentPhase } from '../utils/instance';
@@ -69,7 +72,7 @@ const getPricing = async (
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData,
     instance.processId,
-    null,
+    phase?.formSchemaId ?? null,
   );
   const unit = getFieldUnit(proposalTemplate?.properties?.[voterCostField]);
   if (budget !== undefined && !unit) {
@@ -81,7 +84,8 @@ const getPricing = async (
   return {
     budget: budget ?? null,
     voterCostField,
-    proposalTemplate,
+    instanceData: instance.instanceData,
+    processId: instance.processId,
     unit,
     ranked: phase ? isRankedVoting(phase) : false,
     maxPicks: phase?.rules?.voting?.maxVotesPerMember ?? null,
@@ -104,6 +108,7 @@ const getPickRows = async (ids: string[]) => {
       code: proposals.shortCode,
       title: profiles.name,
       proposalData: proposals.proposalData,
+      formSchemaId: proposals.formSchemaId,
     })
     .from(proposals)
     .innerJoin(profiles, eq(profiles.id, proposals.profileId))
@@ -161,18 +166,36 @@ const getDraftPicks = async (
 };
 
 const priceRows = async (
-  rows: ReadonlyArray<{ id: string; proposalData: unknown }>,
+  rows: ReadonlyArray<{
+    id: string;
+    proposalData: unknown;
+    formSchemaId: string | null;
+  }>,
   pricing: Awaited<ReturnType<typeof getPricing>>,
-): Promise<ReadonlyMap<string, number | null>> =>
-  pricing.unit && rows.length > 0
-    ? getProposalCosts({
-        proposals: [...rows],
-        proposalTemplate: pricing.proposalTemplate,
-        voterCostField: pricing.voterCostField,
-        unit: pricing.unit,
-        unreadable: pricing.budget === null ? 'null' : 'throw',
-      })
-    : new Map(rows.map(({ id }) => [id, null]));
+): Promise<ReadonlyMap<string, number | null>> => {
+  const { unit, voterCostField } = pricing;
+
+  if (!unit || rows.length === 0) {
+    return new Map(rows.map(({ id }) => [id, null]));
+  }
+
+  const unreadable = pricing.budget === null ? 'null' : 'throw';
+  const costs = await getProposalCostsByForm({
+    instanceData: pricing.instanceData,
+    processId: pricing.processId,
+    proposals: rows,
+    voterCostField,
+    unreadable,
+  });
+
+  return getAmountsInUnit({
+    proposals: rows,
+    costs,
+    unit,
+    voterCostField,
+    unreadable,
+  });
+};
 
 const summarize = (
   scope: { decisionName: string; termLabel: string | null },

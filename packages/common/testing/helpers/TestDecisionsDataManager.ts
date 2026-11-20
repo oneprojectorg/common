@@ -629,6 +629,9 @@ export class TestDecisionsDataManager {
    * propagate TipTap fetch failures, so tests that aren't exercising the
    * doc-unavailable path should seed a fetchable doc — mirroring production,
    * where a proposal's collaboration document always exists.
+   *
+   * Set `formSchemaId` to write the row under that form whatever its phase
+   * sets.
    */
   async createProposal({
     userEmail,
@@ -637,6 +640,7 @@ export class TestDecisionsDataManager {
     status,
     createdAt,
     seedCollabDoc = false,
+    formSchemaId,
   }: {
     userEmail: string;
     processInstanceId: string;
@@ -651,6 +655,7 @@ export class TestDecisionsDataManager {
     status?: ProposalStatus;
     createdAt?: Date;
     seedCollabDoc?: boolean;
+    formSchemaId?: string;
   }) {
     this.ensureCleanupRegistered();
 
@@ -694,7 +699,7 @@ export class TestDecisionsDataManager {
       }
     }
 
-    if (nonDefaultStatus || legacyProposalData || createdAt) {
+    if (nonDefaultStatus || legacyProposalData || createdAt || formSchemaId) {
       const shortCode = nonDefaultStatus
         ? await claimShortCode(processInstanceId)
         : undefined;
@@ -704,6 +709,7 @@ export class TestDecisionsDataManager {
           ...(nonDefaultStatus ? { status: nonDefaultStatus, shortCode } : {}),
           ...(createdAt ? { createdAt: createdAt.toISOString() } : {}),
           ...(legacyProposalData ? { proposalData: legacyProposalData } : {}),
+          ...(formSchemaId ? { formSchemaId } : {}),
         })
         .where(eq(proposals.id, proposal.id));
       return {
@@ -711,6 +717,7 @@ export class TestDecisionsDataManager {
         ...(nonDefaultStatus ? { status: nonDefaultStatus, shortCode } : {}),
         ...(createdAt ? { createdAt: createdAt.toISOString() } : {}),
         ...(legacyProposalData ? { proposalData: legacyProposalData } : {}),
+        ...(formSchemaId ? { formSchemaId } : {}),
       };
     }
 

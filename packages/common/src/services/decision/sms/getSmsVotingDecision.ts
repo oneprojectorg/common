@@ -45,7 +45,7 @@ const summarizeVotingInstance = async (
       ? await resolveProposalTemplate(
           instance.instanceData,
           instance.processId,
-          null,
+          phase.formSchemaId ?? null,
         )
       : null;
   const unit =

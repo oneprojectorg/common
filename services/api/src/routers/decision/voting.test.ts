@@ -1,5 +1,9 @@
 import { mockCollab } from '@op/collab/testing';
-import { affirmVoterAttestation, resolveVoterAddress } from '@op/common';
+import {
+  affirmVoterAttestation,
+  parseProposalData,
+  resolveVoterAddress,
+} from '@op/common';
 import type { BudgetData, VoterEnrolmentRule } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import {
@@ -790,6 +794,150 @@ describe.concurrent('submitVote knapsack budget', () => {
     expect(voteData?.selections).toEqual([
       { proposalId: proposals[0]!.id, cost: null },
     ]);
+  });
+});
+
+/** A form row whose `cost` is money in USD, unlike the instance template's dots. */
+const usdCostForm = {
+  type: 'object',
+  properties: {
+    title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+    cost: { ...pricedFieldSchemas.budget, title: 'Cost' },
+  },
+  required: ['title'],
+};
+
+/** A form row that does not price `cost` at all. */
+const unpricedForm = buildProposalTemplate([]);
+
+/** Writes `proposal` under a new form row and seeds its live `cost` fragment. */
+async function writeUnderForm({
+  testData,
+  instanceId,
+  proposal,
+  schema,
+  costFragment,
+}: {
+  testData: TestDecisionsDataManager;
+  instanceId: string;
+  proposal: { id: string; proposalData: unknown };
+  schema: Record<string, unknown>;
+  costFragment: string;
+}) {
+  const form = await testData.createFormSchema({
+    processInstanceId: instanceId,
+    name: 'Entry',
+    schema,
+  });
+  await db
+    .update(proposalsTable)
+    .set({ formSchemaId: form.id })
+    .where(eq(proposalsTable.id, proposal.id));
+  const { collaborationDocId } = parseProposalData(proposal.proposalData);
+  if (!collaborationDocId) {
+    throw new Error(`Proposal ${proposal.id} has no collaboration document`);
+  }
+  mockCollab.setDocFragments(collaborationDocId, {
+    title: 'Entry',
+    cost: costFragment,
+  });
+  return form;
+}
+
+describe.concurrent('submitVote with proposals under their own forms', () => {
+  it('rejects a ballot with a proposal whose form prices the cost in another unit than the budget', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      voterBudget: 10,
+      voterCostField: 'cost',
+      pricedFields: ['cost'],
+      proposalCount: 1,
+    });
+    await writeUnderForm({
+      testData,
+      instanceId: instance.instance.id,
+      proposal: proposals[0]!,
+      schema: usdCostForm,
+      costFragment: JSON.stringify({ amount: 3, currency: 'USD' }),
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[0]!.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'BallotCostError' } });
+  });
+
+  it('rejects a ballot with a proposal whose form does not price the cost field', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      voterBudget: 10,
+      voterCostField: 'cost',
+      pricedFields: ['cost'],
+      proposalCount: 1,
+    });
+    await writeUnderForm({
+      testData,
+      instanceId: instance.instance.id,
+      proposal: proposals[0]!,
+      schema: unpricedForm,
+      costFragment: '3',
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[0]!.id],
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'BallotCostError' } });
+  });
+});
+
+describe.concurrent('getVotingStatus budget unit', () => {
+  it('takes the cap unit from the form the voting phase names, and from the instance template when it names none', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance } = await setupVotingInstance(testData, {
+      voterBudget: 10,
+      voterCostField: 'cost',
+      pricedFields: ['cost'],
+      proposalCount: 0,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const readCostUnit = async () =>
+      (
+        await caller.decision.getVotingStatus({
+          processInstanceId: instance.instance.id,
+        })
+      ).votingConfiguration.costUnit;
+
+    expect(await readCostUnit()).toEqual(DOTS);
+
+    const form = await testData.createFormSchema({
+      processInstanceId: instance.instance.id,
+      name: 'Entry',
+      schema: usdCostForm,
+    });
+    await testData.setPhaseFormSchemaId({
+      instanceId: instance.instance.id,
+      phaseId: 'voting',
+      formSchemaId: form.id,
+    });
+
+    expect(await readCostUnit()).toEqual(USD);
   });
 });
 

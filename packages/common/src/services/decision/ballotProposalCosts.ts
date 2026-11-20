@@ -1,7 +1,6 @@
-import { formatUnitAmount, getFieldUnit } from './fieldUnit';
-import { getProposalCosts } from './getProposalCosts';
+import { formatUnitAmount } from './fieldUnit';
+import { getProposalCostsByForm } from './getProposalCostsByForm';
 import type { InstanceWithPhases } from './instancePhases';
-import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { getInstanceCurrentPhase } from './utils/instance';
 import { getVoterCostField } from './utils/phaseSettings';
 
@@ -17,7 +16,11 @@ export async function priceBallotProposals({
   proposals,
 }: {
   instance: BallotInstance;
-  proposals: ReadonlyArray<{ id: string; proposalData: unknown }>;
+  proposals: ReadonlyArray<{
+    id: string;
+    proposalData: unknown;
+    formSchemaId: string | null;
+  }>;
 }): Promise<ReadonlyMap<string, string | null>> {
   const unpriced = new Map(proposals.map(({ id }) => [id, null]));
   const phase = getInstanceCurrentPhase(instance);
@@ -26,34 +29,22 @@ export async function priceBallotProposals({
     return unpriced;
   }
 
-  const voterCostField = getVoterCostField(phase);
-  const proposalTemplate = await resolveProposalTemplate(
-    instance.instanceData,
-    instance.processId,
-    null,
-  );
-  const unit = getFieldUnit(proposalTemplate?.properties?.[voterCostField]);
-
-  if (!unit) {
-    return unpriced;
-  }
-
-  const costs = await getProposalCosts({
-    proposals: [...proposals],
-    proposalTemplate,
-    voterCostField,
-    unit,
+  const costs = await getProposalCostsByForm({
+    instanceData: instance.instanceData,
+    processId: instance.processId,
+    proposals,
+    voterCostField: getVoterCostField(phase),
     unreadable: 'null',
   });
 
   return new Map(
     proposals.map(({ id }) => {
-      const amount = costs.get(id);
+      const cost = costs.get(id);
       return [
         id,
-        amount === null || amount === undefined
+        cost?.amount == null || !cost.unit
           ? null
-          : formatUnitAmount({ amount, unit }),
+          : formatUnitAmount({ amount: cost.amount, unit: cost.unit }),
       ];
     }),
   );

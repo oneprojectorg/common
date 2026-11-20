@@ -87,8 +87,9 @@ export interface PhaseInstanceData {
   /** Phase-specific form; resolve via `getPhaseProposalTemplate`, never directly. */
   proposalTemplate?: ProposalTemplateSchema;
   /**
-   * Form row a proposal created in this phase is written under; the develop
-   * prefill targets it, not `proposalTemplate`. Only a setup script writes it.
+   * Form row a proposal created in this phase is written under, and the form
+   * a voter budget in this phase takes its unit from; the develop prefill
+   * targets it, not `proposalTemplate`. Only a setup script writes it.
    */
   formSchemaId?: string;
   /**
