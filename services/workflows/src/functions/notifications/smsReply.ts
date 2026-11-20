@@ -34,6 +34,7 @@ export const SMS_COMMAND_LIST_MESSAGE = [
   'REMOVE [code] drop a pick',
   'DONE review your ballot',
   'SUBMIT cast it',
+  'L [question] ask the assistant',
   'INFO-HELP this list',
   'Reply STOP to unsubscribe.',
 ].join('\n');

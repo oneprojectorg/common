@@ -74,6 +74,32 @@ describe('parseSmsCommand', () => {
   });
 });
 
+describe('parseSmsCommand ask keyword', () => {
+  it('given L and a question, when parsed, then it is the l keyword with the question lowercased', () => {
+    expect(parseSmsCommand('L how do I vote?')).toEqual({
+      keyword: 'l',
+      argument: 'how do i vote?',
+    });
+  });
+
+  it('given L alone, when parsed, then it is the l keyword with no argument', () => {
+    expect(parseSmsCommand('L')).toEqual({ keyword: 'l', argument: null });
+    expect(parseSmsCommand('l!')).toEqual({ keyword: 'l', argument: null });
+  });
+
+  it('given L with a question mark or a word starting with l, when parsed, then nothing is recognised', () => {
+    expect(parseSmsCommand('L?')).toEqual({ keyword: null, argument: null });
+    expect(parseSmsCommand('later')).toEqual({ keyword: null, argument: null });
+  });
+
+  it('given LIST, when parsed, then it is still the list keyword', () => {
+    expect(parseSmsCommand('LIST')).toEqual({
+      keyword: 'list',
+      argument: null,
+    });
+  });
+});
+
 describe('parseSmsCommand registration keywords', () => {
   it('given VOTE alone or with a decision name, when parsed, then it is the vote keyword with that argument', () => {
     expect(parseSmsCommand('VOTE')).toEqual({
