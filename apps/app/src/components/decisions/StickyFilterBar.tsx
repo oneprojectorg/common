@@ -82,7 +82,7 @@ export const StickyFilterBar = ({
         className={cn(
           // `top` (inline) only matters on mobile, where it clears the floating
           // toggle; on >=md the toggle is inline in the header, so pin flush at 0.
-          'group sticky z-20 overflow-visible bg-white transition-shadow md:top-0!',
+          'group sticky z-20 overflow-visible bg-white py-3 transition-shadow md:top-0!',
           filterBarRowClassName,
           // Top hairline fades in on pin — mobile only (>=md has no floating
           // toggle above the bar, so no top edge to delineate).

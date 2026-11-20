@@ -23,7 +23,7 @@ interface FilterBarSearchControl {
 }
 
 export const filterBarRowClassName =
-  'flex flex-wrap items-center justify-between gap-4 py-3';
+  'flex flex-wrap items-center justify-between gap-4';
 
 export const FilterBar = ({ children }: { children: ReactNode }) => (
   <div className={filterBarRowClassName}>{children}</div>
