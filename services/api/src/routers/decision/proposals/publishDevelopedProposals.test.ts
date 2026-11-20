@@ -1,15 +1,13 @@
-import { getInstancePhases } from '@op/common';
 import {
   TestDecisionsDataManager,
   createDevelopPhaseSetup,
-  syncPhaseRows,
+  updateInstancePhase,
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   ProposalStatus,
   Visibility,
   decisionTransitionProposals,
-  processInstances,
   proposals,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -334,39 +332,21 @@ async function createEntry({
 
 /** Sets `defaults.hidden` on the develop phase ("final"). */
 async function hideEntriesByDefault(processInstanceId: string): Promise<void> {
-  const instance = await db.query.processInstances.findFirst({
-    where: { id: processInstanceId },
-    columns: { instanceData: true },
-  });
-  const instanceData = instance?.instanceData;
-  if (instanceData === null || typeof instanceData !== 'object') {
-    throw new Error(`Instance ${processInstanceId} has no instanceData`);
-  }
-
-  await db
-    .update(processInstances)
-    .set({
-      instanceData: {
-        ...instanceData,
-        phases: getInstancePhases(instanceData).map((phase) =>
-          phase.phaseId === 'final'
-            ? {
-                ...phase,
-                rules: {
-                  ...phase.rules,
-                  proposals: {
-                    ...phase.rules?.proposals,
-                    defaults: {
-                      ...phase.rules?.proposals?.defaults,
-                      hidden: true,
-                    },
-                  },
-                },
-              }
-            : phase,
-        ),
+  await updateInstancePhase({
+    instanceId: processInstanceId,
+    phaseId: 'final',
+    update: (phase) => ({
+      ...phase,
+      rules: {
+        ...phase.rules,
+        proposals: {
+          ...phase.rules?.proposals,
+          defaults: {
+            ...phase.rules?.proposals?.defaults,
+            hidden: true,
+          },
+        },
       },
-    })
-    .where(eq(processInstances.id, processInstanceId));
-  await syncPhaseRows(processInstanceId);
+    }),
+  });
 }

@@ -9,7 +9,7 @@ import {
   updateInstancePhase,
   updateInstancePhases,
 } from '@op/common/testing';
-import { db, eq } from '@op/db/client';
+import { db } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
