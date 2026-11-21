@@ -82,15 +82,14 @@ export function ReviewerAssignmentsTable({
   );
 }
 
-function ReviewerAssignmentRow({
+/** What a row shows for one assignment, and where it opens. */
+export function useAssignmentRow({
   item: { assignment, review, isReviewOutOfDate },
   route,
 }: {
   item: ReviewAssignmentExtended;
   route: ProposalSheetRoute;
 }) {
-  const t = useTranslations('decisions.review');
-  const format = useFormatter();
   const openInSheet = useOpenProposalInSheet();
   const { proposal } = assignment;
 
@@ -98,15 +97,47 @@ function ReviewerAssignmentRow({
     proposal,
   });
 
-  // A translation record types every field as `string | string[]`.
-  const title = typeof titleText === 'string' ? titleText : titleText.join(' ');
-  const href = proposalReviewsHref({ ...route, profileId: proposal.profileId });
-  const onOpen = openInSheet(proposal.profileId);
-  const submitterName = authors?.[0]?.name;
-  const submittedAt =
-    review?.state === ProposalReviewState.SUBMITTED && review.submittedAt
-      ? new Date(review.submittedAt)
-      : null;
+  return {
+    // A translation record types every field as `string | string[]`.
+    title: typeof titleText === 'string' ? titleText : titleText.join(' '),
+    href: proposalReviewsHref({ ...route, profileId: proposal.profileId }),
+    onOpen: openInSheet(proposal.profileId),
+    submitterName: authors?.[0]?.name,
+    displayCategories,
+    status: getRowStatus({
+      assignmentStatus: assignment.status,
+      reviewState: review?.state,
+    }),
+    isOutOfDate: isReviewShownOutOfDate({
+      isReviewOutOfDate,
+      assignmentStatus: assignment.status,
+    }),
+    submittedAt:
+      review?.state === ProposalReviewState.SUBMITTED && review.submittedAt
+        ? new Date(review.submittedAt)
+        : null,
+  };
+}
+
+function ReviewerAssignmentRow({
+  item,
+  route,
+}: {
+  item: ReviewAssignmentExtended;
+  route: ProposalSheetRoute;
+}) {
+  const t = useTranslations('decisions.review');
+  const format = useFormatter();
+  const {
+    title,
+    href,
+    onOpen,
+    submitterName,
+    displayCategories,
+    status,
+    isOutOfDate,
+    submittedAt,
+  } = useAssignmentRow({ item, route });
 
   return (
     // `relative` anchors the title link's stretched ::after (row-wide click).
@@ -137,16 +168,7 @@ function ReviewerAssignmentRow({
         </div>
       </TableRowHeader>
       <TableCell>
-        <ReviewStatusBadge
-          status={getRowStatus({
-            assignmentStatus: assignment.status,
-            reviewState: review?.state,
-          })}
-          isOutOfDate={isReviewShownOutOfDate({
-            isReviewOutOfDate,
-            assignmentStatus: assignment.status,
-          })}
-        />
+        <ReviewStatusBadge status={status} isOutOfDate={isOutOfDate} />
       </TableCell>
       <TableCell className="text-muted-foreground tabular-nums">
         {submittedAt
