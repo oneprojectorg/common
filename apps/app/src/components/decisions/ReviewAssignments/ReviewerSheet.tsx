@@ -22,14 +22,14 @@ import {
 } from '../ProposalSheet/proposalSheetState';
 import { useLastOpenId } from '../useLastOpenId';
 import {
+  ReviewerAssignmentsBodySkeleton,
+  ReviewerHeaderSkeleton,
+} from './ReviewAssignmentsSkeletons';
+import {
   ReviewerActions,
   ReviewerAssignmentsBody,
   ReviewerNotFound,
 } from './ReviewerAssignmentsBody';
-import {
-  ReviewerAssignmentsBodySkeleton,
-  ReviewerHeaderSkeleton,
-} from './ReviewAssignmentsSkeletons';
 import { ReviewerHeader } from './ReviewerHeader';
 import {
   type ReviewerAssignmentsInput,
