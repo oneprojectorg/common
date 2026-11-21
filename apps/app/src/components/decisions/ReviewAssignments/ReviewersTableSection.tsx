@@ -16,6 +16,14 @@ import {
 } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Button } from '@op/sense/Button';
+import { Dialog } from '@op/sense/Dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLinkItem,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
 import {
   Empty,
   EmptyDescription,
@@ -48,7 +56,13 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { LuBell, LuUsers } from 'react-icons/lu';
+import {
+  LuBell,
+  LuEllipsis,
+  LuFileText,
+  LuPencil,
+  LuUsers,
+} from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -61,7 +75,9 @@ import {
 } from '../FilterBar';
 import { ReviewStatusBadge } from '../ReviewStatusBadge';
 import { StickyFilterBar } from '../StickyFilterBar';
+import { useLastOpenId } from '../useLastOpenId';
 import { useSearchParam } from '../useSearchParam';
+import { ManageAssignmentsDialogContent } from './ManageAssignmentsDialog';
 import { ReviewersTableSkeleton } from './ReviewAssignmentsSkeletons';
 import { REVIEWER_PANEL_PARAM, ReviewerSheet } from './ReviewerSheet';
 import {
@@ -211,6 +227,9 @@ function ReviewersTableContent({
     setReminderTarget(target);
     setIsReminderOpen(true);
   };
+
+  const [editReviewerId, setEditReviewerId] = useState<string | null>(null);
+  const shownEditReviewerId = useLastOpenId(editReviewerId);
 
   // A completed or idle reviewer has nothing open to be reminded of.
   const showSendReminder =
@@ -367,6 +386,7 @@ function ReviewersTableContent({
                   })}
                   onOpen={onOpenReviewer}
                   onRemind={openReminder}
+                  onEditAssignments={setEditReviewerId}
                 />
               ))}
             </TableBody>
@@ -395,6 +415,23 @@ function ReviewersTableContent({
         open={isReminderOpen}
         onOpenChange={setIsReminderOpen}
       />
+      <Dialog
+        open={editReviewerId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditReviewerId(null);
+          }
+        }}
+      >
+        {shownEditReviewerId ? (
+          <ManageAssignmentsDialogContent
+            processInstanceId={processInstanceId}
+            phaseId={phaseId}
+            reviewerProfileId={shownEditReviewerId}
+            onSaved={() => setEditReviewerId(null)}
+          />
+        ) : null}
+      </Dialog>
     </div>
   );
 }
@@ -433,11 +470,13 @@ function ReviewerRowCells({
   href,
   onOpen,
   onRemind,
+  onEditAssignments,
 }: {
   row: PhaseReviewerSummary;
   href: string;
   onOpen?: (reviewerProfileId: string) => void;
   onRemind: (target: SendReminderTarget) => void;
+  onEditAssignments: (reviewerProfileId: string) => void;
 }) {
   const t = useTranslations();
   const format = useFormatter();
@@ -533,18 +572,55 @@ function ReviewerRowCells({
           <ReviewStatusBadge status={row.status} />
         )}
       </TableCell>
-      <TableCell className="text-end">
-        {isRemindable ? (
-          // `z-10` lifts it above the name link's row-wide ::after.
-          <Button
-            variant="outline"
-            className="z-10"
-            aria-label={t('decisions.review.remindReviewerLabel', { name })}
-            onClick={remind}
-          >
-            {t('decisions.review.remindAction')}
-          </Button>
-        ) : null}
+      {/* `z-10` lifts the cell above the name link's row-wide ::after. */}
+      <TableCell className="relative z-10 text-end">
+        <span className="inline-flex items-center gap-1">
+          {isRemindable ? (
+            <Button
+              variant="outline"
+              aria-label={t('decisions.review.remindReviewerLabel', { name })}
+              onClick={remind}
+            >
+              {t('decisions.review.remindAction')}
+            </Button>
+          ) : null}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t('decisions.review.moreActionsForReviewer', {
+                    name,
+                  })}
+                />
+              }
+            >
+              <LuEllipsis className="size-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="bottom" align="end" className="min-w-44">
+              <DropdownMenuLinkItem
+                closeOnClick
+                render={<Link href={href} onClick={handleLinkClick} />}
+              >
+                <LuFileText />
+                {t('decisions.review.openReviewerAction')}
+              </DropdownMenuLinkItem>
+              <DropdownMenuItem
+                onClick={() => onEditAssignments(row.reviewer.id)}
+              >
+                <LuPencil />
+                {t('decisions.review.editAssignmentsAction')}
+              </DropdownMenuItem>
+              {isRemindable ? (
+                <DropdownMenuItem onClick={remind}>
+                  <LuBell />
+                  {t('decisions.review.sendReminderAction')}
+                </DropdownMenuItem>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </span>
       </TableCell>
     </TableRow>
   );

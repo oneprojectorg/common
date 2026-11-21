@@ -1214,6 +1214,8 @@
       "reviewerColumn": "Évaluateur",
       "reviewerPanelLabel": "Évaluateur",
       "openReviewerPageAction": "Ouvrir en tant que page",
+      "openReviewerAction": "Ouvrir l’évaluateur",
+      "moreActionsForReviewer": "Plus d’actions pour {name}",
       "reviewsSubmittedStatus": "{submitted} sur {assigned} soumises",
       "nothingAssignedStatus": "Rien d’assigné pour l’instant",
       "reviewsFromPhase": "Évaluations de <bdi>{phase}</bdi>",

@@ -1214,6 +1214,8 @@
       "reviewerColumn": "Értékelő",
       "reviewerPanelLabel": "Bíráló",
       "openReviewerPageAction": "Megnyitás oldalként",
+      "openReviewerAction": "Bíráló megnyitása",
+      "moreActionsForReviewer": "További műveletek: {name}",
       "reviewsSubmittedStatus": "{assigned} közül {submitted} beküldve",
       "nothingAssignedStatus": "Még nincs semmi kiosztva",
       "reviewsFromPhase": "Értékelések ebből a szakaszból: <bdi>{phase}</bdi>",
