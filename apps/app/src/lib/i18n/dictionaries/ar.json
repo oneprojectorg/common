@@ -2064,6 +2064,8 @@
       "inviteSent": "تم إرسال الدعوة إلى <bdi>{email}</bdi>",
       "inviteFailed": "تعذّرت دعوة <bdi>{email}</bdi>.",
       "inviteMovedToAdmin": "سيصبح <bdi>{email}</bdi> مسؤولًا عند قبول الدعوة.",
+      "queuedInviteMovedToAdmin": "سيصبح <bdi>{email}</bdi> مسؤولًا عند قبول الدعوة. ستُرسل الدعوة عند نشر العملية.",
+      "adminAddFailed": "تعذّر جعل <bdi>{name}</bdi> مسؤولًا.",
       "addingAdminLabel": "جارٍ الإضافة…",
       "removingAdminLabel": "جارٍ الإزالة…",
       "youBadge": "أنت",

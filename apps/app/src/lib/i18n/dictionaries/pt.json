@@ -2064,6 +2064,8 @@
       "inviteSent": "Convite enviado para <bdi>{email}</bdi>",
       "inviteFailed": "Não foi possível convidar <bdi>{email}</bdi>.",
       "inviteMovedToAdmin": "<bdi>{email}</bdi> será administrador ao aceitar o convite.",
+      "queuedInviteMovedToAdmin": "<bdi>{email}</bdi> será administrador ao aceitar o convite, que será enviado quando o processo for publicado.",
+      "adminAddFailed": "Não foi possível tornar <bdi>{name}</bdi> administrador.",
       "addingAdminLabel": "Adicionando…",
       "removingAdminLabel": "Removendo…",
       "youBadge": "Você",

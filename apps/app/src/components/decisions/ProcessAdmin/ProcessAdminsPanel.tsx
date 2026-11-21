@@ -182,6 +182,7 @@ function AdminsList({
         ),
       );
     const name = getOptionLabel(option);
+    let failureMessage = t.rich('adminAddFailed', { name, bdi });
     // Reserves the email at once; the row waits for the lookup so it appears where it will stay.
     setPendingAdmins((current) => [...current, { key }]);
 
@@ -214,11 +215,18 @@ function AdminsList({
             inviteId: action.invite.id,
             accessRoleId: roleId,
           });
+          // A draft holds back a non-admin invite until publish, and moving it does not send it.
           toast.success(
-            t.rich('inviteMovedToAdmin', { email: option.email, bdi }),
+            t.rich(
+              action.invite.notifiedAt
+                ? 'inviteMovedToAdmin'
+                : 'queuedInviteMovedToAdmin',
+              { email: option.email, bdi },
+            ),
           );
           break;
         case 'invite': {
+          failureMessage = t.rich('inviteFailed', { email: option.email, bdi });
           showPending({ list: 'invites', option });
           const result = await invite.mutateAsync({
             profileId,
@@ -238,7 +246,7 @@ function AdminsList({
       ]);
     } catch (error) {
       logger.error('Process admin grant failed', { error });
-      toast.error(t.rich('inviteFailed', { email: option.email, bdi }));
+      toast.error(failureMessage);
     } finally {
       setPendingAdmins((current) =>
         current.filter((pending) => pending.key !== key),

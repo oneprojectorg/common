@@ -2064,6 +2064,8 @@
       "inviteSent": "Invitation sent to <bdi>{email}</bdi>",
       "inviteFailed": "<bdi>{email}</bdi> could not be invited.",
       "inviteMovedToAdmin": "<bdi>{email}</bdi> will be an admin once they accept the invitation.",
+      "queuedInviteMovedToAdmin": "<bdi>{email}</bdi> will be an admin once they accept. Their invitation is sent when the process is published.",
+      "adminAddFailed": "<bdi>{name}</bdi> could not be made an admin.",
       "addingAdminLabel": "Adding…",
       "removingAdminLabel": "Removing…",
       "youBadge": "You",
