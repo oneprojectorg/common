@@ -404,10 +404,11 @@ describe('ProcessAdminOverview', () => {
     ).toContain(`/decisions/${SLUG}/edit`);
   });
 
-  it('gives a draft an inert launch, not the public view', () => {
+  it('gives a draft its admins and an inert launch, not the public view', () => {
     seed({ status: ProcessStatus.DRAFT });
     renderOverview();
 
+    expect(screen.getByRole('button', { name: 'Manage admins' })).toBeTruthy();
     expect(
       screen
         .getByRole('button', { name: 'Launch process' })
@@ -424,6 +425,7 @@ describe('ProcessAdminOverview', () => {
       screen.getByRole('link', { name: 'View process' }).getAttribute('href'),
     ).toContain(`/decisions/${SLUG}`);
     expect(screen.queryByRole('button', { name: 'Launch process' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Manage admins' })).toBeNull();
   });
 
   it('edits a draft title in place and keeps a live title read-only', () => {
