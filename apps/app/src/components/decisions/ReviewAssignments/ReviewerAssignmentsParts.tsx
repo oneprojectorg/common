@@ -65,8 +65,11 @@ export function ReviewerNoAssignments({
 /** Loads the next page when it scrolls into view, and announces the load. */
 export function AssignmentsNextPage({
   pagination: { fetchNextPage, hasNextPage, isFetchingNextPage },
+  scrollRoot = null,
 }: {
   pagination: ReviewerAssignmentsPagination;
+  /** Scrolling ancestor of the list. Omit when the page scrolls. */
+  scrollRoot?: Element | null;
 }) {
   const t = useTranslations();
   const loadNextPage = useCallback(() => {
@@ -77,6 +80,7 @@ export function AssignmentsNextPage({
     useInfiniteScroll<HTMLDivElement>(loadNextPage, {
       hasNextPage,
       isFetchingNextPage,
+      root: scrollRoot,
     });
 
   return (

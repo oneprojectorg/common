@@ -81,12 +81,13 @@ export function ReviewPage({
   );
 
   // Same table as /decisions/[slug]/assignments — the tab and the dedicated
-  // screen are two entry points onto one surface, and reviewer rows link into
-  // the dedicated per-reviewer route from both.
+  // screen are two entry points onto one surface, and a reviewer row opens
+  // the reviewer panel from both.
   const assignmentsTabContent = (
     <TabsContent value="reviewers" className="grow sm:p-0">
       <ReviewersTableSection
         decisionSlug={decisionSlug}
+        ownerSlug={slug}
         processInstanceId={instance.id}
         phaseId={currentPhase.phaseId}
       />
