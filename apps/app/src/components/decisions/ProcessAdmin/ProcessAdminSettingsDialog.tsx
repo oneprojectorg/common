@@ -1,5 +1,6 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { ProcessInstance } from '@op/api/encoders';
 import {
   PROCESS_NAME_MAX_LENGTH,
@@ -17,15 +18,17 @@ import { Field, FieldError, FieldLabel, FieldTitle } from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
 import { OptionBox } from '@op/sense/OptionBox';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
+import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { toast } from '@op/sense/Toast';
-import { useId, useState } from 'react';
+import { Suspense, useId, useState } from 'react';
 import { LuCopy, LuGlobe, LuLink, LuSettings } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { CharacterCounter } from '@/components/collaboration/CharacterCounter';
 
+import { ProcessAdminStewardSelect } from './ProcessAdminSteward';
 import { ProcessAdminsPanel } from './ProcessAdminsPanel';
 import { useSaveInstance } from './useSaveInstance';
 
@@ -95,7 +98,7 @@ export function ProcessAdminSettingsDialog({
             ))}
           </TabsList>
           <TabsContent value="details" className={PANEL_CLASSNAME}>
-            <DetailsSection slug={slug} name={name} instanceId={instance.id} />
+            <DetailsSection slug={slug} name={name} instance={instance} />
           </TabsContent>
           <TabsContent value="admins" className={PANEL_CLASSNAME}>
             <div className="flex flex-col gap-4">
@@ -123,12 +126,13 @@ export function ProcessAdminSettingsDialog({
 function DetailsSection({
   slug,
   name,
-  instanceId,
+  instance,
 }: {
   slug: string;
   name: string;
-  instanceId: string;
+  instance: ProcessInstance;
 }) {
+  const instanceId = instance.id;
   const t = useTranslations('decisions.processAdmin');
   const tShared = useTranslations();
   const nameId = useId();
@@ -217,6 +221,11 @@ function DetailsSection({
           </FieldError>
         ) : null}
       </Field>
+      <APIErrorBoundary fallbacks={{ default: () => null }}>
+        <Suspense fallback={<Skeleton className="h-9 w-full" />}>
+          <ProcessAdminStewardSelect slug={slug} instance={instance} />
+        </Suspense>
+      </APIErrorBoundary>
       <div className="flex flex-col gap-2">
         <FieldTitle>{t('processLinkLabel')}</FieldTitle>
         <div className="flex items-center gap-2 rounded-md border px-3 py-2">

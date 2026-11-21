@@ -1,6 +1,13 @@
 // @vitest-environment jsdom
 import { ProcessStatus } from '@op/api/encoders';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -15,10 +22,12 @@ const { query, updateInstance, utils, toast, logger } = await vi.hoisted(
     const query: {
       decisionProfile: unknown;
       resources: unknown[];
+      userProfiles: { id: string; name: string }[];
       error: Error | null;
     } = {
       decisionProfile: null,
       resources: [],
+      userProfiles: [],
       error: null,
     };
 
@@ -37,9 +46,9 @@ const { query, updateInstance, utils, toast, logger } = await vi.hoisted(
     const logger = { error: vi.fn() };
 
     interface Callbacks {
-      onSuccess?: (saved: unknown) => unknown;
+      onSuccess?: (saved: unknown, input: unknown) => unknown;
       onError?: (error: Error) => unknown;
-      onSettled?: () => unknown;
+      onSettled?: (saved: unknown, error: Error | null) => unknown;
     }
 
     /** A mutation mock whose latest save stays pending, per hook instance, until the test settles it with `succeed` or `fail`. */
@@ -64,12 +73,14 @@ const { query, updateInstance, utils, toast, logger } = await vi.hoisted(
             settleLatest = async ({ error, saved }) => {
               if (error) {
                 await hook.onError?.(error);
+                await hook.onSettled?.(undefined, error);
                 await call.onError?.(error);
               } else {
-                await hook.onSuccess?.(saved);
-                await call.onSuccess?.(saved);
+                await hook.onSuccess?.(saved, input);
+                await hook.onSettled?.(saved, null);
+                await call.onSuccess?.(saved, input);
               }
-              await call.onSettled?.();
+              await call.onSettled?.(saved, error ?? null);
               setIsPending(false);
             };
           },
@@ -93,6 +104,11 @@ const refresh = vi.hoisted(() => vi.fn());
 vi.mock('@op/api/client', () => ({
   trpc: {
     useUtils: () => ({ decision: { getDecisionBySlug: utils } }),
+    account: {
+      getUserProfiles: {
+        useSuspenseQuery: () => [{ items: query.userProfiles }],
+      },
+    },
     decision: {
       getDecisionBySlug: {
         useSuspenseQuery: () => {
@@ -159,6 +175,48 @@ vi.mock('../BannerUploadModal', () => ({
     ) : null,
 }));
 
+// TipTap needs a real DOM selection; a textarea seeded from `content` that
+// emits a one-paragraph doc is enough to drive open, type and commit.
+const paragraphDoc = (text: string) => ({
+  type: 'doc',
+  content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+});
+vi.mock('@tiptap/core', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  generateJSON: (html: string) => paragraphDoc(html),
+}));
+vi.mock('@op/sense/RichTextEditor', () => ({
+  RichTextEditor: ({
+    content,
+    placeholder,
+    ariaLabelledBy,
+    onChangeJSON,
+  }: {
+    content?: string | object;
+    placeholder?: string;
+    ariaLabelledBy?: string;
+    onChangeJSON?: (json: object) => void;
+  }) => (
+    <textarea
+      aria-labelledby={ariaLabelledBy}
+      placeholder={placeholder}
+      defaultValue={
+        typeof content === 'string' ? content : JSON.stringify(content)
+      }
+      onChange={(event) => onChangeJSON?.(paragraphDoc(event.target.value))}
+    />
+  ),
+  RichTextViewer: ({ content }: { content: object }) => (
+    <div data-testid="about-viewer">{JSON.stringify(content)}</div>
+  ),
+}));
+vi.mock('@/components/RichTextEditor', () => ({
+  RichTextEditorBubbleMenu: () => null,
+}));
+vi.mock('@/components/RichTextEditor/editorConfig', () => ({
+  getProposalExtensions: () => [],
+}));
+
 const SLUG = 'community-fund';
 
 const profile = ({
@@ -166,7 +224,9 @@ const profile = ({
   description = null,
   phases = [],
   steward = null,
+  owner = null,
   heroImage,
+  body,
   isPrivate = false,
   name = 'Community Fund',
 }: {
@@ -175,7 +235,9 @@ const profile = ({
   description?: string | null;
   phases?: object[];
   steward?: object | null;
+  owner?: object | null;
   heroImage?: string;
+  body?: string | object;
   isPrivate?: boolean;
 }) => ({
   name,
@@ -186,10 +248,11 @@ const profile = ({
     description,
     currentStateId: null,
     steward,
+    owner,
     instanceData: {
       phases,
       config: { isPrivate },
-      overview: heroImage ? { heroImage } : undefined,
+      overview: heroImage || body ? { heroImage, body } : undefined,
     },
   },
 });
@@ -220,6 +283,7 @@ const phase = {
 afterEach(() => {
   cleanup();
   query.resources = [];
+  query.userProfiles = [];
   query.error = null;
   vi.clearAllMocks();
 });
@@ -641,6 +705,203 @@ describe('ProcessAdminOverview', () => {
       instanceId: 'instance-1',
       config: { isPrivate: true },
     });
+  });
+
+  it('lets an admin of the owner pick a draft steward from their profiles', async () => {
+    query.userProfiles = [
+      { id: 'me', name: 'Me' },
+      { id: 'org-1', name: 'East Side Collective' },
+      { id: 'org-2', name: 'West End Trust' },
+    ];
+    seed({
+      status: ProcessStatus.DRAFT,
+      steward: { id: 'org-1', name: 'East Side Collective' },
+      owner: { id: 'org-1' },
+    });
+    renderOverview();
+    const user = userEvent.setup();
+
+    const trigger = await screen.findByRole('button', {
+      name: 'East Side Collective',
+      description: 'Change who is stewarding this',
+    });
+    await user.click(trigger);
+    await user.click(
+      await screen.findByRole('menuitem', { name: /West End Trust/ }),
+    );
+
+    expect(updateInstance.mutate.mock.calls[0]?.[0]).toEqual({
+      instanceId: 'instance-1',
+      stewardProfileId: 'org-2',
+    });
+  });
+
+  it('shows the chosen steward in Settings while it saves and the stored one when it fails', async () => {
+    query.userProfiles = [
+      { id: 'org-1', name: 'East Side Collective' },
+      { id: 'org-2', name: 'West End Trust' },
+    ];
+    seed({
+      steward: { id: 'org-1', name: 'East Side Collective' },
+      owner: { id: 'org-1' },
+    });
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }));
+    const select = await screen.findByRole('combobox', {
+      name: 'Stewarded by',
+    });
+    await user.click(select);
+    await user.click(
+      await screen.findByRole('option', { name: /West End Trust/ }),
+    );
+
+    expect(select.textContent).toContain('West End Trust');
+
+    await failSave();
+
+    expect(select.textContent).toContain('East Side Collective');
+  });
+
+  it('shows the steward as plain text when the admin does not administer the owner', async () => {
+    query.userProfiles = [
+      { id: 'me', name: 'Me' },
+      { id: 'org-1', name: 'East Side Collective' },
+    ];
+    seed({
+      status: ProcessStatus.DRAFT,
+      steward: { id: 'org-1', name: 'East Side Collective' },
+      owner: { id: 'org-9' },
+    });
+    renderOverview();
+
+    const name = await screen.findByText('East Side Collective');
+    expect(name.closest('button')).toBeNull();
+  });
+
+  const aboutField = () =>
+    screen.getByRole('textbox', { name: 'About the process' });
+
+  it('edits the About body of a live process behind Edit and saves on Done', async () => {
+    seed({ description: 'Plain description' });
+    renderOverview();
+    const user = userEvent.setup();
+
+    expect(
+      screen.queryByRole('textbox', { name: 'About the process' }),
+    ).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await user.type(aboutField(), 'Grants for the neighbourhood');
+    await user.click(screen.getByRole('button', { name: 'Done' }));
+
+    expect(updateInstance.mutate).toHaveBeenCalledTimes(1);
+    expect(updateInstance.mutate.mock.calls[0]?.[0]).toEqual({
+      instanceId: 'instance-1',
+      overview: { body: paragraphDoc('Grants for the neighbourhood') },
+    });
+    await succeedSave(
+      profile({
+        description: 'Plain description',
+        body: paragraphDoc('Grants for the neighbourhood'),
+      }),
+    );
+    expect(
+      screen.queryByRole('textbox', { name: 'About the process' }),
+    ).toBeNull();
+    expect(screen.getByTestId('about-viewer').textContent).toContain(
+      'Grants for the neighbourhood',
+    );
+  });
+
+  it('seeds the editor from a legacy HTML body and saves nothing on an unchanged Done', async () => {
+    seed({ body: '<p>Legacy body</p>' });
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    expect(screen.getByDisplayValue('<p>Legacy body</p>')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Done' }));
+
+    expect(updateInstance.mutate).not.toHaveBeenCalled();
+  });
+
+  it('asks before a dirty edit is abandoned by a click elsewhere', async () => {
+    seed({});
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await user.type(aboutField(), 'Half a sentence');
+    await user.click(screen.getByRole('link', { name: 'View process' }));
+
+    const dialog = await screen.findByRole('alertdialog', {
+      name: 'Keep your changes?',
+    });
+    expect(updateInstance.mutate).not.toHaveBeenCalled();
+    await user.click(within(dialog).getByRole('button', { name: 'Discard' }));
+
+    expect(updateInstance.mutate).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole('textbox', { name: 'About the process' }),
+    ).toBeNull();
+  });
+
+  it('closes a clean edit silently on a click elsewhere', async () => {
+    seed({});
+    renderOverview();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await user.click(screen.getByRole('link', { name: 'View process' }));
+
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(
+      screen.queryByRole('textbox', { name: 'About the process' }),
+    ).toBeNull();
+  });
+
+  it('saves a draft About body after a pause, once, with the last text', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    try {
+      seed({ status: ProcessStatus.DRAFT });
+      renderOverview();
+
+      expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
+      fireEvent.change(aboutField(), { target: { value: 'a' } });
+      fireEvent.change(aboutField(), { target: { value: 'ab' } });
+      vi.advanceTimersByTime(999);
+      expect(updateInstance.mutate).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(1);
+
+      expect(updateInstance.mutate).toHaveBeenCalledTimes(1);
+      expect(updateInstance.mutate.mock.calls[0]?.[0]).toEqual({
+        instanceId: 'instance-1',
+        overview: { body: paragraphDoc('ab') },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('sends a draft About edit when the page is left inside the pause', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    try {
+      seed({ status: ProcessStatus.DRAFT });
+      const { unmount } = renderOverview();
+
+      fireEvent.change(aboutField(), { target: { value: 'gone' } });
+      expect(updateInstance.mutate).not.toHaveBeenCalled();
+      unmount();
+
+      expect(updateInstance.mutate).toHaveBeenCalledTimes(1);
+      expect(updateInstance.mutate.mock.calls[0]?.[0]).toEqual({
+        instanceId: 'instance-1',
+        overview: { body: paragraphDoc('gone') },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('shows the chosen visibility while it saves and the saved one when it fails', async () => {
