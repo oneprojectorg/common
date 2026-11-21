@@ -1214,6 +1214,8 @@
       "reviewerColumn": "Dib-u-eege",
       "reviewerPanelLabel": "Dib-u-eegaha",
       "openReviewerPageAction": "U fur bog ahaan",
+      "openReviewerAction": "Fur dib-u-eegaha",
+      "moreActionsForReviewer": "Ficillo kale oo loogu talagalay {name}",
       "reviewsSubmittedStatus": "{submitted} ka mid ah {assigned} ayaa la gudbiyay",
       "nothingAssignedStatus": "Weli waxba lama qoondayn",
       "reviewsFromPhase": "Dib-u-eegisyada <bdi>{phase}</bdi>",

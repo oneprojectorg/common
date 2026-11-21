@@ -1214,6 +1214,8 @@
       "reviewerColumn": "Reviewer",
       "reviewerPanelLabel": "Reviewer",
       "openReviewerPageAction": "Open as a page",
+      "openReviewerAction": "Open reviewer",
+      "moreActionsForReviewer": "More actions for {name}",
       "reviewsSubmittedStatus": "{submitted} of {assigned} submitted",
       "nothingAssignedStatus": "Nothing assigned yet",
       "reviewsFromPhase": "Reviews from <bdi>{phase}</bdi>",
