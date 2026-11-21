@@ -1,6 +1,8 @@
 'use client';
 
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { isPlainLeftClick } from '@/utils/isPlainLeftClick';
 import { trpc } from '@op/api/client';
 import {
   DEFAULT_REVIEWER_SORT,
@@ -37,8 +39,15 @@ import {
   TableRowHeader,
 } from '@op/sense/Table';
 import { useFormatter } from 'next-intl';
-import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { Suspense, useCallback, useDeferredValue, useState } from 'react';
+import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
+import {
+  type MouseEvent,
+  Suspense,
+  useCallback,
+  useDeferredValue,
+  useMemo,
+  useState,
+} from 'react';
 import { LuBell, LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
@@ -54,6 +63,7 @@ import { ReviewStatusBadge } from '../ReviewStatusBadge';
 import { StickyFilterBar } from '../StickyFilterBar';
 import { useSearchParam } from '../useSearchParam';
 import { ReviewersTableSkeleton } from './ReviewAssignmentsSkeletons';
+import { REVIEWER_PANEL_PARAM, ReviewerSheet } from './ReviewerSheet';
 import {
   SendReminderDialog,
   type SendReminderTarget,
@@ -62,6 +72,8 @@ import { accountContactText } from './accountContactText';
 
 interface ReviewersTableSectionProps {
   decisionSlug: string;
+  /** Owning profile slug, for the proposal route. */
+  ownerSlug: string;
   processInstanceId: string;
   phaseId: string;
 }
@@ -71,33 +83,69 @@ const reviewerSortParser = parseAsStringLiteral(
   reviewerSortSchema.options,
 ).withDefault(DEFAULT_REVIEWER_SORT);
 
-export function ReviewersTableSection(props: ReviewersTableSectionProps) {
+export function ReviewersTableSection({
+  ownerSlug,
+  ...props
+}: ReviewersTableSectionProps) {
   const t = useTranslations();
+  const { decisionSlug, processInstanceId, phaseId } = props;
+  const isMobile = useIsMobile();
+  const [openReviewerId, setOpenReviewerId] = useQueryState(
+    REVIEWER_PANEL_PARAM,
+    parseAsString,
+  );
+
+  // Pushed, so Back closes the panel; a phone goes to the reviewer page instead.
+  const openReviewer = useCallback(
+    (reviewerProfileId: string) => {
+      void setOpenReviewerId(reviewerProfileId, { history: 'push' });
+    },
+    [setOpenReviewerId],
+  );
+  const route = useMemo(
+    () => ({ decisionSlug, slug: ownerSlug, instanceId: processInstanceId }),
+    [decisionSlug, ownerSlug, processInstanceId],
+  );
 
   return (
-    <APIErrorBoundary
-      fallbacks={{
-        default: () => (
-          <Empty>
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <LuUsers className="size-6" />
-              </EmptyMedia>
-              <EmptyTitle>
-                {t('decisions.review.loadAssignmentsError')}
-              </EmptyTitle>
-              <EmptyDescription>
-                {t('decisions.proposals.refreshPageHint')}
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ),
-      }}
-    >
-      <Suspense fallback={<ReviewersTableSkeleton />}>
-        <ReviewersTableContent {...props} />
-      </Suspense>
-    </APIErrorBoundary>
+    <>
+      <APIErrorBoundary
+        fallbacks={{
+          default: () => (
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <LuUsers className="size-6" />
+                </EmptyMedia>
+                <EmptyTitle>
+                  {t('decisions.review.loadAssignmentsError')}
+                </EmptyTitle>
+                <EmptyDescription>
+                  {t('decisions.proposals.refreshPageHint')}
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ),
+        }}
+      >
+        <Suspense fallback={<ReviewersTableSkeleton />}>
+          <ReviewersTableContent
+            {...props}
+            onOpenReviewer={isMobile ? undefined : openReviewer}
+          />
+        </Suspense>
+      </APIErrorBoundary>
+      <ReviewerSheet
+        processInstanceId={processInstanceId}
+        phaseId={phaseId}
+        route={route}
+        reviewerProfileId={isMobile ? null : openReviewerId}
+        pageHref={(reviewerProfileId) =>
+          reviewerPageHref({ decisionSlug, reviewerProfileId })
+        }
+        onClose={() => void setOpenReviewerId(null)}
+      />
+    </>
   );
 }
 
@@ -105,7 +153,11 @@ function ReviewersTableContent({
   decisionSlug,
   processInstanceId,
   phaseId,
-}: ReviewersTableSectionProps) {
+  onOpenReviewer,
+}: Omit<ReviewersTableSectionProps, 'ownerSlug'> & {
+  /** Opens the reviewer panel. Omit to follow the link to the reviewer page. */
+  onOpenReviewer?: (reviewerProfileId: string) => void;
+}) {
   const t = useTranslations();
 
   const { search, setSearch, appliedSearch, isSearchPending } = useSearchParam({
@@ -309,7 +361,11 @@ function ReviewersTableContent({
                 <ReviewerRowCells
                   key={row.reviewer.id}
                   row={row}
-                  href={`/decisions/${decisionSlug}/assignments/${row.reviewer.id}`}
+                  href={reviewerPageHref({
+                    decisionSlug,
+                    reviewerProfileId: row.reviewer.id,
+                  })}
+                  onOpen={onOpenReviewer}
                   onRemind={openReminder}
                 />
               ))}
@@ -375,10 +431,12 @@ function ReviewerCount({
 function ReviewerRowCells({
   row,
   href,
+  onOpen,
   onRemind,
 }: {
   row: PhaseReviewerSummary;
   href: string;
+  onOpen?: (reviewerProfileId: string) => void;
   onRemind: (target: SendReminderTarget) => void;
 }) {
   const t = useTranslations();
@@ -403,6 +461,14 @@ function ReviewerRowCells({
         remainingCount: row.remainingCount,
       },
     });
+  const handleLinkClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (!onOpen || !isPlainLeftClick(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    onOpen(row.reviewer.id);
+  };
 
   return (
     // `relative` anchors the name link's stretched ::after (row-wide click).
@@ -416,6 +482,7 @@ function ReviewerRowCells({
             transform or `relative` here collapses the row-wide target. */}
         <Link
           href={href}
+          onClick={handleLinkClick}
           className="static inline-flex after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring/50 focus-visible:after:ring-inset"
         >
           <ProfileItem
@@ -481,4 +548,14 @@ function ReviewerRowCells({
       </TableCell>
     </TableRow>
   );
+}
+
+function reviewerPageHref({
+  decisionSlug,
+  reviewerProfileId,
+}: {
+  decisionSlug: string;
+  reviewerProfileId: string;
+}): string {
+  return `/decisions/${decisionSlug}/assignments/${reviewerProfileId}`;
 }

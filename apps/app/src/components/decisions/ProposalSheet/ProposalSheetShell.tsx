@@ -12,7 +12,7 @@ import {
 } from '@op/sense/Empty';
 import { Sheet, SheetContent, SheetTitle } from '@op/sense/Sheet';
 import { Skeleton, SkeletonText } from '@op/sense/Skeleton';
-import { type ReactNode, Suspense, useContext, useState } from 'react';
+import { type ReactNode, Suspense, useContext } from 'react';
 import { LuExpand, LuTriangleAlert, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -21,12 +21,13 @@ import { ButtonLink } from '../../ButtonLink';
 import { ProposalQueryProvider } from '../Proposal/ProposalQueryProvider';
 import { ReportProposalDialog } from '../ReportProposalDialog';
 import { decisionRootHref, proposalHref } from '../proposalHrefs';
+import { useLastOpenId } from '../useLastOpenId';
 import { ProposalSheetStateContext } from './proposalSheetState';
 
 export function ProposalSheetShell({ children }: { children: ReactNode }) {
   const t = useTranslations();
   const state = useContext(ProposalSheetStateContext);
-  const shownProfileId = useLastOpenProposal(state?.openProfileId ?? null);
+  const shownProfileId = useLastOpenId(state?.openProfileId ?? null);
 
   if (!state) {
     return null;
@@ -132,17 +133,6 @@ function ReportAction({ profileId }: { profileId: string }) {
 
 function ScrollRegion({ children }: { children: ReactNode }) {
   return <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>;
-}
-
-/** Held past the close so the panel animates out with its content still in it. */
-function useLastOpenProposal(profileId: string | null): string | null {
-  const [shown, setShown] = useState(profileId);
-
-  if (profileId !== null && profileId !== shown) {
-    setShown(profileId);
-  }
-
-  return shown;
 }
 
 function ProposalSheetSkeleton() {

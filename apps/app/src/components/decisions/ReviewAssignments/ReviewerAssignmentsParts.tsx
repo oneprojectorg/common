@@ -33,14 +33,16 @@ import type {
 export function ReviewerNoAssignments({
   input,
   name,
+  className,
 }: {
   input: ReviewerAssignmentsInput;
   name: string;
+  className?: string;
 }) {
   const t = useTranslations();
 
   return (
-    <Empty>
+    <Empty className={className}>
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <LuListChecks className="size-6" />
@@ -65,8 +67,11 @@ export function ReviewerNoAssignments({
 /** Loads the next page when it scrolls into view, and announces the load. */
 export function AssignmentsNextPage({
   pagination: { fetchNextPage, hasNextPage, isFetchingNextPage },
+  scrollRoot = null,
 }: {
   pagination: ReviewerAssignmentsPagination;
+  /** Scrolling ancestor of the list. Omit when the page scrolls. */
+  scrollRoot?: Element | null;
 }) {
   const t = useTranslations();
   const loadNextPage = useCallback(() => {
@@ -77,6 +82,7 @@ export function AssignmentsNextPage({
     useInfiniteScroll<HTMLDivElement>(loadNextPage, {
       hasNextPage,
       isFetchingNextPage,
+      root: scrollRoot,
     });
 
   return (
@@ -219,9 +225,9 @@ export function ReviewerStats({
 
 function StatCard({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <Card className="gap-2 p-4">
-      <span className="text-base text-muted-foreground">{label}</span>
-      <span className="font-serif text-headline font-light tabular-nums">
+    <Card className="gap-0 p-4">
+      <span className="truncate text-base text-muted-foreground">{label}</span>
+      <span className="font-serif text-headline whitespace-nowrap tabular-nums">
         {children}
       </span>
     </Card>

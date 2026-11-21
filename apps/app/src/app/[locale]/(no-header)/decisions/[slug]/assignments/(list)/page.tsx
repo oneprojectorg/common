@@ -33,7 +33,7 @@ export default async function ReviewAssignmentsPage({
   params,
 }: ReviewAssignmentsPageProps) {
   const { slug } = await params;
-  const [t, { processInstanceId, phaseId }] = await Promise.all([
+  const [t, { processInstanceId, phaseId, ownerSlug }] = await Promise.all([
     getTranslations('decisions'),
     loadReviewAssignmentsPage(slug),
   ]);
@@ -62,6 +62,7 @@ export default async function ReviewAssignmentsPage({
       <HydrationBoundary state={dehydrate(queryClient)}>
         <ReviewersTableSection
           decisionSlug={slug}
+          ownerSlug={ownerSlug}
           processInstanceId={processInstanceId}
           phaseId={phaseId}
         />
