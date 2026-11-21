@@ -1215,6 +1215,7 @@
       "reviewerPanelLabel": "Revisor",
       "openReviewerPageAction": "Abrir como página",
       "reviewsSubmittedStatus": "{submitted} de {assigned} enviadas",
+      "nothingAssignedStatus": "Nada atribuído ainda",
       "reviewsFromPhase": "Avaliações de <bdi>{phase}</bdi>",
       "revisedLabel": "Revisado",
       "revisedTimeAgo": "Revised {timeAgo}",

@@ -1215,6 +1215,7 @@
       "reviewerPanelLabel": "পর্যালোচক",
       "openReviewerPageAction": "পৃষ্ঠা হিসেবে খুলুন",
       "reviewsSubmittedStatus": "{assigned}টির মধ্যে {submitted}টি জমা দেওয়া হয়েছে",
+      "nothingAssignedStatus": "এখনও কিছু বরাদ্দ করা হয়নি",
       "reviewsFromPhase": "<bdi>{phase}</bdi> থেকে পর্যালোচনা",
       "revisedLabel": "সংশোধিত",
       "revisedTimeAgo": "Revised {timeAgo}",

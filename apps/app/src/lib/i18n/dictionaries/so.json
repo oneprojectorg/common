@@ -1215,6 +1215,7 @@
       "reviewerPanelLabel": "Dib-u-eegaha",
       "openReviewerPageAction": "U fur bog ahaan",
       "reviewsSubmittedStatus": "{submitted} ka mid ah {assigned} ayaa la gudbiyay",
+      "nothingAssignedStatus": "Weli waxba lama qoondayn",
       "reviewsFromPhase": "Dib-u-eegisyada <bdi>{phase}</bdi>",
       "revisedLabel": "La dib-u-habeeyay",
       "revisedTimeAgo": "Revised {timeAgo}",

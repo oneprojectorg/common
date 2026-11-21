@@ -1215,6 +1215,7 @@
       "reviewerPanelLabel": "المراجع",
       "openReviewerPageAction": "فتح كصفحة",
       "reviewsSubmittedStatus": "تم إرسال {submitted} من {assigned}",
+      "nothingAssignedStatus": "لم يُسند أي شيء بعد",
       "reviewsFromPhase": "مراجعات <bdi>{phase}</bdi>",
       "revisedLabel": "تمت المراجعة",
       "revisedTimeAgo": "Revised {timeAgo}",

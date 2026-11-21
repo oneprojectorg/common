@@ -9,8 +9,10 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
+import { Header2, Header3 } from '@op/sense/Header';
 import { Sheet, SheetContent, SheetFooter, SheetTitle } from '@op/sense/Sheet';
-import { type ReactNode, Suspense, useState } from 'react';
+import { Skeleton } from '@op/sense/Skeleton';
+import { type ReactNode, Suspense, useId, useState } from 'react';
 import { LuExpand, LuUsers, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -21,16 +23,16 @@ import {
   type ProposalSheetRoute,
 } from '../ProposalSheet/proposalSheetState';
 import { useLastOpenId } from '../useLastOpenId';
+import { ManageAssignmentsAction } from './ManageAssignmentsAction';
+import { ReviewerAssignmentList } from './ReviewerAssignmentList';
 import {
-  ReviewerAssignmentsBodySkeleton,
-  ReviewerHeaderSkeleton,
-} from './ReviewAssignmentsSkeletons';
-import {
+  AssignmentsNextPage,
   ReviewerActions,
-  ReviewerAssignmentsBody,
+  ReviewerNoAssignments,
   ReviewerNotFound,
-} from './ReviewerAssignmentsBody';
-import { ReviewerHeader } from './ReviewerHeader';
+  ReviewerStats,
+} from './ReviewerAssignmentsParts';
+import { accountContactText } from './accountContactText';
 import {
   type ReviewerAssignmentsInput,
   getReviewerName,
@@ -121,8 +123,7 @@ export function ReviewerSheet({
               <Suspense
                 fallback={
                   <ScrollRegion>
-                    <ReviewerHeaderSkeleton />
-                    <ReviewerAssignmentsBodySkeleton />
+                    <ReviewerSheetSkeleton />
                   </ScrollRegion>
                 }
               >
@@ -151,6 +152,7 @@ function ReviewerSheetContent({
   route: ProposalSheetRoute;
 }) {
   const t = useTranslations();
+  const headingId = useId();
   const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null);
   const { summary, assignments, pagination } = useReviewerAssignments(input);
 
@@ -164,38 +166,68 @@ function ReviewerSheetContent({
 
   const { reviewer } = summary;
   const name = getReviewerName(reviewer);
+  const contact = accountContactText(reviewer.contact);
+  const hasAssignments = summary.total > 0 || summary.remainingCount > 0;
 
   return (
     <>
       <ScrollRegion ref={setScrollRoot}>
-        <ReviewerHeader name={name} contact={reviewer.contact} />
-        <ReviewerAssignmentsBody
-          input={input}
-          summary={summary}
-          name={name}
-          assignments={assignments}
-          pagination={pagination}
-          route={route}
-          scrollRoot={scrollRoot}
-        />
+        <div className="flex flex-col gap-2">
+          <Header2>{name}</Header2>
+          {contact ? (
+            <p className="text-base break-words text-muted-foreground">
+              <bdi>{contact}</bdi>
+            </p>
+          ) : null}
+        </div>
+
+        {/* `total` drops merged-away proposals; the counts still hold their reviews. */}
+        {summary.assignedCount > 0 ? (
+          <ReviewerStats reviewer={summary} className="mt-6" />
+        ) : null}
+
+        {summary.total === 0 ? (
+          <ReviewerNoAssignments input={input} name={name} />
+        ) : (
+          <div className="mt-10 flex flex-col gap-4">
+            <Header3 id={headingId}>
+              {t('decisions.review.assignedProposalsHeading', {
+                count: summary.total,
+              })}
+            </Header3>
+            <ReviewerAssignmentList
+              assignments={assignments}
+              route={route}
+              labelledBy={headingId}
+            />
+            <AssignmentsNextPage
+              pagination={pagination}
+              scrollRoot={scrollRoot}
+            />
+          </div>
+        )}
       </ScrollRegion>
 
-      {summary.total > 0 || summary.remainingCount > 0 ? (
-        <SheetFooter className="shrink-0 flex-row flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-8">
-          <p className="text-sm text-muted-foreground tabular-nums">
-            {t('decisions.review.reviewsSubmittedStatus', {
-              submitted: summary.submittedCount,
-              assigned: summary.assignedCount,
-            })}
-          </p>
+      <SheetFooter className="shrink-0 flex-row items-center justify-between gap-4 px-6 py-5">
+        <p className="text-base whitespace-nowrap tabular-nums">
+          {hasAssignments
+            ? t('decisions.review.reviewsSubmittedStatus', {
+                submitted: summary.submittedCount,
+                assigned: summary.assignedCount,
+              })
+            : t('decisions.review.nothingAssignedStatus')}
+        </p>
+        {hasAssignments ? (
           <ReviewerActions
             input={input}
             summary={summary}
             reviewer={reviewer}
             name={name}
           />
-        </SheetFooter>
-      ) : null}
+        ) : (
+          <ManageAssignmentsAction {...input} intent="assign" />
+        )}
+      </SheetFooter>
     </>
   );
 }
@@ -209,10 +241,33 @@ function ScrollRegion({
 }) {
   return (
     <div ref={ref} className="min-h-0 flex-1 overflow-y-auto">
-      <div className="flex flex-col gap-6 px-4 py-6 sm:px-8 sm:py-8">
-        {children}
-      </div>
+      <div className="flex flex-col px-6 pt-6 pb-8">{children}</div>
     </div>
+  );
+}
+
+/** Mirrors the panel: name, contact, two stat rows, the heading and the cards. */
+function ReviewerSheetSkeleton() {
+  return (
+    <>
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-9 w-56" />
+        <Skeleton className="h-6 w-64" />
+      </div>
+      <div className="mt-6 grid grid-cols-2 gap-4">
+        <Skeleton className="h-24 w-full rounded-lg" />
+        <Skeleton className="h-24 w-full rounded-lg" />
+        <Skeleton className="h-24 w-full rounded-lg" />
+      </div>
+      <div className="mt-10 flex flex-col gap-4">
+        <Skeleton className="h-7 w-56" />
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-19 w-full rounded-lg" />
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
 
