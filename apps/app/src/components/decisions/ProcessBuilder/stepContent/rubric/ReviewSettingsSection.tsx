@@ -1,16 +1,21 @@
+import { useQueryState } from 'nuqs';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
+import { sectionIdToReviewPhaseId } from '@/components/decisions/ProcessBuilder/navigationConfig';
 
 import { ReviewSettingsContent } from './ReviewSettingsContent';
 
 export default function ReviewSettingsSection(props: SectionProps) {
+  const [sectionParam] = useQueryState('section', { history: 'push' });
+  const phaseKey = sectionParam ? sectionIdToReviewPhaseId(sectionParam) : null;
+
   return (
     <ErrorBoundary fallback={<ErrorMessage />}>
       <Suspense fallback={<ReviewSettingsSkeleton />}>
-        <ReviewSettingsContent {...props} />
+        <ReviewSettingsContent key={phaseKey ?? 'reviewSettings'} {...props} />
       </Suspense>
     </ErrorBoundary>
   );

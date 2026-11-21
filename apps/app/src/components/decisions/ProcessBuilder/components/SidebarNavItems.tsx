@@ -16,12 +16,14 @@ import {
   type SectionId,
   type SidebarItem,
   isPhaseSection,
+  isReviewPhaseSection,
   isSectionId,
   phaseToSectionId,
 } from '../navigationConfig';
 import type { ProcessPhase } from '../useProcessPhases';
 
 type StaticSidebarItem = Extract<SidebarItem, { isDynamic?: false }>;
+type DynamicSidebarItem = Extract<SidebarItem, { isDynamic: true }>;
 
 interface SidebarNavItemsProps {
   visibleSections: SidebarItem[];
@@ -52,11 +54,13 @@ function NavRow({
   label,
   isActive,
   incomplete,
+  isUserAuthored = false,
   onClick,
 }: {
   label: string;
   isActive: boolean;
   incomplete: boolean;
+  isUserAuthored?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -66,7 +70,13 @@ function NavRow({
       onClick={onClick}
       className="w-full cursor-pointer justify-between gap-2"
     >
-      <span className="truncate">{label}</span>
+      {isUserAuthored ? (
+        <span dir="auto" className="truncate ltr:text-left rtl:text-right">
+          {label}
+        </span>
+      ) : (
+        <span className="truncate">{label}</span>
+      )}
       {incomplete && <IncompleteDot />}
     </SidebarMenuSubButton>
   );
@@ -81,6 +91,10 @@ export function SidebarNavItems({
   onSectionClick,
 }: SidebarNavItemsProps) {
   const t = useTranslations();
+  const reviewPhaseSections = visibleSections.filter(
+    (section): section is DynamicSidebarItem =>
+      !!section.isDynamic && isReviewPhaseSection(section.id),
+  );
 
   return (
     <SidebarGroup className="p-0">
@@ -101,6 +115,9 @@ export function SidebarNavItems({
                 (s): s is StaticSidebarItem =>
                   !s.isDynamic && s.parentSectionId === section.id,
               )}
+              dynamicChildSections={
+                section.id === 'reviewSettings' ? reviewPhaseSections : []
+              }
               phases={phases}
               currentSectionId={currentSectionId}
               phaseValidation={phaseValidation}
@@ -116,6 +133,7 @@ export function SidebarNavItems({
 interface SectionItemProps {
   section: StaticSidebarItem;
   childSections: StaticSidebarItem[];
+  dynamicChildSections: DynamicSidebarItem[];
   phases: ProcessPhase[];
   currentSectionId: string | undefined;
   phaseValidation: Record<string, boolean>;
@@ -126,6 +144,7 @@ interface SectionItemProps {
 function SectionItem({
   section,
   childSections,
+  dynamicChildSections,
   phases,
   currentSectionId,
   phaseValidation,
@@ -157,8 +176,21 @@ function SectionItem({
           ))}
         </SidebarMenuSub>
       )}
-      {childSections.length > 0 && (
+      {(childSections.length > 0 || dynamicChildSections.length > 0) && (
         <SidebarMenuSub className="me-0 pe-0">
+          {dynamicChildSections.map((child) => (
+            <SidebarMenuSubItem key={child.id}>
+              <NavRow
+                label={
+                  child.labelKey || t('decisions.processBuilder.untitledPhase')
+                }
+                isActive={currentSectionId === child.id}
+                incomplete={false}
+                isUserAuthored
+                onClick={() => onSectionClick(child.id)}
+              />
+            </SidebarMenuSubItem>
+          ))}
           {childSections.map((child) => (
             <SidebarMenuSubItem key={child.id}>
               <NavRow
