@@ -13,7 +13,7 @@ import { Header2, Header3 } from '@op/sense/Header';
 import { Sheet, SheetContent, SheetFooter, SheetTitle } from '@op/sense/Sheet';
 import { Skeleton } from '@op/sense/Skeleton';
 import { type ReactNode, Suspense, useId, useState } from 'react';
-import { LuExpand, LuUsers, LuX } from 'react-icons/lu';
+import { LuMaximize2, LuUsers, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -78,31 +78,33 @@ export function ReviewerSheet({
         side="inline-end"
         // sense labels its built-in close "Close" in English.
         showCloseButton={false}
-        className="w-full gap-0 p-0 sm:max-w-2xl"
+        className="w-full gap-0 p-0 sm:max-w-148"
       >
         {/* The reviewer's name arrives with the query, so the dialog needs a static name. */}
         <SheetTitle className="sr-only">
           {t('decisions.review.reviewerPanelLabel')}
         </SheetTitle>
 
-        <div className="flex shrink-0 items-center justify-end gap-1 border-b px-4 py-3">
+        <div className="flex shrink-0 items-center justify-end gap-1 px-4 pt-4">
           {shownId ? (
             <ButtonLink
               href={pageHref(shownId)}
               variant="ghost"
               size="icon-sm"
+              className="text-muted-foreground hover:text-foreground"
               aria-label={t('decisions.review.openReviewerPageAction')}
             >
-              <LuExpand className="size-4" />
+              <LuMaximize2 className="size-4" />
             </ButtonLink>
           ) : null}
           <Button
             variant="ghost"
             size="icon-sm"
+            className="text-muted-foreground hover:text-foreground"
             onClick={onClose}
             aria-label={t('Close')}
           >
-            <LuX className="size-5" />
+            <LuX className="size-4" />
           </Button>
         </div>
 
@@ -173,7 +175,7 @@ function ReviewerSheetContent({
     <>
       <ScrollRegion ref={setScrollRoot}>
         <div className="flex flex-col gap-2">
-          <Header2>{name}</Header2>
+          <Header2 className="font-normal">{name}</Header2>
           {contact ? (
             <p className="text-base break-words text-muted-foreground">
               <bdi>{contact}</bdi>
@@ -186,26 +188,33 @@ function ReviewerSheetContent({
           <ReviewerStats reviewer={summary} className="mt-6" />
         ) : null}
 
-        {summary.total === 0 ? (
-          <ReviewerNoAssignments input={input} name={name} />
-        ) : (
-          <div className="mt-10 flex flex-col gap-4">
-            <Header3 id={headingId}>
-              {t('decisions.review.assignedProposalsHeading', {
-                count: summary.total,
-              })}
-            </Header3>
-            <ReviewerAssignmentList
-              assignments={assignments}
-              route={route}
-              labelledBy={headingId}
+        <div className="mt-10 flex flex-col gap-4">
+          <Header3 id={headingId}>
+            {t('decisions.review.assignedProposalsHeading', {
+              count: summary.total,
+            })}
+          </Header3>
+          {summary.total === 0 ? (
+            // The design's compact empty state: no side padding, smaller copy.
+            <ReviewerNoAssignments
+              input={input}
+              name={name}
+              className="gap-4 px-0 pt-0 pb-2 **:data-[slot=empty-description]:text-sm **:data-[slot=empty-title]:text-title **:data-[slot=empty-title]:font-normal"
             />
-            <AssignmentsNextPage
-              pagination={pagination}
-              scrollRoot={scrollRoot}
-            />
-          </div>
-        )}
+          ) : (
+            <>
+              <ReviewerAssignmentList
+                assignments={assignments}
+                route={route}
+                labelledBy={headingId}
+              />
+              <AssignmentsNextPage
+                pagination={pagination}
+                scrollRoot={scrollRoot}
+              />
+            </>
+          )}
+        </div>
       </ScrollRegion>
 
       <SheetFooter className="shrink-0 flex-row items-center justify-between gap-4 px-6 py-5">

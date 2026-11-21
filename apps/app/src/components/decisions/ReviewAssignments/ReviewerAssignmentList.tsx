@@ -76,7 +76,7 @@ function ReviewerAssignmentItem({
       variant="outline"
       className="relative min-h-19 flex-nowrap gap-3 hover:bg-muted"
     >
-      <ItemContent className="min-w-0">
+      <ItemContent className="min-w-0 gap-0">
         <ItemTitle className="w-full font-normal">
           {/* `static` keeps the card the ::after's containing block. */}
           <Link

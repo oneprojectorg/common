@@ -33,14 +33,16 @@ import type {
 export function ReviewerNoAssignments({
   input,
   name,
+  className,
 }: {
   input: ReviewerAssignmentsInput;
   name: string;
+  className?: string;
 }) {
   const t = useTranslations();
 
   return (
-    <Empty>
+    <Empty className={className}>
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <LuListChecks className="size-6" />
@@ -223,9 +225,9 @@ export function ReviewerStats({
 
 function StatCard({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <Card className="gap-2 p-4">
-      <span className="text-base text-muted-foreground">{label}</span>
-      <span className="font-serif text-headline font-light tabular-nums">
+    <Card className="gap-0 p-4">
+      <span className="truncate text-base text-muted-foreground">{label}</span>
+      <span className="font-serif text-headline whitespace-nowrap tabular-nums">
         {children}
       </span>
     </Card>
