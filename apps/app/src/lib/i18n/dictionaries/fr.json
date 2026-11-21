@@ -2070,6 +2070,8 @@
       "inviteSent": "Invitation envoyée à <bdi>{email}</bdi>",
       "inviteFailed": "Impossible d’inviter <bdi>{email}</bdi>.",
       "inviteMovedToAdmin": "<bdi>{email}</bdi> deviendra administrateur en acceptant son invitation.",
+      "queuedInviteMovedToAdmin": "<bdi>{email}</bdi> deviendra administrateur en acceptant son invitation, qui sera envoyée à la publication du processus.",
+      "adminAddFailed": "Impossible de rendre <bdi>{name}</bdi> administrateur.",
       "addingAdminLabel": "Ajout en cours…",
       "removingAdminLabel": "Suppression en cours…",
       "youBadge": "Vous",

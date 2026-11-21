@@ -293,6 +293,67 @@ describe('ProcessAdminsPanel', () => {
     expect(spies.invite).not.toHaveBeenCalled();
   });
 
+  it('picks a person from the search and promotes them by name', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+      member({ id: 'paul', name: 'Paul', roles: [REVIEWER] }),
+    ];
+    data.searchResults = [
+      {
+        results: [
+          {
+            id: 'p-paul',
+            name: 'Paul',
+            rank: 1,
+            user: { email: 'paul@example.org' },
+          },
+        ],
+      },
+    ];
+    const user = renderPanel();
+
+    await user.type(searchBox(), 'pa');
+    await user.click(await screen.findByRole('option', { name: /Paul/ }));
+
+    expect(spies.lookup).toHaveBeenCalledWith({
+      profileId: 'profile-1',
+      query: 'paul@example.org',
+      limit: 100,
+    });
+    expect(spies.updateUserRoles).toHaveBeenCalledWith({
+      profileUserId: 'pu-paul',
+      roleIds: [REVIEWER, ADMIN],
+    });
+    await waitFor(() =>
+      expect(toastMarkup(spies.toastSuccess)).toEqual([
+        '<bdi>Paul</bdi> is now an admin.',
+      ]),
+    );
+  });
+
+  it('says a moved invitation already sent needs only to be accepted', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+    ];
+    data.invites = [
+      {
+        id: 'inv-other',
+        email: 'other@example.org',
+        accessRoleId: REVIEWER,
+        notifiedAt: '2026-11-01T00:00:00.000Z',
+      },
+    ];
+    const user = renderPanel();
+
+    await pickEmail(user, 'other@example.org');
+
+    await waitFor(() =>
+      expect(toastMarkup(spies.toastSuccess)).toEqual([
+        '<bdi>other@example.org</bdi> will be an admin once they accept the invitation.',
+      ]),
+    );
+  });
+
   it('moves a pending invitation to the admin role without claiming an email went out', async () => {
     data.members = [
       member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
@@ -310,7 +371,7 @@ describe('ProcessAdminsPanel', () => {
     });
     await waitFor(() =>
       expect(toastMarkup(spies.toastSuccess)).toEqual([
-        '<bdi>other@example.org</bdi> will be an admin once they accept the invitation.',
+        '<bdi>other@example.org</bdi> will be an admin once they accept. Their invitation is sent when the process is published.',
       ]),
     );
     expect(spies.invite).not.toHaveBeenCalled();
@@ -414,7 +475,7 @@ describe('ProcessAdminsPanel', () => {
 
       await waitFor(() =>
         expect(toastMarkup(spies.toastError)).toEqual([
-          `<bdi>${email}</bdi> could not be invited.`,
+          `<bdi>${email}</bdi> could not be made an admin.`,
         ]),
       );
       await waitFor(() => expect(screen.queryByText('Adding…')).toBeNull());

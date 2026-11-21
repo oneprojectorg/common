@@ -2070,6 +2070,8 @@
       "inviteSent": "Casuumaadda waa loo diray <bdi>{email}</bdi>",
       "inviteFailed": "<bdi>{email}</bdi> lama casuumi karin.",
       "inviteMovedToAdmin": "<bdi>{email}</bdi> wuxuu noqonayaa maamule marka uu aqbalo casuumaadda.",
+      "queuedInviteMovedToAdmin": "<bdi>{email}</bdi> wuxuu noqonayaa maamule marka uu aqbalo casuumaadda. Casuumaadda waxaa la diri doonaa marka habka la daabaco.",
+      "adminAddFailed": "<bdi>{name}</bdi> lama samayn karin maamule.",
       "addingAdminLabel": "Waa la darayaa…",
       "removingAdminLabel": "Waa la saarayaa…",
       "youBadge": "Adiga",
