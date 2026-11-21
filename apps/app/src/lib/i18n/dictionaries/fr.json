@@ -2032,6 +2032,9 @@
       "votingPhase": "Vote",
       "workThemUp": "Les développer",
       "workThemUpDescription": "Ce qui avance devient quelque chose de plus complet."
+    },
+    "processAdmin": {
+      "pageTitle": "Gérer {decisionName}"
     }
   },
   "loadingProgress": "En train de charger…",

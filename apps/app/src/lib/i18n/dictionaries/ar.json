@@ -2032,6 +2032,9 @@
       "votingPhase": "تصويت",
       "workThemUp": "تطويرها",
       "workThemUpDescription": "ما يتقدّم يُبنى ليصبح أكثر اكتمالاً."
+    },
+    "processAdmin": {
+      "pageTitle": "إدارة {decisionName}"
     }
   },
   "loadingProgress": "جارٍ التحميل...",

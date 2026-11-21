@@ -2032,6 +2032,9 @@
       "votingPhase": "Codbixin",
       "workThemUp": "Horumar kuwa",
       "workThemUpDescription": "Waxa hore u socda waxaa laga dhigaa wax ka dhameystiran."
+    },
+    "processAdmin": {
+      "pageTitle": "Maamul {decisionName}"
     }
   },
   "loadingProgress": "Waa la soo rarayaa...",
