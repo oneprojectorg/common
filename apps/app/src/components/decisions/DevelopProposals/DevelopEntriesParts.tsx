@@ -12,11 +12,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from '@op/sense/InputGroup';
 import { Skeleton } from '@op/sense/Skeleton';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { Table, TableCell, TableRowHeader } from '@op/sense/Table';
@@ -30,10 +25,11 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { LuFileText, LuSearch } from 'react-icons/lu';
+import { LuFileText } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
+import { FilterBarSearch } from '../FilterBar';
 import { useOpenProposalInSheet } from '../ProposalSheet/proposalSheetState';
 import { PROPOSALS_PAGE_LIMIT } from '../proposalFilterQuery';
 import {
@@ -142,18 +138,11 @@ export function DevelopEntriesSearch() {
   const { state, actions } = useDevelopEntriesContext();
 
   return (
-    <InputGroup className="w-full sm:w-56">
-      <InputGroupAddon align="inline-start">
-        <LuSearch aria-hidden />
-      </InputGroupAddon>
-      <InputGroupInput
-        type="search"
-        value={state.search}
-        onChange={(event) => actions.setSearch(event.target.value)}
-        placeholder={t('Search')}
-        aria-label={t('decisions.develop.searchEntriesLabel')}
-      />
-    </InputGroup>
+    <FilterBarSearch
+      value={state.search}
+      onChange={actions.setSearch}
+      label={t('decisions.develop.searchEntriesLabel')}
+    />
   );
 }
 

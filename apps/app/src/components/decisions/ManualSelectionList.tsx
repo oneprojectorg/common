@@ -33,6 +33,7 @@ import {
 import { ProposalCardDialogProvider } from './ProposalCardDialogContext';
 import { SelectableProposalsTable } from './SelectableProposalsTable';
 import { SelectionFooter } from './SelectionFooter';
+import { ALL_CATEGORIES } from './proposalFilterQuery';
 import { useManualAwardDraft } from './useManualAwardDraft';
 import { useManualSelection } from './useManualSelection';
 import { useProposalAwards } from './useProposalAwards';
@@ -62,12 +63,13 @@ export const ManualSelectionList = ({
   const pathname = usePathname();
   const isFinalPhase = confirmVariant === 'finalPhase';
 
-  const [selectedCategory, setSelectedCategory] = useState('all-categories');
+  const [selectedCategory, setSelectedCategory] =
+    useState<string>(ALL_CATEGORIES);
   const [sortOrder, setSortOrder] =
     useState<SelectionFilters['sortOrder']>('votes');
 
   const categoryId =
-    selectedCategory === 'all-categories' ? undefined : selectedCategory;
+    selectedCategory === ALL_CATEGORIES ? undefined : selectedCategory;
 
   const [[{ items: categories }, instance]] = trpc.useSuspenseQueries((q) => [
     q.decision.getCategories({ processInstanceId: instanceId }),
@@ -334,6 +336,7 @@ export const ManualSelectionList = ({
         <ManualSelectionToolbar
           count={candidates.length}
           categories={categories}
+          decisionSlug={decisionSlug}
           filters={toolbarFilters}
           onChange={handleToolbarChange}
           pinOffset={pinOffset}
@@ -351,7 +354,7 @@ export const ManualSelectionList = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setSelectedCategory('all-categories')}
+                onClick={() => setSelectedCategory(ALL_CATEGORIES)}
               >
                 {t('decisions.review.showAllProposalsAction')}
               </Button>

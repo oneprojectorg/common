@@ -1,12 +1,12 @@
 import { useTranslations } from '@/lib/i18n';
 
-import { ResponsiveSelect } from './ResponsiveSelect';
+import { FilterBarSelect } from './FilterBar';
 import { usesDistrictCategoryTerm } from './categoryTerm';
 import { ALL_CATEGORIES } from './proposalFilterQuery';
 
 /**
- * Category filter dropdown shared by the proposals list and the review
- * screen, including the per-decision "districts" copy override.
+ * Category filter dropdown shared by the decision lists, including the
+ * per-decision "districts" copy override.
  */
 export const CategoryFilterSelect = ({
   decisionSlug,
@@ -26,11 +26,11 @@ export const CategoryFilterSelect = ({
   const usesDistricts = usesDistrictCategoryTerm(decisionSlug);
 
   return (
-    <ResponsiveSelect
-      selectedKey={selectedCategory}
-      onSelectionChange={onSelectCategory}
+    <FilterBarSelect
+      value={selectedCategory}
+      onChange={onSelectCategory}
       className={className}
-      aria-label={
+      label={
         usesDistricts ? t('filterByDistrictLabel') : t('filterByCategoryLabel')
       }
       items={[

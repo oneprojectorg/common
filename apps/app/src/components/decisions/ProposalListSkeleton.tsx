@@ -1,5 +1,6 @@
 import { Skeleton } from '@op/sense/Skeleton';
 
+import { FilterBar, FilterBarEnd, FilterBarStart } from './FilterBar';
 import { ProposalCardSkeleton } from './ProposalCardSkeleton';
 import { ProposalMasonry } from './ProposalMasonry';
 
@@ -19,16 +20,16 @@ export const ProposalListSkeletonGrid = () => (
 );
 
 export const ProposalFilterBarSkeleton = () => (
-  <div className="flex flex-wrap items-center justify-between gap-4">
-    <div className="flex items-center gap-4">
+  <FilterBar>
+    <FilterBarStart>
       <Skeleton className="h-6 w-40" />
-    </div>
-    <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
+    </FilterBarStart>
+    <FilterBarEnd>
       <Skeleton className="h-10 w-32" />
       <Skeleton className="h-10 w-32" />
       <Skeleton className="h-10 w-32" />
-    </div>
-  </div>
+    </FilterBarEnd>
+  </FilterBar>
 );
 
 export const ProposalListSkeleton = () => {
