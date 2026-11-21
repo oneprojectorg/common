@@ -60,11 +60,18 @@ describe('findAdminRole', () => {
 });
 
 describe('getAdminPickAction', () => {
+  const reviewer = member({
+    id: 'pu-reviewer',
+    profileId: 'p-reviewer',
+    roles: [REVIEWER],
+  });
   const members = [
-    member({ id: 'pu-reviewer', profileId: 'p-reviewer', roles: [REVIEWER] }),
+    reviewer,
     member({ id: 'pu-mail', email: 'Mail@Example.org', roles: [REVIEWER] }),
+    member({ id: 'pu-admin', email: 'admin@example.org' }),
   ];
-  const invites = [{ id: 'invite-1', email: 'pending@example.org' }];
+  const pendingInvite = { id: 'invite-1', email: 'pending@example.org' };
+  const invites = [pendingInvite];
 
   it('promotes an existing member found by profile, keeping their roles', () => {
     expect(
@@ -76,7 +83,7 @@ describe('getAdminPickAction', () => {
       }),
     ).toEqual({
       kind: 'promote',
-      profileUserId: 'pu-reviewer',
+      member: reviewer,
       roleIds: [REVIEWER, ADMIN],
     });
   });
@@ -93,7 +100,37 @@ describe('getAdminPickAction', () => {
         invites,
         roleId: ADMIN,
       }),
-    ).toMatchObject({ kind: 'promote', profileUserId: 'pu-mail' });
+    ).toMatchObject({ kind: 'promote', member: { id: 'pu-mail' } });
+  });
+
+  it('does not add the admin role twice to someone who already holds it', () => {
+    expect(
+      getAdminPickAction({
+        option: {
+          value: 'add-email',
+          kind: 'email',
+          email: 'admin@example.org',
+        },
+        members,
+        invites,
+        roleId: ADMIN,
+      }),
+    ).toMatchObject({ kind: 'promote', roleIds: [ADMIN] });
+  });
+
+  it('promotes a member over moving an invite sent to the same email', () => {
+    expect(
+      getAdminPickAction({
+        option: {
+          value: 'add-email',
+          kind: 'email',
+          email: 'mail@example.org',
+        },
+        members,
+        invites: [{ id: 'invite-2', email: 'mail@example.org' }],
+        roleId: ADMIN,
+      }),
+    ).toMatchObject({ kind: 'promote', member: { id: 'pu-mail' } });
   });
 
   it('moves a pending invite onto the admin role instead of inviting twice', () => {
@@ -108,7 +145,7 @@ describe('getAdminPickAction', () => {
         invites,
         roleId: ADMIN,
       }),
-    ).toEqual({ kind: 'moveInvite', inviteId: 'invite-1' });
+    ).toEqual({ kind: 'moveInvite', invite: pendingInvite });
   });
 
   it('invites someone new', () => {
@@ -126,15 +163,17 @@ describe('getAdminPickAction', () => {
 describe('getAdminRemoveAction', () => {
   it('drops only the admin role from someone who holds another', () => {
     expect(
-      getAdminRemoveAction(
-        member({ id: 'pu', roles: [ADMIN, REVIEWER] }),
-        ADMIN,
-      ),
+      getAdminRemoveAction({
+        admin: member({ id: 'pu', roles: [ADMIN, REVIEWER] }),
+        roleId: ADMIN,
+      }),
     ).toEqual({ kind: 'demote', profileUserId: 'pu', roleIds: [REVIEWER] });
   });
 
   it('removes the membership when admin is the only role', () => {
-    expect(getAdminRemoveAction(member({ id: 'pu' }), ADMIN)).toEqual({
+    expect(
+      getAdminRemoveAction({ admin: member({ id: 'pu' }), roleId: ADMIN }),
+    ).toEqual({
       kind: 'remove',
       profileUserId: 'pu',
     });

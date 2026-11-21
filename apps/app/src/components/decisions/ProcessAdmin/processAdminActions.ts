@@ -21,9 +21,9 @@ export type AdminPickerOption<Result extends { id: string } = { id: string }> =
   | { value: string; kind: 'person'; result: Result; email: string }
   | { value: string; kind: 'email'; email: string };
 
-type AdminPickAction =
-  | { kind: 'promote'; profileUserId: string; roleIds: string[] }
-  | { kind: 'moveInvite'; inviteId: string }
+type AdminPickAction<Member, Invite> =
+  | { kind: 'promote'; member: Member; roleIds: string[] }
+  | { kind: 'moveInvite'; invite: Invite }
   | { kind: 'invite'; email: string };
 
 /** What removing an admin should call: drop the role when they hold others, else the membership. */
@@ -39,17 +39,20 @@ export function findAdminRole<R extends AdminRole>(roles: R[]): R | undefined {
   );
 }
 
-export function getAdminPickAction({
+export function getAdminPickAction<
+  Member extends AdminMember,
+  Invite extends AdminInvite,
+>({
   option,
   members,
   invites,
   roleId,
 }: {
   option: AdminPickerOption;
-  members: AdminMember[];
-  invites: AdminInvite[];
+  members: Member[];
+  invites: Invite[];
   roleId: string;
-}): AdminPickAction {
+}): AdminPickAction<Member, Invite> {
   const email = option.email.toLowerCase();
   const member = members.find(
     (candidate) =>
@@ -62,25 +65,28 @@ export function getAdminPickAction({
     const roleIds = member.roles.map((role) => role.id);
     return {
       kind: 'promote',
-      profileUserId: member.id,
+      member,
       roleIds: roleIds.includes(roleId) ? roleIds : [...roleIds, roleId],
     };
   }
 
-  const pendingInvite = invites.find(
-    (invite) => invite.email.toLowerCase() === email,
+  const invite = invites.find(
+    (candidate) => candidate.email.toLowerCase() === email,
   );
-  if (pendingInvite) {
-    return { kind: 'moveInvite', inviteId: pendingInvite.id };
+  if (invite) {
+    return { kind: 'moveInvite', invite };
   }
 
   return { kind: 'invite', email: option.email };
 }
 
-export function getAdminRemoveAction(
-  admin: AdminMember,
-  roleId: string,
-): AdminRemoveAction {
+export function getAdminRemoveAction({
+  admin,
+  roleId,
+}: {
+  admin: AdminMember;
+  roleId: string;
+}): AdminRemoveAction {
   const otherRoleIds = admin.roles
     .filter((role) => role.id !== roleId)
     .map((role) => role.id);

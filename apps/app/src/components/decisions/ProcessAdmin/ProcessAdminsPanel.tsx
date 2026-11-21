@@ -181,6 +181,7 @@ function AdminsList({
           pending.key === key ? { key, row } : pending,
         ),
       );
+    const name = getOptionLabel(option);
     // Reserves the email at once; the row waits for the lookup so it appears where it will stay.
     setPendingAdmins((current) => [...current, { key }]);
 
@@ -199,32 +200,18 @@ function AdminsList({
         roleId,
       });
       switch (action.kind) {
-        case 'promote': {
-          const name =
-            option.kind === 'person' ? option.result.name : option.email;
-          const member = matches.find(
-            (candidate) => candidate.id === action.profileUserId,
-          );
-          if (member) {
-            showPending({ list: 'admins', member });
-          }
+        case 'promote':
+          showPending({ list: 'admins', member: action.member });
           await promote.mutateAsync({
-            profileUserId: action.profileUserId,
+            profileUserId: action.member.id,
             roleIds: action.roleIds,
           });
           toast.success(t.rich('adminAdded', { name, bdi }));
           break;
-        }
         case 'moveInvite':
-          showPending({
-            list: 'invites',
-            option,
-            movedInvite: allInvites.items.find(
-              (candidate) => candidate.id === action.inviteId,
-            ),
-          });
+          showPending({ list: 'invites', option, movedInvite: action.invite });
           await moveInvite.mutateAsync({
-            inviteId: action.inviteId,
+            inviteId: action.invite.id,
             accessRoleId: roleId,
           });
           toast.success(
@@ -326,6 +313,9 @@ const inServerOrder = (a: string, b: string) => a.localeCompare(b, 'en');
 
 const bdi = (chunks: ReactNode) => <bdi>{chunks}</bdi>;
 
+const getOptionLabel = (option: PickerOption) =>
+  option.kind === 'person' ? option.result.name : option.email;
+
 /** The members list comes back by name, then email. */
 const compareMembers = (a: ProfileUser, b: ProfileUser) =>
   inServerOrder(a.name ?? '', b.name ?? '') ||
@@ -384,6 +374,15 @@ function AdminPicker({
       : people;
   }, [searchResults, takenEmails, debouncedQuery]);
 
+  let emptyContent: ReactNode = tShared('No results');
+  if (isFetching) {
+    emptyContent = (
+      <Spinner className="size-4" aria-label={tShared('loadingProgress')} />
+    );
+  } else if (isError) {
+    emptyContent = t('adminSearchError');
+  }
+
   return (
     <Combobox
       items={options}
@@ -398,9 +397,7 @@ function AdminPicker({
           setQuery('');
         }
       }}
-      itemToStringLabel={(option: PickerOption) =>
-        option.kind === 'person' ? option.result.name : option.email
-      }
+      itemToStringLabel={getOptionLabel}
       isItemEqualToValue={(a: PickerOption, b: PickerOption) =>
         a.value === b.value
       }
@@ -421,18 +418,7 @@ function AdminPicker({
       </ComboboxChips>
       {isSearching ? (
         <ComboboxContent>
-          <ComboboxEmpty>
-            {isFetching ? (
-              <Spinner
-                className="size-4"
-                aria-label={tShared('loadingProgress')}
-              />
-            ) : isError ? (
-              t('adminSearchError')
-            ) : (
-              tShared('No results')
-            )}
-          </ComboboxEmpty>
+          <ComboboxEmpty>{emptyContent}</ComboboxEmpty>
           <ComboboxList>
             {(option: PickerOption) => (
               <ComboboxItem key={option.value} value={option}>
@@ -491,7 +477,7 @@ function AdminRow({
     successMessage: t.rich('adminRemoved', { name, bdi }),
     onRemoved,
     run: () => {
-      const action = getAdminRemoveAction(admin, roleId);
+      const action = getAdminRemoveAction({ admin, roleId });
       return action.kind === 'demote'
         ? demote.mutateAsync({
             profileUserId: action.profileUserId,
@@ -501,29 +487,33 @@ function AdminRow({
     },
   });
 
+  let description = admin.profile?.name
+    ? (admin.email ?? undefined)
+    : undefined;
+  if (isRemoving) {
+    description = t('removingAdminLabel');
+  }
+
+  let action: ReactNode = null;
+  if (isSelf) {
+    action = <Badge variant="secondary">{t('youBadge')}</Badge>;
+  } else if (canRemoveAdmin({ admin, adminCount })) {
+    action = (
+      <RemoveMenu
+        label={t('manageAdminLabel', { name })}
+        disabled={isRemoving}
+        onRemove={remove}
+      />
+    );
+  }
+
   return (
     <AdminListRow
       name={name}
       profile={{ ...admin.profile, name, email: admin.email }}
-      description={
-        isRemoving
-          ? t('removingAdminLabel')
-          : admin.profile?.name
-            ? (admin.email ?? undefined)
-            : undefined
-      }
+      description={description}
       isBusy={isRemoving}
-      action={
-        isSelf ? (
-          <Badge variant="secondary">{t('youBadge')}</Badge>
-        ) : canRemoveAdmin({ admin, adminCount }) ? (
-          <RemoveMenu
-            label={t('manageAdminLabel', { name })}
-            disabled={isRemoving}
-            onRemove={remove}
-          />
-        ) : null
-      }
+      action={action}
     />
   );
 }
