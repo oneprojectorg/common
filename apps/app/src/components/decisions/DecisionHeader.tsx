@@ -3,11 +3,7 @@
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
-import {
-  type InstanceData,
-  type ProcessInstance,
-  type ProcessPhase,
-} from '@op/api/encoders';
+import { type ProcessInstance, type ProcessPhase } from '@op/api/encoders';
 import { type ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -15,6 +11,8 @@ import { useTranslations } from '@/lib/i18n';
 import { AdminOverviewBar } from '@/components/decisions/AdminOverviewBar';
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
 import { DecisionStepperBar } from '@/components/decisions/DecisionStepperBar';
+
+import { toProcessPhases } from './toProcessPhases';
 
 interface DecisionHeaderBaseProps {
   instanceId: string;
@@ -81,25 +79,6 @@ export function DecisionHeader(props: DecisionHeaderProps) {
     );
   }
   return <DecisionHeaderContent {...props} />;
-}
-
-/**
- * Maps the encoded instanceData phases to the ProcessPhase shape the stepper
- * consumes. Shared by the query and prop header variants.
- */
-function toProcessPhases(
-  instanceData: InstanceData | undefined,
-): ProcessPhase[] {
-  return (instanceData?.phases ?? []).map((p) => ({
-    id: p.phaseId,
-    name: p.name || '',
-    description: p.description,
-    phase: {
-      startDate: p.startDate,
-      endDate: p.endDate,
-    },
-    advancementMethod: p.rules?.advancement?.method,
-  }));
 }
 
 /** Presentational header bar + optional stepper, fed by either variant below. */
@@ -186,7 +165,7 @@ function DecisionHeaderContent(props: StandardDecisionHeaderProps) {
         instance.process?.name ||
         t('decisions.untitledLabel')
       }
-      phases={toProcessPhases(instance.instanceData)}
+      phases={toProcessPhases(instance.instanceData?.phases)}
       currentStateId={instance.currentStateId || ''}
       heroImagePath={instance.instanceData?.overview?.heroImage}
     />
@@ -211,7 +190,7 @@ function DecisionHeaderFromProps(
         instance.process?.name ||
         t('decisions.untitledLabel')
       }
-      phases={toProcessPhases(instance.instanceData)}
+      phases={toProcessPhases(instance.instanceData?.phases)}
       currentStateId={instance.currentStateId || ''}
       heroImagePath={instance.instanceData?.overview?.heroImage}
     />

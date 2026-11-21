@@ -1,15 +1,13 @@
 'use client';
 
-import {
-  PROCESS_NAME_MAX_LENGTH,
-  PROCESS_NAME_MIN_LENGTH,
-} from '@op/common/client';
+import { PROCESS_NAME_MIN_LENGTH } from '@op/common/client';
 import { Field, FieldError, FieldLabel } from '@op/sense/Field';
 import { Input } from '@op/sense/Input';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { PROCESS_NAME_INPUT_MAX_LENGTH } from '../../processName';
 import { StepHeading } from '../StepHeading';
 
 const NAME_ID = 'process-name';
@@ -50,7 +48,7 @@ export function NameAccessStep({
             onChange={(event) => onNameChange(event.target.value)}
             onBlur={() => setHasBlurred(true)}
             placeholder={t('namePlaceholder')}
-            maxLength={PROCESS_NAME_MAX_LENGTH}
+            maxLength={PROCESS_NAME_INPUT_MAX_LENGTH}
             disabled={disabled}
             aria-invalid={showError}
             aria-describedby={showError ? NAME_ERROR_ID : undefined}

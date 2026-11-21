@@ -2034,7 +2034,27 @@
       "workThemUpDescription": "Ami továbblép, részletesebbé épül ki."
     },
     "processAdmin": {
-      "pageTitle": "{decisionName} kezelése"
+      "pageTitle": "{decisionName} kezelése",
+      "backToEditor": "Vissza a szerkesztőbe",
+      "viewProcess": "Folyamat megtekintése",
+      "stewardedBy": "Gondozza: <steward>{name}</steward>",
+      "aboutHeading": "A folyamatról",
+      "statusDraft": "Piszkozat",
+      "statusLive": "Élő",
+      "statusCompleted": "Befejezett",
+      "statusCancelled": "Megszakítva",
+      "noPhasesTitle": "Még nincsenek szakaszok",
+      "noPhasesDescription": "A szerkesztőben hozzáadott szakaszok itt jelennek meg.",
+      "noResourcesTitle": "Nincsenek kitűzött források",
+      "noResourcesDescription": "Útmutatók, dokumentumok és linkek, amelyeket a résztvevők használhatnak.",
+      "noAboutTitle": "Még nincs leírás",
+      "noAboutDescription": "Írd le a folyamatot a szerkesztőben, hogy a résztvevők tudják, mire való.",
+      "editTitleHint": "Szerkesztés",
+      "processNameLabel": "Folyamat neve",
+      "processNameTooShort": "A névnek legalább {min} karakterből kell állnia.",
+      "saveError": "A módosítás nem lett mentve.",
+      "addBannerAction": "Banner hozzáadása",
+      "launchAction": "Folyamat indítása"
     }
   },
   "loadingProgress": "Betöltés...",

@@ -395,7 +395,7 @@ const OverviewHero = ({
   );
 };
 
-const OverviewAbout = ({
+export const OverviewAbout = ({
   bodySlot,
   fallbackText,
 }: {
