@@ -33,6 +33,7 @@ import { isDevelopPhase } from '../utils/phaseSettings';
 export type CategoryDevelopAccess = {
   phaseId: string;
   actorProfileId: string;
+  processOwnerProfileId: string;
 } & (
   | {
       isAdmin: true;
@@ -78,6 +79,7 @@ export async function assertCategoryDevelopAccess({
       where: { id: processInstanceId },
       columns: {
         profileId: true,
+        ownerProfileId: true,
         status: true,
         currentStateId: true,
         instanceData: true,
@@ -152,6 +154,7 @@ export async function assertCategoryDevelopAccess({
     return {
       phaseId,
       actorProfileId: dbUser.profileId,
+      processOwnerProfileId: instance.ownerProfileId,
       isAdmin: true,
       taxonomyTermId,
       targetReviewerProfileId: reviewerProfileId ?? null,
@@ -186,6 +189,7 @@ export async function assertCategoryDevelopAccess({
   return {
     phaseId,
     actorProfileId: dbUser.profileId,
+    processOwnerProfileId: instance.ownerProfileId,
     isAdmin: false,
     taxonomyTermId: taxonomyTermId ?? null,
     targetReviewerProfileId: dbUser.profileId,

@@ -11,6 +11,7 @@ import { getPhases } from './instancePhases';
 /**
  * Asserts the caller may develop in the current phase, is not held by the
  * develop lock (`assertDevelopUnlocked`) and authors this developed proposal.
+ * Returns the instance and the proposals the entry was developed from.
  */
 export async function assertDevelopedProposalAuthor<
   TInstance extends {
@@ -27,7 +28,10 @@ export async function assertDevelopedProposalAuthor<
   proposal: { id: string; profileId: string };
   instance: TInstance | null;
   user: Pick<User, 'id'>;
-}): Promise<TInstance & { profileId: string }> {
+}): Promise<{
+  instance: TInstance & { profileId: string };
+  sourceProposalIds: string[];
+}> {
   if (!instance?.profileId) {
     throw new NotFoundError('Decision profile');
   }
@@ -40,19 +44,19 @@ export async function assertDevelopedProposalAuthor<
 
   const phases = await getPhases({ instance });
 
-  const [, developedEdge, author] = await Promise.all([
+  const [, developedEdges, author] = await Promise.all([
     assertProposalDevelopAccess({
       instance: { profileId: instance.profileId, phases },
       phaseId: currentPhaseId,
       user: { id: user.id },
     }),
-    db.query.proposalRelationships.findFirst({
+    db.query.proposalRelationships.findMany({
       where: {
         targetProposalId: proposal.id,
         relationshipType: ProposalRelationshipType.DEVELOPED,
         deletedAt: { isNull: true },
       },
-      columns: { id: true },
+      columns: { sourceProposalId: true },
     }),
     getProfileAccessUser({
       user: { id: user.id },
@@ -60,7 +64,7 @@ export async function assertDevelopedProposalAuthor<
     }),
   ]);
 
-  if (!developedEdge) {
+  if (developedEdges.length === 0) {
     throw new ValidationError('This proposal was not developed from another');
   }
 
@@ -73,5 +77,8 @@ export async function assertDevelopedProposalAuthor<
 
   await assertDevelopUnlocked({ instance: { ...instance, phases }, user });
 
-  return { ...instance, profileId: instance.profileId };
+  return {
+    instance: { ...instance, profileId: instance.profileId },
+    sourceProposalIds: developedEdges.map((edge) => edge.sourceProposalId),
+  };
 }

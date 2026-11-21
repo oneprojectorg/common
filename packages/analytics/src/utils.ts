@@ -655,6 +655,25 @@ export async function trackManualSelectionSubmitted(
   );
 }
 
+/**
+ * Track when a reviewer, or an admin for them, confirms the develop work of a
+ * category
+ */
+export async function trackDevelopCategoryConfirmed(
+  userId: string,
+  processId: string,
+  additionalProps?: Record<string, unknown>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'develop_category_confirmed',
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      additionalProps,
+    }),
+  );
+}
+
 export async function trackPhaseEndDateChanged(
   userId: string,
   processId: string,
