@@ -1,9 +1,6 @@
 'use client';
 
-import type {
-  ReviewAssignmentExtended,
-  ReviewerAssignments,
-} from '@op/common/client';
+import type { ReviewerAssignments } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Button } from '@op/sense/Button';
 import { Card } from '@op/sense/Card';
@@ -15,17 +12,15 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
-import { Header3 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
+import { cn } from '@op/sense/lib/utils';
 import { useFormatter } from 'next-intl';
-import { type ReactNode, useCallback, useId, useState } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
 import { LuBell, LuListChecks, LuUserX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { ProposalSheetRoute } from '../ProposalSheet/proposalSheetState';
 import { ManageAssignmentsAction } from './ManageAssignmentsAction';
-import { ReviewerAssignmentsTable } from './ReviewerAssignmentsTable';
 import {
   SendReminderDialog,
   type SendReminderTarget,
@@ -35,27 +30,45 @@ import type {
   ReviewerAssignmentsPagination,
 } from './useReviewerAssignments';
 
-interface ReviewerAssignmentsBodyProps {
+export function ReviewerNoAssignments({
+  input,
+  name,
+}: {
   input: ReviewerAssignmentsInput;
-  summary: ReviewerAssignments;
   name: string;
-  assignments: ReviewAssignmentExtended[];
-  pagination: ReviewerAssignmentsPagination;
-  route: ProposalSheetRoute;
+}) {
+  const t = useTranslations();
+
+  return (
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuListChecks className="size-6" />
+        </EmptyMedia>
+        <EmptyTitle className="text-headline font-light">
+          {t('decisions.review.noProposalsAssignedTitle')}
+        </EmptyTitle>
+        <EmptyDescription>
+          {t.rich('decisions.review.reviewerNothingToReview', {
+            name: getFirstName(name),
+            bdi: (chunks) => <bdi>{chunks}</bdi>,
+          })}
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <ManageAssignmentsAction {...input} intent="assign" />
+      </EmptyContent>
+    </Empty>
+  );
 }
 
-/** The stat cards and the assigned proposals, below a header the caller owns. */
-export function ReviewerAssignmentsBody({
-  input,
-  summary,
-  name,
-  assignments,
+/** Loads the next page when it scrolls into view, and announces the load. */
+export function AssignmentsNextPage({
   pagination: { fetchNextPage, hasNextPage, isFetchingNextPage },
-  route,
-}: ReviewerAssignmentsBodyProps) {
+}: {
+  pagination: ReviewerAssignmentsPagination;
+}) {
   const t = useTranslations();
-  const headingId = useId();
-
   const loadNextPage = useCallback(() => {
     fetchNextPage();
   }, [fetchNextPage]);
@@ -68,61 +81,20 @@ export function ReviewerAssignmentsBody({
 
   return (
     <>
-      {/* `total` drops merged-away proposals; the counts still hold their reviews. */}
-      {summary.assignedCount > 0 ? <ReviewerStats reviewer={summary} /> : null}
-
-      {summary.total === 0 ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <LuListChecks className="size-6" />
-            </EmptyMedia>
-            <EmptyTitle className="text-headline font-light">
-              {t('decisions.review.noProposalsAssignedTitle')}
-            </EmptyTitle>
-            <EmptyDescription>
-              {t.rich('decisions.review.reviewerNothingToReview', {
-                name: getFirstName(name),
-                bdi: (chunks) => <bdi>{chunks}</bdi>,
-              })}
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <ManageAssignmentsAction {...input} intent="assign" />
-          </EmptyContent>
-        </Empty>
-      ) : (
-        <div className="flex flex-col gap-4">
-          <Header3 id={headingId} className="font-light">
-            {t('decisions.review.assignedProposalsHeading', {
-              count: summary.total,
-            })}
-          </Header3>
-
-          <ReviewerAssignmentsTable
-            assignments={assignments}
-            route={route}
-            labelledBy={headingId}
-          />
-
-          {/* Hidden from the a11y tree; the `aria-live` line below announces loading. */}
-          {shouldShowTrigger ? (
-            <div ref={scrollTriggerRef} aria-hidden>
-              {isFetchingNextPage ? (
-                <div className="flex flex-col gap-2">
-                  <Skeleton className="h-15 w-full" />
-                  <Skeleton className="h-15 w-full" />
-                </div>
-              ) : null}
+      {/* Hidden from the a11y tree; the `aria-live` line below announces loading. */}
+      {shouldShowTrigger ? (
+        <div ref={scrollTriggerRef} aria-hidden>
+          {isFetchingNextPage ? (
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-15 w-full" />
+              <Skeleton className="h-15 w-full" />
             </div>
           ) : null}
-          <p aria-live="polite" className="sr-only">
-            {isFetchingNextPage
-              ? t('decisions.review.loadingMoreProposals')
-              : ''}
-          </p>
         </div>
-      )}
+      ) : null}
+      <p aria-live="polite" className="sr-only">
+        {isFetchingNextPage ? t('decisions.review.loadingMoreProposals') : ''}
+      </p>
     </>
   );
 }
@@ -200,8 +172,14 @@ export function ReviewerNotFound() {
   );
 }
 
-/** Four columns at `lg`, so later cards (started, reminders) slot in without a relayout. */
-function ReviewerStats({ reviewer }: { reviewer: ReviewerAssignments }) {
+/** Two columns; the caller widens the grid where it has the room. */
+export function ReviewerStats({
+  reviewer,
+  className,
+}: {
+  reviewer: ReviewerAssignments;
+  className?: string;
+}) {
   const t = useTranslations();
   const format = useFormatter();
 
@@ -211,10 +189,7 @@ function ReviewerStats({ reviewer }: { reviewer: ReviewerAssignments }) {
   const startedAt = reviewer.startedAt ? new Date(reviewer.startedAt) : null;
 
   return (
-    <div
-      aria-live="polite"
-      className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6"
-    >
+    <div aria-live="polite" className={cn('grid grid-cols-2 gap-4', className)}>
       <StatCard label={t('decisions.review.reviewsSubmittedLabel')}>
         {t.rich('decisions.review.reviewsSubmittedFigure', {
           submitted: reviewer.submittedCount,

@@ -8,7 +8,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
-import { Suspense, useCallback, useMemo } from 'react';
+import { Header3 } from '@op/sense/Header';
+import { Suspense, useCallback, useId, useMemo } from 'react';
 import { LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -22,10 +23,13 @@ import {
   ReviewerHeaderSkeleton,
 } from './ReviewAssignmentsSkeletons';
 import {
+  AssignmentsNextPage,
   ReviewerActions,
-  ReviewerAssignmentsBody,
+  ReviewerNoAssignments,
   ReviewerNotFound,
-} from './ReviewerAssignmentsBody';
+  ReviewerStats,
+} from './ReviewerAssignmentsParts';
+import { ReviewerAssignmentsTable } from './ReviewerAssignmentsTable';
 import { ReviewerHeader } from './ReviewerHeader';
 import {
   type ReviewerAssignmentsInput,
@@ -112,6 +116,8 @@ function ReviewerAssignmentsContent({
   input: ReviewerAssignmentsInput;
   route: ProposalSheetRoute;
 }) {
+  const t = useTranslations();
+  const headingId = useId();
   const { summary, assignments, pagination } = useReviewerAssignments(input);
 
   if (!summary?.reviewer) {
@@ -133,14 +139,28 @@ function ReviewerAssignmentsContent({
         />
       </div>
 
-      <ReviewerAssignmentsBody
-        input={input}
-        summary={summary}
-        name={name}
-        assignments={assignments}
-        pagination={pagination}
-        route={route}
-      />
+      {/* `total` drops merged-away proposals; the counts still hold their reviews. */}
+      {summary.assignedCount > 0 ? (
+        <ReviewerStats reviewer={summary} className="lg:grid-cols-4 lg:gap-6" />
+      ) : null}
+
+      {summary.total === 0 ? (
+        <ReviewerNoAssignments input={input} name={name} />
+      ) : (
+        <div className="flex flex-col gap-4">
+          <Header3 id={headingId} className="font-light">
+            {t('decisions.review.assignedProposalsHeading', {
+              count: summary.total,
+            })}
+          </Header3>
+          <ReviewerAssignmentsTable
+            assignments={assignments}
+            route={route}
+            labelledBy={headingId}
+          />
+          <AssignmentsNextPage pagination={pagination} />
+        </div>
+      )}
     </>
   );
 }
