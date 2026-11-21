@@ -59,7 +59,6 @@ export const ProposalsListFilterBar = ({
           categories={controls.categories}
           selectedCategory={controls.selectedCategory}
           onSelectCategory={controls.setSelectedCategory}
-          className="min-w-40 shrink-0"
         />
         <FilterBarSelect
           label={t('decisions.proposals.sortProposalsLabel')}

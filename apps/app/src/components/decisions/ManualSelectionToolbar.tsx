@@ -2,6 +2,7 @@
 
 import { useTranslations } from '@/lib/i18n';
 
+import { CategoryFilterSelect } from './CategoryFilterSelect';
 import { FilterBarEnd, FilterBarSelect } from './FilterBar';
 import { ProposalCount } from './ProposalCount';
 import { StickyFilterBar } from './StickyFilterBar';
@@ -21,6 +22,7 @@ export interface SelectionFilters {
 interface ManualSelectionToolbarProps {
   count: number;
   categories: Category[];
+  decisionSlug: string;
   filters: SelectionFilters;
   onChange: (patch: Partial<SelectionFilters>) => void;
   /** Px offset where the bar pins (clears the floating phase toggle). */
@@ -30,6 +32,7 @@ interface ManualSelectionToolbarProps {
 export const ManualSelectionToolbar = ({
   count,
   categories,
+  decisionSlug,
   filters,
   onChange,
   pinOffset,
@@ -41,20 +44,13 @@ export const ManualSelectionToolbar = ({
     <StickyFilterBar pinOffset={pinOffset}>
       <ProposalCount count={count} />
       <FilterBarEnd>
-        <FilterBarSelect
-          value={selectedCategory}
-          onChange={(key) => onChange({ selectedCategory: key })}
-          label={t('decisions.proposals.filterByCategoryLabel')}
-          items={[
-            {
-              id: 'all-categories',
-              label: t('decisions.proposals.allCategoriesOption'),
-            },
-            ...categories.map((category) => ({
-              id: category.id,
-              label: category.name,
-            })),
-          ]}
+        <CategoryFilterSelect
+          decisionSlug={decisionSlug}
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={(category) =>
+            onChange({ selectedCategory: category })
+          }
         />
         <FilterBarSelect
           value={sortOrder}

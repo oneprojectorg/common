@@ -219,7 +219,6 @@ function ReviewAllProposalsContent({
             categories={categories}
             selectedCategory={filters.selectedCategory}
             onSelectCategory={filters.setSelectedCategory}
-            className="min-w-40 shrink-0"
           />
           <FilterBarSelect
             value={filters.reviewStatus}

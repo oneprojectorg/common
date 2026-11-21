@@ -64,13 +64,14 @@ export const FilterBarSelect = <T extends string>({
   value,
   onChange,
   label,
-}: FilterBarSelectControl<T>) => (
+  className,
+}: FilterBarSelectControl<T> & { className?: string }) => (
   <ResponsiveSelect
     selectedKey={value}
     onSelectionChange={onChange}
     aria-label={label}
     items={items}
-    className="min-w-40 shrink-0"
+    className={cn('min-w-40 shrink-0', className)}
   />
 );
 
