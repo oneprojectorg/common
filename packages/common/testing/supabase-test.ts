@@ -89,7 +89,10 @@ function main() {
 
   switch (command) {
     case 'start':
-      executeSupabaseCommand('start', 'Starting test Supabase instance');
+      executeSupabaseCommand(
+        'start --runtime native --eager',
+        'Starting test Supabase instance',
+      );
       break;
 
     case 'stop':

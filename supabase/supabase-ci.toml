@@ -143,6 +143,8 @@ skip_nonce_check = false
 enabled = false
 
 [experimental]
+# Lets `supabase start --runtime native` run the stack without Docker.
+stack = true
 orioledb_version = ""
 s3_host = "env(S3_HOST)"
 s3_region = "env(S3_REGION)"

@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 
-/** The Mailpit instance `[inbucket]` in `supabase/supabase-e2e.toml` starts. */
+/** The Mailpit instance `[local_smtp]` in `supabase/supabase-e2e.toml` starts. */
 const MAILPIT_URL = 'http://127.0.0.1:56324';
 
 interface MailpitSearchResult {

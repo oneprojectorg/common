@@ -11,6 +11,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '../..');
 const E2E_CONFIG = path.resolve(PROJECT_ROOT, 'supabase/supabase-e2e.toml');
 const CONFIG_PATH = path.resolve(PROJECT_ROOT, 'supabase/config.toml');
+// A named stack keeps e2e apart from the test stack, which shares this project
+// root and git branch.
+const STACK = '--stack e2e';
 
 const COMMANDS = {
   start: 'Start the e2e Supabase instance',
@@ -131,23 +134,37 @@ function main() {
 
   switch (command) {
     case 'start':
-      executeSupabaseCommand('start', 'Starting e2e Supabase instance');
+      executeSupabaseCommand(
+        `start --runtime native --eager ${STACK}`,
+        'Starting e2e Supabase instance',
+      );
       break;
 
     case 'stop':
-      executeSupabaseCommand('stop', 'Stopping e2e Supabase instance');
+      executeSupabaseCommand(`stop ${STACK}`, 'Stopping e2e Supabase instance');
       break;
 
     case 'status':
-      executeSupabaseCommand('status', 'Checking e2e Supabase status');
+      executeSupabaseCommand(`status ${STACK}`, 'Checking e2e Supabase status');
       break;
 
     case 'reset':
-      executeSupabaseCommand('db reset', 'Resetting e2e database');
+      // `db reset` only targets the default stack, so recreate the named one.
+      if (
+        executeSupabaseCommand(
+          `stack destroy ${STACK} --yes`,
+          'Destroying e2e Supabase instance',
+        )
+      ) {
+        executeSupabaseCommand(
+          `start --runtime native --eager ${STACK}`,
+          'Starting e2e Supabase instance',
+        );
+      }
       break;
 
     case 'logs':
-      executeSupabaseCommand('logs', 'Showing e2e Supabase logs');
+      executeSupabaseCommand(`logs ${STACK}`, 'Showing e2e Supabase logs');
       break;
 
     case 'migrate':
