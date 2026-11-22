@@ -21,6 +21,10 @@ sql_paths = [ './seed.sql' ]
 [realtime]
 enabled = true
 
+# The native runtime will not start Studio once `[api]` is off.
+[studio]
+enabled = false
+
 [storage]
 enabled = true
 file_size_limit = "50MiB"
