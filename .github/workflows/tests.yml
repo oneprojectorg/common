@@ -91,22 +91,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: 2.99.0
-
       - name: Use CI config
         run: cp supabase/supabase-ci.toml supabase/config.toml
 
       - name: Start Supabase
         run: |
           echo "Starting Supabase with CI config..."
-          supabase start
+          # `pull_request_target` runs this file from dev against the PR's
+          # config, so the config decides the runtime.
+          if grep -qx 'stack = true' supabase/config.toml; then
+            pnpm exec supabase start --runtime native --eager
+          else
+            pnpm exec supabase start
+          fi
           echo "Supabase started successfully"
 
       - name: Check Supabase status
-        run: supabase status
+        run: pnpm exec supabase status
 
       - name: Wait for Supabase to be ready and run migrations
         run: pnpm w:db migrate:test
