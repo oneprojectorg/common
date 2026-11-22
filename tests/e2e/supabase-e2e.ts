@@ -19,7 +19,7 @@ const COMMANDS = {
   start: 'Start the e2e Supabase instance',
   stop: 'Stop the e2e Supabase instance',
   status: 'Check e2e Supabase instance status',
-  reset: 'Reset the e2e database',
+  reset: 'Destroy and restart the e2e Supabase instance',
   logs: 'Show e2e Supabase logs',
   migrate: 'Run migrations on the e2e database',
   seed: 'Seed the e2e database with test data',
@@ -150,17 +150,15 @@ function main() {
 
     case 'reset':
       // `db reset` only targets the default stack, so recreate the named one.
-      if (
-        executeSupabaseCommand(
-          `stack destroy ${STACK} --yes`,
-          'Destroying e2e Supabase instance',
-        )
-      ) {
-        executeSupabaseCommand(
-          `start --runtime native --eager ${STACK}`,
-          'Starting e2e Supabase instance',
-        );
-      }
+      // Destroy fails when no stack exists yet; start anyway.
+      executeSupabaseCommand(
+        `stack destroy ${STACK} --yes`,
+        'Destroying e2e Supabase instance',
+      );
+      executeSupabaseCommand(
+        `start --runtime native --eager ${STACK}`,
+        'Starting e2e Supabase instance',
+      );
       break;
 
     case 'logs':

@@ -24,6 +24,7 @@ This runs: `supabase:start` + `supabase:migrate` + `supabase:seed`
 ### Prerequisites
 
 - macOS on Apple silicon or Linux with glibc 2.35 or later. Supabase runs as native processes, not in Docker
+- Docker running (for the e2e Redis that `start:e2e` starts)
 - `.env.local` at repo root (copied from `.env.example`)
 
 ## Running Tests
@@ -76,7 +77,7 @@ pnpm w:e2e supabase:stop     # Stop it
 pnpm w:e2e supabase:status   # Check status
 pnpm w:e2e supabase:migrate  # Run DB migrations
 pnpm w:e2e supabase:seed     # Seed test data
-pnpm w:e2e supabase:reset    # Destroy and restart the stack (destructive)
+pnpm w:e2e supabase:reset    # Destroy and restart the stack (destructive); then migrate and seed
 ```
 
 ## Background workflows (Inngest)

@@ -29,9 +29,6 @@ The test setup uses a **separate Supabase instance** running on different ports:
 | --------- | ----------- | --------- |
 | API       | 54321       | **55321** |
 | Database  | 54322       | **55322** |
-| Studio    | 54323       | **55323** |
-| Inbucket  | 54324       | **55324** |
-| Analytics | 54327       | **55327** |
 
 This allows you to:
 
