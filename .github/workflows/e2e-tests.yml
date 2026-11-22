@@ -213,26 +213,32 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm -C ./tests/e2e exec playwright install-deps chromium
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: 2.99.0
-
       - name: Use E2E Supabase config
         run: cp supabase/supabase-e2e.toml supabase/config.toml
 
       - name: Start Supabase (E2E instance)
         run: |
           echo "Starting Supabase with E2E config (ports 56xxx)..."
-          supabase start
+          # `pull_request_target` runs this file from the base branch against
+          # the PR's config, so the config decides the runtime.
+          if grep -qx 'stack = true' supabase/config.toml; then
+            pnpm exec supabase start --runtime native --eager
+          else
+            pnpm exec supabase start
+          fi
           echo "Supabase E2E instance started successfully"
 
       - name: Check Supabase status
-        run: supabase status
+        run: pnpm exec supabase status
 
       - name: Export Supabase auth keys
         run: |
-          eval "$(supabase status -o env | grep -E '^(PUBLISHABLE_KEY|SECRET_KEY)=')"
+          if grep -qx 'stack = true' supabase/config.toml; then
+            STATUS_ENV=$(pnpm exec supabase status --env --output-format text)
+          else
+            STATUS_ENV=$(pnpm exec supabase status -o env)
+          fi
+          eval "$(echo "$STATUS_ENV" | grep -E '^(PUBLISHABLE_KEY|SECRET_KEY)=')"
           {
             echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${PUBLISHABLE_KEY}"
             echo "SUPABASE_ANON_KEY=${PUBLISHABLE_KEY}"
@@ -432,31 +438,32 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm -C ./tests/e2e exec playwright install-deps chromium
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          # Matches the other CI jobs and the `supabase` catalog pin in
-          # pnpm-workspace.yaml. This job was left behind on 2.84.2 when the
-          # rest moved, so it has been booting a different Supabase — different
-          # default images, different config handling — from everything that
-          # runs beside it.
-          version: 2.99.0
-
       - name: Use E2E Supabase config
         run: cp supabase/supabase-e2e.toml supabase/config.toml
 
       - name: Start Supabase (E2E instance)
         run: |
           echo "Starting Supabase with E2E config (ports 56xxx)..."
-          supabase start
+          # `pull_request_target` runs this file from the base branch against
+          # the PR's config, so the config decides the runtime.
+          if grep -qx 'stack = true' supabase/config.toml; then
+            pnpm exec supabase start --runtime native --eager
+          else
+            pnpm exec supabase start
+          fi
           echo "Supabase E2E instance started successfully"
 
       - name: Check Supabase status
-        run: supabase status
+        run: pnpm exec supabase status
 
       - name: Export Supabase auth keys
         run: |
-          eval "$(supabase status -o env | grep -E '^(PUBLISHABLE_KEY|SECRET_KEY)=')"
+          if grep -qx 'stack = true' supabase/config.toml; then
+            STATUS_ENV=$(pnpm exec supabase status --env --output-format text)
+          else
+            STATUS_ENV=$(pnpm exec supabase status -o env)
+          fi
+          eval "$(echo "$STATUS_ENV" | grep -E '^(PUBLISHABLE_KEY|SECRET_KEY)=')"
           {
             echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${PUBLISHABLE_KEY}"
             echo "SUPABASE_ANON_KEY=${PUBLISHABLE_KEY}"
