@@ -219,8 +219,8 @@ jobs:
       - name: Start Supabase (E2E instance)
         run: |
           echo "Starting Supabase with E2E config (ports 56xxx)..."
-          # `pull_request_target` runs this file from the base branch against
-          # the PR's config, so the config decides the runtime.
+          # `pull_request_target` runs this file from dev against the PR's
+          # config, so the config decides the runtime.
           if grep -qx 'stack = true' supabase/config.toml; then
             pnpm exec supabase start --runtime native --eager
           else
@@ -444,8 +444,8 @@ jobs:
       - name: Start Supabase (E2E instance)
         run: |
           echo "Starting Supabase with E2E config (ports 56xxx)..."
-          # `pull_request_target` runs this file from the base branch against
-          # the PR's config, so the config decides the runtime.
+          # `pull_request_target` runs this file from dev against the PR's
+          # config, so the config decides the runtime.
           if grep -qx 'stack = true' supabase/config.toml; then
             pnpm exec supabase start --runtime native --eager
           else

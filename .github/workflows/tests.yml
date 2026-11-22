@@ -97,8 +97,8 @@ jobs:
       - name: Start Supabase
         run: |
           echo "Starting Supabase with CI config..."
-          # `pull_request_target` runs this file from the base branch against
-          # the PR's config, so the config decides the runtime.
+          # `pull_request_target` runs this file from dev against the PR's
+          # config, so the config decides the runtime.
           if grep -qx 'stack = true' supabase/config.toml; then
             pnpm exec supabase start --runtime native --eager
           else
