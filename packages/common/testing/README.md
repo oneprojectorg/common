@@ -270,7 +270,7 @@ file if they conflict with other services.
 
 The CLI keys a native stack by project root and git branch. A test stack that
 still runs on another branch or worktree holds these ports, and `start` names
-its project. Stop it there, or run `pnpm exec supabase stack stop --all`. A
+its project. Stop it there, or run `pnpm exec supabase stop --all`. A
 Docker test instance from an older CLI holds them too: stop it with
 `docker stop $(docker ps -q --filter name=common-test)`.
 
