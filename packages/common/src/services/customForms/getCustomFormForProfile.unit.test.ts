@@ -168,4 +168,38 @@ describe('getCustomFormForProfile', () => {
     expect(result?.id).toBe('form');
     expect(submissionLimit).not.toHaveBeenCalled();
   });
+
+  it('returns an entry form only to a caller asking at phase entry', async () => {
+    findMany.mockResolvedValue([
+      form({ 'x-phase': 'review', 'x-show-on': 'entry' }, 'entry-form'),
+    ]);
+    const input = {
+      profileId: 'p1',
+      phaseId: 'review',
+      initialPhaseId: 'submission',
+      authUserId: 'auth-user',
+    };
+
+    const [atAction, atEntry] = await Promise.all([
+      getCustomFormForProfile(input),
+      getCustomFormForProfile({ ...input, showOn: 'entry' }),
+    ]);
+
+    expect(atAction).toBeNull();
+    expect(atEntry?.id).toBe('entry-form');
+  });
+
+  it('does not return an action form to a caller asking at phase entry', async () => {
+    findMany.mockResolvedValue([form({ 'x-phase': 'review' }, 'action-form')]);
+
+    const result = await getCustomFormForProfile({
+      profileId: 'p1',
+      phaseId: 'review',
+      initialPhaseId: 'submission',
+      showOn: 'entry',
+      authUserId: 'auth-user',
+    });
+
+    expect(result).toBeNull();
+  });
 });

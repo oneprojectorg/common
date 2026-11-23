@@ -3,7 +3,6 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { CustomForm } from '@op/api/encoders';
-import { getFormShowOn } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
 import { useQueryState } from 'nuqs';
@@ -24,43 +23,35 @@ interface PhaseEntryCustomFormProps {
   initialPhaseId?: string;
 }
 
-/** Opens the current phase's custom form when it is set to show on entry. */
-export const PhaseEntryCustomForm = (props: PhaseEntryCustomFormProps) => {
-  const [resultsLive] = useQueryState(RESULTS_LIVE_QUERY_PARAM);
+/** Opens the current phase's custom form when it is set to open on entry. */
+export const PhaseEntryCustomForm = ({
+  decisionProfileId,
+  currentPhaseId,
+  initialPhaseId,
+}: PhaseEntryCustomFormProps) => {
   const { user } = useUser();
+  const [resultsLive] = useQueryState(RESULTS_LIVE_QUERY_PARAM);
+  const [isClosed, setIsClosed] = useState(false);
+  const participantProfileId = user?.profileId;
   // The post-publish success modal owns the screen while `?resultsLive=1` is in
   // the URL, so the form waits until that param is stripped.
   const isResultsLiveDialogActive = resultsLive === '1';
 
-  if (!user?.profileId || isResultsLiveDialogActive) {
-    return null;
-  }
-
-  return (
-    <PhaseEntryCustomFormQuery
-      {...props}
-      participantProfileId={user.profileId}
-    />
+  const { data: form } = trpc.customForm.getForProfile.useQuery(
+    {
+      profileId: decisionProfileId,
+      phaseId: currentPhaseId,
+      initialPhaseId,
+      showOn: 'entry',
+    },
+    { enabled: !!participantProfileId },
   );
-};
-
-function PhaseEntryCustomFormQuery({
-  decisionProfileId,
-  currentPhaseId,
-  initialPhaseId,
-  participantProfileId,
-}: PhaseEntryCustomFormProps & { participantProfileId: string }) {
-  const [isClosed, setIsClosed] = useState(false);
-  const { data: form } = trpc.customForm.getForProfile.useQuery({
-    profileId: decisionProfileId,
-    phaseId: currentPhaseId,
-    initialPhaseId,
-  });
 
   if (
-    isClosed ||
+    !participantProfileId ||
     !form ||
-    getFormShowOn(form.schema) !== 'entry' ||
+    isClosed ||
+    isResultsLiveDialogActive ||
     hasSkipCookie(getFormSkipCookieName(form.id))
   ) {
     return null;
@@ -73,7 +64,7 @@ function PhaseEntryCustomFormQuery({
       onClose={() => setIsClosed(true)}
     />
   );
-}
+};
 
 function PhaseEntryCustomFormModal({
   form,

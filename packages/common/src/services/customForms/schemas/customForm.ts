@@ -324,6 +324,9 @@ export const getCustomFormForProfileInputSchema = z.object({
   // The process's initial phase id. A form with no `x-phase` is treated as
   // belonging to this phase, so legacy forms keep gating submission.
   initialPhaseId: z.string().optional(),
+  // The moment the caller asks at. A form set to open at another moment is
+  // not returned.
+  showOn: customFormShowOnSchema.default('action'),
 });
 
 export type GetCustomFormForProfileInput = z.infer<

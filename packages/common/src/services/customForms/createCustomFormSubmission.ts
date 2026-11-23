@@ -22,9 +22,10 @@ import { getEffectiveFormPhase, getFormShowOn } from './utils';
  * (for a proposal attachment, the proposal's own profile — its creator and
  * collaborators). The target must also belong to the form's owning process,
  * via one of these attachment sites:
- *   - a proposal whose decision process owns the form (submission/edit forms),
- *   - a participant's own profile that can read the process (forms that open
- *     on phase entry),
+ *   - for a form that opens on phase entry, the caller's own profile, when
+ *     they can read the process;
+ *   - otherwise, a proposal whose decision process owns the form
+ *     (submission/edit forms),
  *   - a participant's own profile that has voted in the process (post-vote
  *     forms), or
  *   - a reviewer's own profile with a review assignment in the form's phase
@@ -69,30 +70,14 @@ export const createCustomFormSubmission = async ({
   // The target profile must belong to the process that owns the form
   // (`form.profileId` is the process instance's profile). This stops a caller
   // from attaching their own entity to an unrelated form.
-  const proposal = await db.query.proposals.findFirst({
-    where: { profileId: input.profileId },
-    with: { processInstance: true },
-  });
-
-  const belongsViaProposal =
-    !!proposal && proposal.processInstance.profileId === form.profileId;
-
-  const belongsToForm =
-    belongsViaProposal ||
-    (await isEntryFormParticipant({
+  if (getFormShowOn(form.schema) === 'entry') {
+    await assertEntryFormParticipant({
       participantProfileId: input.profileId,
       form,
       authUserId,
-    })) ||
-    (await isParticipantInFormProcess({
-      participantProfileId: input.profileId,
-      form,
-    }));
-
-  if (!belongsToForm) {
-    throw new ValidationError(
-      'The submission target does not belong to this form',
-    );
+    });
+  } else {
+    await assertActionFormTarget({ targetProfileId: input.profileId, form });
   }
 
   // Single cast point at the DB boundary — the jsonb column holds the same
@@ -143,7 +128,8 @@ export const createCustomFormSubmission = async ({
   return submission;
 };
 
-const isEntryFormParticipant = async ({
+/** Anyone who can read the process answers an entry form, on their own profile. */
+const assertEntryFormParticipant = async ({
   participantProfileId,
   form,
   authUserId,
@@ -151,23 +137,48 @@ const isEntryFormParticipant = async ({
   participantProfileId: string;
   form: CustomForm;
   authUserId: string;
-}): Promise<boolean> => {
-  if (getFormShowOn(form.schema) !== 'entry') {
-    return false;
-  }
-
+}): Promise<void> => {
   const user = await assertUserByAuthId(authUserId);
 
   if (user.profileId !== participantProfileId) {
-    return false;
+    throw new ValidationError(
+      'The submission target does not belong to this form',
+    );
   }
 
   await assertDecisionProfileReadAccess({
     user: { id: authUserId },
     profileId: form.profileId,
   });
+};
 
-  return true;
+const assertActionFormTarget = async ({
+  targetProfileId,
+  form,
+}: {
+  targetProfileId: string;
+  form: CustomForm;
+}): Promise<void> => {
+  const proposal = await db.query.proposals.findFirst({
+    where: { profileId: targetProfileId },
+    with: { processInstance: true },
+  });
+
+  const belongsViaProposal =
+    !!proposal && proposal.processInstance.profileId === form.profileId;
+
+  const belongsToForm =
+    belongsViaProposal ||
+    (await isParticipantInFormProcess({
+      participantProfileId: targetProfileId,
+      form,
+    }));
+
+  if (!belongsToForm) {
+    throw new ValidationError(
+      'The submission target does not belong to this form',
+    );
+  }
 };
 
 const isParticipantInFormProcess = async ({

@@ -356,12 +356,9 @@ const ShowOnField = ({
       <Select
         value={showOn}
         items={labels}
-        onValueChange={(next) => {
-          const parsed = customFormShowOnSchema.safeParse(next);
-          if (parsed.success) {
-            onChange(parsed.data);
-          }
-        }}
+        onValueChange={(next) =>
+          onChange(next === 'entry' ? 'entry' : 'action')
+        }
       >
         <SelectTrigger id={id} className="w-full">
           <SelectValue />

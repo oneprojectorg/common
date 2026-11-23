@@ -12,7 +12,8 @@ import { customFormSubmissions, proposals } from '@op/db/schema';
 
 import { assertUserByAuthId } from '../assert';
 import { assertDecisionProfileReadAccess } from '../decision/assertDecisionProfileReadAccess';
-import { getEffectiveFormPhase } from './utils';
+import type { CustomFormShowOn } from './schemas/customForm';
+import { getEffectiveFormPhase, getFormShowOn } from './utils';
 
 /**
  * Returns the custom form attached to `profileId` that the caller still owes an
@@ -24,7 +25,8 @@ import { getEffectiveFormPhase } from './utils';
  * no `x-phase` keep applying to the initial/submission phase).
  *
  * A form is asked once per person per phase, so a caller who already submitted
- * the matched form gets null.
+ * the matched form gets null. A form set to open at a moment other than
+ * `showOn` also gets null.
  *
  * When `phaseId` is omitted, the first form attached to the profile is returned
  * (legacy, phase-agnostic behavior) for callers with no phase context.
@@ -33,11 +35,13 @@ export const getCustomFormForProfile = async ({
   profileId,
   phaseId,
   initialPhaseId,
+  showOn = 'action',
   authUserId,
 }: {
   profileId: string;
   phaseId?: string;
   initialPhaseId?: string;
+  showOn?: CustomFormShowOn;
   authUserId: string;
 }): Promise<CustomForm | null> => {
   const [, form] = await Promise.all([
@@ -48,7 +52,7 @@ export const getCustomFormForProfile = async ({
     getFormForPhase({ profileId, phaseId, initialPhaseId }),
   ]);
 
-  if (!form) {
+  if (!form || getFormShowOn(form.schema) !== showOn) {
     return null;
   }
 
