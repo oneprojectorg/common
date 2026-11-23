@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { schemaMappingSchema } from './schema';
 
-const mappingWith = (field: { from: string; to: string }) => ({
+const mappingWith = (field: { from: unknown; to: string }) => ({
   from: { type: 'proposal', phaseId: 'submission' },
   to: { type: 'proposal', phaseId: 'ballot' },
   fields: [field],
@@ -29,6 +29,26 @@ describe('schemaMappingSchema', () => {
       from: 'cost.__proto__.amount',
       to: 'budget',
     });
+
+    expect(schemaMappingSchema.safeParse(mapping).success).toBe(false);
+  });
+
+  it('accepts a money sum of source paths', () => {
+    const mapping = mappingWith({
+      from: { moneySum: ['answers.cost_design', 'answers.cost_construction'] },
+      to: 'budget',
+    });
+
+    expect(schemaMappingSchema.safeParse(mapping).success).toBe(true);
+  });
+
+  it.each([
+    { moneySum: [] },
+    { moneySum: ['answers.__proto__'] },
+    { moneySum: ['answers.cost_design'], extra: true },
+    { sum: ['answers.cost_design'] },
+  ])('rejects the source %j', (from) => {
+    const mapping = mappingWith({ from, to: 'budget' });
 
     expect(schemaMappingSchema.safeParse(mapping).success).toBe(false);
   });

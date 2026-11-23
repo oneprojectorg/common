@@ -29,8 +29,15 @@ export const targetKeySchema = z
     { message: 'Must be one non-empty key with no dot and no prototype key' },
   );
 
+/** The total of the money fields at these paths (ADR 0022, amended 2026-11-23). */
+const moneySumSchema = z.strictObject({
+  moneySum: z.array(fieldPathSchema).min(1),
+});
+
+export type MoneySum = z.infer<typeof moneySumSchema>;
+
 export const fieldMappingSchema = z.strictObject({
-  from: fieldPathSchema,
+  from: z.union([fieldPathSchema, moneySumSchema]),
   to: targetKeySchema,
 });
 
@@ -47,6 +54,8 @@ export type SchemaMapping = z.infer<typeof schemaMappingSchema>;
 export type MappingInput = {
   schema: SchemaRef;
   data: unknown;
+  /** The source the input belongs to: a proposal is its own, a review its proposal's. */
+  sourceId: string;
 };
 
 export type MappingResult = {

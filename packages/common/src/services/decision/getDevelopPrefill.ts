@@ -343,6 +343,7 @@ const loadMappingInputs = async ({
       return {
         schema: { type: 'proposal', phaseId: input.phaseId },
         data: proposalDataById.get(input.id),
+        sourceId: input.id,
       };
     }
     const review = reviewsById.get(input.id);
@@ -354,6 +355,7 @@ const loadMappingInputs = async ({
     return {
       schema: { type: 'review', phaseId: review.assignment.phaseId },
       data: review.reviewData,
+      sourceId: review.assignment.proposalId,
     };
   });
 };

@@ -10,6 +10,8 @@ import {
   createCategoryReviewerWithTerm,
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
+  createProposalReview,
+  createReviewAssignment,
   grantInstanceRole,
   openDevelopWindow,
   testDevelopSchema,
@@ -18,6 +20,7 @@ import {
 import {
   ProcessStatus,
   ProposalRelationshipType,
+  ProposalReviewState,
   ProposalStatus,
   processInstances,
   proposals,
@@ -174,6 +177,64 @@ const configurePrefill = async ({
     ]),
   });
   return { entryFormSchemaId: entryRow.id };
+};
+
+const usd = (amount: number) => ({ amount, currency: 'USD' });
+
+/** Sums three review cost fields of phase "initial" into the entry budget. */
+const configureCostSum = async (instanceId: string) => {
+  const entryRow = await insertFormSchema({
+    processInstanceId: instanceId,
+    name: 'Ballot entry',
+    schema: prefillEntrySchema,
+  });
+  await configureDevelopPhase(instanceId, {
+    formSchemaId: entryRow.id,
+    developPrefillMappings: [
+      {
+        from: { type: 'review', phaseId: 'initial' },
+        to: { type: 'proposal', phaseId: 'final' },
+        fields: [
+          {
+            from: {
+              moneySum: [
+                'answers.cost_design',
+                'answers.cost_construction',
+                'answers.cost_contingency',
+              ],
+            },
+            to: 'budget',
+          },
+        ],
+      },
+    ],
+  });
+};
+
+const createCostReview = async ({
+  instanceId,
+  proposalId,
+  reviewerProfileId,
+  answers,
+  state = ProposalReviewState.SUBMITTED,
+}: {
+  instanceId: string;
+  proposalId: string;
+  reviewerProfileId: string;
+  answers: Record<string, unknown>;
+  state?: ProposalReviewState;
+}) => {
+  const assignment = await createReviewAssignment({
+    processInstanceId: instanceId,
+    proposalId,
+    reviewerProfileId,
+    phaseId: 'initial',
+  });
+  return createProposalReview({
+    assignmentId: assignment.id,
+    state,
+    reviewData: { answers },
+  });
 };
 
 const EMPTY_FRAGMENT = { type: 'doc', content: [] };
@@ -1039,5 +1100,189 @@ describe.concurrent('createDevelopedProposal', () => {
       columns: { id: true },
     });
     expect(instanceProposals).toEqual([{ id: source.id }]);
+  });
+
+  describe('with a money sum of review costs', () => {
+    const setUpCostSum = async ({
+      testData,
+      sourceCount,
+    }: {
+      testData: TestDecisionsDataManager;
+      sourceCount: number;
+    }) => {
+      const { setup, instanceId, source, otherSources } =
+        await createDevelopPhaseSetup({ testData, sourceCount });
+      await configureCostSum(instanceId);
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+      const reviewers = [
+        setup.organization.profileId,
+        setup.instance.profileId,
+      ] as const;
+      const createDraft = async (sourceProposalIds: string[]) => {
+        const draft = await caller.decision.createDevelopedProposal({
+          processInstanceId: instanceId,
+          sourceProposalIds,
+          proposalData: {},
+        });
+        testData.trackProfileForCleanup(draft.profileId);
+        return readProposalData(draft.id);
+      };
+      return {
+        instanceId,
+        sources: [source, ...otherSources],
+        reviewers,
+        createDraft,
+      };
+    };
+
+    it('prefills the budget with the cost total of the submitted review, without a missing cost key or a draft review', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instanceId, sources, reviewers, createDraft } =
+        await setUpCostSum({ testData, sourceCount: 1 });
+      const [source] = sources;
+      if (!source) {
+        throw new Error('Expected a source');
+      }
+      await createCostReview({
+        instanceId,
+        proposalId: source.id,
+        reviewerProfileId: reviewers[0],
+        answers: { cost_design: usd(1000), cost_construction: usd(20000) },
+      });
+      await createCostReview({
+        instanceId,
+        proposalId: source.id,
+        reviewerProfileId: reviewers[1],
+        answers: { cost_design: usd(9999) },
+        state: ProposalReviewState.DRAFT,
+      });
+
+      await expect(createDraft([source.id])).resolves.toMatchObject({
+        budget: usd(21000),
+      });
+    });
+
+    it('prefills the budget only for a source whose submitted reviews agree on the total', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instanceId, sources, reviewers, createDraft } =
+        await setUpCostSum({ testData, sourceCount: 3 });
+      const [agreeing, disagreeing, unreviewed] = sources;
+      if (!agreeing || !disagreeing || !unreviewed) {
+        throw new Error('Expected three sources');
+      }
+      await Promise.all([
+        createCostReview({
+          instanceId,
+          proposalId: agreeing.id,
+          reviewerProfileId: reviewers[0],
+          answers: { cost_design: usd(100), cost_construction: usd(200) },
+        }),
+        createCostReview({
+          instanceId,
+          proposalId: agreeing.id,
+          reviewerProfileId: reviewers[1],
+          answers: { cost_design: usd(250), cost_contingency: usd(50) },
+        }),
+        createCostReview({
+          instanceId,
+          proposalId: disagreeing.id,
+          reviewerProfileId: reviewers[0],
+          answers: { cost_design: usd(100) },
+        }),
+        createCostReview({
+          instanceId,
+          proposalId: disagreeing.id,
+          reviewerProfileId: reviewers[1],
+          answers: { cost_design: usd(900) },
+        }),
+      ]);
+
+      await expect(createDraft([agreeing.id])).resolves.toMatchObject({
+        budget: usd(300),
+      });
+      await expect(createDraft([disagreeing.id])).resolves.not.toHaveProperty(
+        'budget',
+      );
+      await expect(createDraft([unreviewed.id])).resolves.not.toHaveProperty(
+        'budget',
+      );
+    });
+
+    it('prefills a merged entry with the sum of its sources, and leaves it empty when one source has no total', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instanceId, sources, reviewers, createDraft } =
+        await setUpCostSum({ testData, sourceCount: 3 });
+      const [garden, benches, unreviewed] = sources;
+      if (!garden || !benches || !unreviewed) {
+        throw new Error('Expected three sources');
+      }
+      await Promise.all([
+        createCostReview({
+          instanceId,
+          proposalId: garden.id,
+          reviewerProfileId: reviewers[0],
+          answers: { cost_design: usd(100) },
+        }),
+        createCostReview({
+          instanceId,
+          proposalId: benches.id,
+          reviewerProfileId: reviewers[0],
+          answers: { cost_construction: usd(50), cost_contingency: usd(5) },
+        }),
+      ]);
+
+      await expect(createDraft([garden.id, benches.id])).resolves.toMatchObject(
+        { budget: usd(155) },
+      );
+      await expect(
+        createDraft([garden.id, unreviewed.id]),
+      ).resolves.not.toHaveProperty('budget');
+    });
+
+    it('leaves the budget empty for mixed currencies and for a total of zero', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instanceId, sources, reviewers, createDraft } =
+        await setUpCostSum({ testData, sourceCount: 2 });
+      const [mixed, zero] = sources;
+      if (!mixed || !zero) {
+        throw new Error('Expected two sources');
+      }
+      await Promise.all([
+        createCostReview({
+          instanceId,
+          proposalId: mixed.id,
+          reviewerProfileId: reviewers[0],
+          answers: {
+            cost_design: usd(100),
+            cost_construction: { amount: 100, currency: 'EUR' },
+          },
+        }),
+        createCostReview({
+          instanceId,
+          proposalId: zero.id,
+          reviewerProfileId: reviewers[0],
+          answers: { cost_design: usd(0) },
+        }),
+      ]);
+
+      await expect(createDraft([mixed.id])).resolves.not.toHaveProperty(
+        'budget',
+      );
+      await expect(createDraft([zero.id])).resolves.not.toHaveProperty(
+        'budget',
+      );
+    });
   });
 });

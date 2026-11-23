@@ -1,8 +1,10 @@
 import { isDeepStrictEqual } from 'node:util';
 
 import { evaluateExpression } from '../services/decision/selectionPipeline/expressionEvaluator';
-import { readOwnField } from './fieldPath';
+import { isEmptyValue, readOwnField } from './fieldPath';
+import { resolveMoneySum } from './moneySum';
 import type {
+  FieldMapping,
   MappingInput,
   MappingResult,
   SchemaMapping,
@@ -10,8 +12,9 @@ import type {
 } from './schema';
 
 /**
- * Copies each field of each mapping from each input of the mapping's source
- * schema. A target field is filled only when all its values are equal.
+ * Maps each field of each mapping from each input of the mapping's source
+ * schema. A target field is filled only when all its values are equal, and
+ * never when a `moneySum` rule for it gives no total.
  */
 export const mapToSchema = ({
   mappings,
@@ -23,6 +26,8 @@ export const mapToSchema = ({
   targetSchema: SchemaRef;
 }): MappingResult => {
   const valuesByField = new Map<string, unknown[]>();
+  const blockedFields = new Set<string>();
+  const sourceIds = [...new Set(inputs.map((input) => input.sourceId))];
 
   for (const mapping of mappings) {
     if (!isSameSchemaRef({ left: mapping.to, right: targetSchema })) {
@@ -33,18 +38,18 @@ export const mapToSchema = ({
     );
 
     for (const field of mapping.fields) {
-      for (const source of sources) {
-        const value = evaluateSourceField({
-          data: source.data,
-          path: field.from,
-        });
-        if (value === undefined) {
-          continue;
-        }
-        const values = valuesByField.get(field.to) ?? [];
-        values.push(value);
-        valuesByField.set(field.to, values);
+      const values = getFieldValues({ field, sources, sourceIds });
+      if (values === 'blocked') {
+        blockedFields.add(field.to);
+        continue;
       }
+      if (values.length === 0) {
+        continue;
+      }
+      valuesByField.set(field.to, [
+        ...(valuesByField.get(field.to) ?? []),
+        ...values,
+      ]);
     }
   }
 
@@ -53,6 +58,7 @@ export const mapToSchema = ({
   const data = Object.fromEntries(
     [...valuesByField].flatMap<[string, unknown]>(
       ([field, [first, ...rest]]) =>
+        !blockedFields.has(field) &&
         rest.every((value) => isDeepStrictEqual(first, value))
           ? [[field, structuredClone(first)]]
           : [],
@@ -60,6 +66,31 @@ export const mapToSchema = ({
   );
 
   return { data };
+};
+
+/** `blocked` when a `moneySum` rule gives no total. */
+const getFieldValues = ({
+  field,
+  sources,
+  sourceIds,
+}: {
+  field: FieldMapping;
+  sources: MappingInput[];
+  sourceIds: string[];
+}): unknown[] | 'blocked' => {
+  if (typeof field.from !== 'string') {
+    const total = resolveMoneySum({
+      rule: field.from,
+      inputs: sources,
+      sourceIds,
+    });
+    return total ? [total] : 'blocked';
+  }
+  const path = field.from;
+  return sources.flatMap((source) => {
+    const value = evaluateSourceField({ data: source.data, path });
+    return value === undefined ? [] : [value];
+  });
 };
 
 const isSameSchemaRef = ({
@@ -88,6 +119,3 @@ const evaluateSourceField = ({
   );
   return isEmptyValue(value) ? undefined : value;
 };
-
-const isEmptyValue = (value: unknown): boolean =>
-  value === undefined || value === null || value === '';
