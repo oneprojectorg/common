@@ -6,24 +6,6 @@ settings:
 
 catalogs:
   default:
-    '@opentelemetry/auto-instrumentations-web':
-      specifier: ^0.60.0
-      version: 0.60.0
-    '@opentelemetry/context-zone':
-      specifier: 2.7.0
-      version: 2.7.0
-    '@opentelemetry/exporter-trace-otlp-http':
-      specifier: ^0.215.0
-      version: 0.215.0
-    '@opentelemetry/instrumentation':
-      specifier: ^0.215.0
-      version: 0.215.0
-    '@opentelemetry/resources':
-      specifier: 2.7.0
-      version: 2.7.0
-    '@opentelemetry/sdk-trace-web':
-      specifier: 2.7.0
-      version: 2.7.0
     '@rjsf/utils':
       specifier: ^5.24.12
       version: 5.24.12
@@ -473,22 +455,22 @@ importers:
         specifier: ^1.9.0
         version: 1.9.0
       '@opentelemetry/auto-instrumentations-web':
-        specifier: 'catalog:'
+        specifier: ^0.60.0
         version: 0.60.0(@opentelemetry/api@1.9.0)(zone.js@0.16.0)
       '@opentelemetry/context-zone':
-        specifier: 'catalog:'
+        specifier: 2.7.0
         version: 2.7.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/exporter-trace-otlp-http':
-        specifier: 'catalog:'
+        specifier: ^0.215.0
         version: 0.215.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/instrumentation':
-        specifier: 'catalog:'
+        specifier: ^0.215.0
         version: 0.215.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/resources':
-        specifier: 'catalog:'
+        specifier: 2.7.0
         version: 2.7.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-web':
-        specifier: 'catalog:'
+        specifier: 2.7.0
         version: 2.7.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/semantic-conventions':
         specifier: ^1.39.0
