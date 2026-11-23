@@ -33,6 +33,7 @@ import {
 } from './lockProcessInstance';
 import {
   type ProcessPhaseWithProfile,
+  assertPhaseEndsOnOrAfterStart,
   reconcilePhases,
   toInstanceDataPhase,
 } from './phaseHelpers';
@@ -42,6 +43,7 @@ import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
   InstanceOverviewUpdate,
+  PhaseInstanceData,
   PhaseOverride,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
@@ -376,13 +378,15 @@ async function saveInstanceData({
     locked: instance,
     syncTransitions: false,
     write: async (tx, { phases: rows }) => {
+      const existingPhases = rows.map(toInstanceDataPhase);
       const merged = getUpdatedInstanceData({
         existing: stored,
-        existingPhases: rows.map(toInstanceDataPhase),
+        existingPhases,
         update,
       });
 
       if (merged.phases) {
+        assertChangedPhaseDates({ existingPhases, phases: merged.phases });
         await reconcilePhases({
           tx,
           processInstanceId: instanceId,
@@ -408,6 +412,27 @@ async function saveInstanceData({
     phases,
     phaseEndDateChanges: updated.phaseEndDateChanges,
   };
+}
+
+function assertChangedPhaseDates({
+  existingPhases,
+  phases,
+}: {
+  existingPhases: PhaseInstanceData[];
+  phases: PhaseInstanceData[];
+}) {
+  const existingById = new Map(
+    existingPhases.map((phase) => [phase.phaseId, phase]),
+  );
+  for (const phase of phases) {
+    const existing = existingById.get(phase.phaseId);
+    if (
+      existing?.startDate !== phase.startDate ||
+      existing?.endDate !== phase.endDate
+    ) {
+      assertPhaseEndsOnOrAfterStart(phase);
+    }
+  }
 }
 
 async function sendQueuedInvites({
