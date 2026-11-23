@@ -178,6 +178,63 @@ describe.concurrent('updatePhase', () => {
     });
   });
 
+  it('rejects a start date that lands after the stored end date', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: { endDate: DAY_1 },
+    });
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: phase.id,
+        data: { startDate: DAY_2 },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expectPhase(phase, { name: PHASE_NAME, data: { endDate: DAY_1 } });
+  });
+
+  it('keeps the name when the dates sent with it are reversed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: phase.id,
+        name: 'Final Review',
+        data: { startDate: DAY_2, endDate: DAY_1 },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expectPhase(phase, UNCHANGED);
+  });
+
+  it('still edits a phase whose stored dates are already reversed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+    await db
+      .update(processPhases)
+      .set({ data: { startDate: DAY_2, endDate: DAY_1 } })
+      .where(eq(processPhases.id, phase.id));
+
+    const result = await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: { headline: 'Pitch an idea' },
+    });
+
+    expect(result.data).toEqual({
+      startDate: DAY_2,
+      endDate: DAY_1,
+      headline: 'Pitch an idea',
+    });
+  });
+
   it('keeps every field when updates to different fields run at once', async ({
     task,
     onTestFinished,
