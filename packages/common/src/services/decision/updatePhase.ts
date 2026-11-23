@@ -54,8 +54,6 @@ export const updatePhase = async ({
     patch !== undefined &&
     (patch.set.settings !== undefined ||
       patch.set.settingsSchema !== undefined);
-  // Only when touched: a stored pair that is already reversed must not block
-  // unrelated edits.
   const touchesDates =
     patch !== undefined &&
     (patch.set.startDate !== undefined || patch.set.endDate !== undefined);
