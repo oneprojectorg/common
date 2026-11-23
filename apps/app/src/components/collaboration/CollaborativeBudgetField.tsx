@@ -28,7 +28,7 @@ interface CollaborativeBudgetFieldProps {
  * for future multi-currency support.
  *
  * Rendered as a permanently-visible labelled number input with a currency-symbol
- * addon, at half the form column's width (Figma: 272 of 544).
+ * addon. The input is half the form column's width (Figma: 272 of 544).
  */
 export function CollaborativeBudgetField({
   title,
@@ -107,8 +107,8 @@ export function CollaborativeBudgetField({
       maxValue={maxAmount}
       prefixText={currencySymbol}
       placeholder={placeholderText}
-      // Figma: half the 544 column (272px = 17rem).
-      className="w-full gap-2 sm:max-w-68"
+      className="w-full gap-2"
+      inputGroupClassName="sm:max-w-68"
     />
   );
 }

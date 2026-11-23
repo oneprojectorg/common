@@ -31,6 +31,26 @@ export const Default: Story = {
   render: () => <DefaultDemo />,
 };
 
+const NarrowInputDemo = () => {
+  const [amount, setAmount] = useState<number | null>(null);
+
+  return (
+    <NumberField
+      label="Budget"
+      description="Long helper text wraps at the field's edge, not at the input's."
+      prefixText="$"
+      value={amount}
+      onChange={setAmount}
+      className="w-96"
+      inputGroupClassName="w-48"
+    />
+  );
+};
+
+export const NarrowInput: Story = {
+  render: () => <NarrowInputDemo />,
+};
+
 const BoundsDemo = () => {
   const [votes, setVotes] = useState<number | null>(5);
 
