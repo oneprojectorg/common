@@ -17,34 +17,35 @@ import {
 } from './proposalEditor/CustomFormModal';
 import { hasSkipCookie, setSkipCookie } from './skipCookie';
 
-interface PhaseEntryCustomFormProps {
-  decisionProfileId: string;
-  currentPhaseId: string;
-  initialPhaseId?: string;
-}
-
 /** Opens the current phase's custom form when it is set to open on entry. */
 export const PhaseEntryCustomForm = ({
-  decisionProfileId,
-  currentPhaseId,
-  initialPhaseId,
-}: PhaseEntryCustomFormProps) => {
+  instanceId,
+}: {
+  instanceId: string;
+}) => {
   const { user } = useUser();
+  // The live instance, not layout props, so a phase change opens its form.
+  const { data: instance } = trpc.decision.getInstance.useQuery({ instanceId });
   const [resultsLive] = useQueryState(RESULTS_LIVE_QUERY_PARAM);
   const [closedFormId, setClosedFormId] = useState<string>();
   const participantProfileId = user?.profileId;
+  const decisionProfileId = instance?.profileId;
+  const currentPhaseId = instance?.currentStateId;
   // The post-publish success modal owns the screen while `?resultsLive=1` is in
   // the URL, so the form waits until that param is stripped.
   const isResultsLiveDialogActive = resultsLive === '1';
 
   const { data: form } = trpc.customForm.getForProfile.useQuery(
     {
-      profileId: decisionProfileId,
-      phaseId: currentPhaseId,
-      initialPhaseId,
+      profileId: decisionProfileId ?? '',
+      phaseId: currentPhaseId ?? undefined,
+      initialPhaseId: instance?.instanceData?.phases?.[0]?.phaseId,
       showOn: 'entry',
     },
-    { enabled: !!participantProfileId },
+    {
+      enabled:
+        !!participantProfileId && !!decisionProfileId && !!currentPhaseId,
+    },
   );
 
   if (
@@ -52,7 +53,9 @@ export const PhaseEntryCustomForm = ({
     !form ||
     form.id === closedFormId ||
     isResultsLiveDialogActive ||
-    hasSkipCookie(getFormSkipCookieName(form.id))
+    hasSkipCookie(
+      getFormSkipCookieName({ formId: form.id, participantProfileId }),
+    )
   ) {
     return null;
   }
@@ -105,7 +108,9 @@ function PhaseEntryCustomFormModal({
     if (open || submitForm.isPending) {
       return;
     }
-    setSkipCookie(getFormSkipCookieName(form.id));
+    setSkipCookie(
+      getFormSkipCookieName({ formId: form.id, participantProfileId }),
+    );
     onClose();
   };
 
@@ -121,4 +126,10 @@ function PhaseEntryCustomFormModal({
   );
 }
 
-const getFormSkipCookieName = (formId: string) => `form-skipped-${formId}`;
+const getFormSkipCookieName = ({
+  formId,
+  participantProfileId,
+}: {
+  formId: string;
+  participantProfileId: string;
+}) => `form-skipped-${formId}-${participantProfileId}`;

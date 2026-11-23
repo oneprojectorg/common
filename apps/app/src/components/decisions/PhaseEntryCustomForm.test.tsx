@@ -16,10 +16,22 @@ const useQuery = vi.fn();
 const mutate = vi.fn();
 let mutationOptions: { onSuccess?: () => void } = {};
 let resultsLive: string | null = null;
+let currentPhaseId = 'review';
 let user: { profileId: string | null } | undefined;
 
 vi.mock('@op/api/client', () => ({
   trpc: {
+    decision: {
+      getInstance: {
+        useQuery: () => ({
+          data: {
+            profileId: 'decision-profile',
+            currentStateId: currentPhaseId,
+            instanceData: { phases: [{ phaseId: 'submission' }] },
+          },
+        }),
+      },
+    },
     customForm: {
       getForProfile: {
         useQuery: (...args: unknown[]) => useQuery(...args),
@@ -74,20 +86,18 @@ const entryForm = {
 const renderForm = () =>
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
-      <PhaseEntryCustomForm
-        decisionProfileId="decision-profile"
-        currentPhaseId="review"
-        initialPhaseId="submission"
-      />
+      <PhaseEntryCustomForm instanceId="instance-1" />
     </NextIntlClientProvider>,
   );
 
 describe('PhaseEntryCustomForm', () => {
   beforeEach(() => {
     resultsLive = null;
+    currentPhaseId = 'review';
     user = { profileId: 'participant-profile' };
     useQuery.mockReturnValue({ data: entryForm });
-    document.cookie = 'form-skipped-form-1=; path=/; max-age=0';
+    document.cookie =
+      'form-skipped-form-1-participant-profile=; path=/; max-age=0';
   });
 
   afterEach(() => {
@@ -108,6 +118,31 @@ describe('PhaseEntryCustomForm', () => {
       { enabled: true },
     );
     expect(screen.getByRole('button', { name: 'submit form' })).toBeTruthy();
+  });
+
+  it('asks for the new phase after the live instance moves on', () => {
+    const { rerender } = renderForm();
+    currentPhaseId = 'voting';
+
+    rerender(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <PhaseEntryCustomForm instanceId="instance-1" />
+      </NextIntlClientProvider>,
+    );
+
+    expect(useQuery).toHaveBeenLastCalledWith(
+      expect.objectContaining({ phaseId: 'voting' }),
+      { enabled: true },
+    );
+  });
+
+  it("keeps one participant's skip from hiding the form for another", () => {
+    document.cookie = 'form-skipped-form-1-someone-else=1; path=/';
+
+    renderForm();
+
+    expect(screen.getByRole('button', { name: 'submit form' })).toBeTruthy();
+    document.cookie = 'form-skipped-form-1-someone-else=; path=/; max-age=0';
   });
 
   it('opens nothing for a visitor with no profile, or while the results dialog is open', () => {
@@ -136,7 +171,9 @@ describe('PhaseEntryCustomForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'close form' }));
 
     expect(screen.queryByRole('button', { name: 'close form' })).toBeNull();
-    expect(document.cookie).toContain('form-skipped-form-1=1');
+    expect(document.cookie).toContain(
+      'form-skipped-form-1-participant-profile=1',
+    );
     unmount();
 
     renderForm();
@@ -158,6 +195,8 @@ describe('PhaseEntryCustomForm', () => {
     act(() => mutationOptions.onSuccess?.());
 
     expect(screen.queryByRole('button', { name: 'submit form' })).toBeNull();
-    expect(document.cookie).not.toContain('form-skipped-form-1=1');
+    expect(document.cookie).not.toContain(
+      'form-skipped-form-1-participant-profile=1',
+    );
   });
 });
