@@ -5,7 +5,7 @@ import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 import { DecisionViewToggle } from '@/components/decisions/DecisionViewToggle';
 import { JoinAccountModal } from '@/components/decisions/JoinAccountModal';
-import { PhaseEntryCustomFormGate } from '@/components/decisions/PhaseEntryCustomFormGate';
+import { PhaseEntryCustomForm } from '@/components/decisions/PhaseEntryCustomForm';
 import { PromoteAccountModal } from '@/components/decisions/PromoteAccountModal';
 import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 import { getDecisionDetectionText } from '@/components/decisions/translationDetectionText';
@@ -94,13 +94,16 @@ const DecisionViewLayout = async ({
       <Suspense fallback={null}>
         <PromoteAccountModal />
       </Suspense>
-      {/*
-       * Custom form that shows automatically when user enters a phase.
-       * Only mounted for authenticated users (the endpoint is authenticatedProcedure).
-       */}
-      {access?.read || access?.submitProposals ? (
+      {/* Reads `?resultsLive=` via nuqs, hence the Suspense. */}
+      {instance?.profileId &&
+      instance.currentStateId &&
+      (access?.read || access?.submitProposals) ? (
         <Suspense fallback={null}>
-          <PhaseEntryCustomFormGate instance={instance} />
+          <PhaseEntryCustomForm
+            decisionProfileId={instance.profileId}
+            currentPhaseId={instance.currentStateId}
+            initialPhaseId={instance.instanceData?.phases?.[0]?.phaseId}
+          />
         </Suspense>
       ) : null}
       {/*

@@ -518,7 +518,11 @@
     "formInternalNameHint": "Kaliya maamulayaashu way arkaan. Ka qaybgalayaashu waxay arkaan cinwaanka hoose.",
     "formPhaseLabel": "Weji",
     "formPhasePlaceholder": "Dooro weji",
-    "formPhaseHint": "Each process phase can have a custom form.",
+    "formPhaseHint": "Weji wuxuu qaadan karaa hal foom. Wejiyada hore u leh foom lama dooran karo.",
+    "formShowOnLabel": "Muuji foomkan",
+    "formShowOnActionOption": "Kadib marka ka qaybgaluhu wax ka qabto wejiga",
+    "formShowOnEntryOption": "Marka ka qaybgaluhu furo wejiga",
+    "formShowOnHint": "Foom furma marka la galo mar dambe ma furmo kadib marka ka qaybgaluhu soo gudbiyo. Haddii uu xiro, wuxuu mar kale furmayaa 7 maalmood kadib.",
     "formHeadingLabel": "Cinwaan",
     "formIntroLabel": "Qoraal hordhac ah",
     "formUnsupportedTitle": "Foomkan wuxuu u baahan yahay injineer",
@@ -573,9 +577,7 @@
     "removePublicAccessConfirmHint": "Booqdayaasha aan koonto lahayn way lumiyaan gelitaanka go'aankan iyo wax kasta oo ku jira. Qofkii horey u soo biiray wuxuu haystaa gelitaankiisa, waxna lagama tirtirayo wixii uu soo gudbiyay.",
     "removeAccessAction": "Ka saar gelitaanka",
     "removingProgress": "Waa la saarayaa…",
-    "removePublicAccessSuccess": "Go'aankan hadda ma aha mid dadweyne.",
-    "showOnPhaseEntryLabel": "Show automatically when user enters this phase",
-    "showOnPhaseEntryHint": "The form opens when a participant enters this phase. It does not open again after they submit it. If they dismiss it, it opens again after 7 days."
+    "removePublicAccessSuccess": "Go'aankan hadda ma aha mid dadweyne."
   },
   "editor": {
     "removePreviewAction": "Ka saar muuqaalka hore",

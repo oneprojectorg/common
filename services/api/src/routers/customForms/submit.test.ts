@@ -1,3 +1,4 @@
+import type { CustomFormShowOn } from '@op/common/client';
 import {
   TestDecisionsDataManager,
   TestReviewsDataManager,
@@ -43,15 +44,18 @@ async function createCustomForm(
   profileId: string,
   onTestFinished: (fn: () => Promise<void>) => void,
   phaseId?: string,
+  showOn?: CustomFormShowOn,
 ) {
   const [form] = await db
     .insert(customForms)
     .values({
       profileId,
       name: 'Test Form',
-      schema: phaseId
-        ? { ...TEST_FORM_SCHEMA, 'x-phase': phaseId }
-        : TEST_FORM_SCHEMA,
+      schema: {
+        ...TEST_FORM_SCHEMA,
+        ...(phaseId ? { 'x-phase': phaseId } : {}),
+        ...(showOn ? { 'x-show-on': showOn } : {}),
+      },
     })
     .returning();
 
@@ -361,6 +365,59 @@ describe.concurrent('customForm.submit', () => {
         data: { neighborhood: 'Downtown' },
       }),
     ).rejects.toThrow(/does not belong to this form/i);
+  });
+
+  it('records an entry form submission from a member who neither voted nor reviews', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    const member = await testData.createInstanceMember(context);
+    const form = await createCustomForm(
+      context.instance.profileId,
+      onTestFinished,
+      'review',
+      'entry',
+    );
+
+    const caller = await createAuthenticatedCaller(member.email);
+
+    const submission = await caller.customForm.submit({
+      customFormId: form.id,
+      profileId: member.profileId,
+      data: { neighborhood: 'Downtown' },
+    });
+
+    expect(submission.profileId).toBe(member.profileId);
+  });
+
+  it('rejects an entry form submission from a member of another process', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const [context, otherContext] = await Promise.all([
+      testData.createContext(),
+      testData.createContext(),
+    ]);
+    const outsider = await testData.createInstanceMember(otherContext);
+    const form = await createCustomForm(
+      context.instance.profileId,
+      onTestFinished,
+      'review',
+      'entry',
+    );
+
+    const caller = await createAuthenticatedCaller(outsider.email);
+
+    await expect(
+      caller.customForm.submit({
+        customFormId: form.id,
+        profileId: outsider.profileId,
+        data: { neighborhood: 'Downtown' },
+      }),
+    ).rejects.toThrow(/access/i);
   });
 });
 

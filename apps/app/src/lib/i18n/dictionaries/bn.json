@@ -518,7 +518,11 @@
     "formInternalNameHint": "এটি শুধু অ্যাডমিনরা দেখেন। অংশগ্রহণকারীরা নিচের শিরোনামটি দেখেন।",
     "formPhaseLabel": "পর্ব",
     "formPhasePlaceholder": "একটি পর্ব নির্বাচন করুন",
-    "formPhaseHint": "Each process phase can have a custom form.",
+    "formPhaseHint": "একটি পর্বে একটিই ফর্ম থাকতে পারে। যেসব পর্বে ইতিমধ্যে ফর্ম আছে সেগুলি নির্বাচন করা যাবে না।",
+    "formShowOnLabel": "এই ফর্মটি দেখান",
+    "formShowOnActionOption": "অংশগ্রহণকারী পর্বে কোনো পদক্ষেপ নেওয়ার পরে",
+    "formShowOnEntryOption": "অংশগ্রহণকারী যখন পর্বটি খোলেন",
+    "formShowOnHint": "প্রবেশের সময় খোলা ফর্মটি অংশগ্রহণকারী জমা দেওয়ার পরে আর খোলে না। তিনি এটি বন্ধ করলে ৭ দিন পরে আবার খোলে।",
     "formHeadingLabel": "শিরোনাম",
     "formIntroLabel": "সূচনা লেখা",
     "formUnsupportedTitle": "এই ফর্মটির জন্য একজন ইঞ্জিনিয়ার প্রয়োজন",
@@ -573,9 +577,7 @@
     "removePublicAccessConfirmHint": "অ্যাকাউন্ট নেই এমন দর্শকরা এই সিদ্ধান্ত ও এর ভেতরের সবকিছুর অ্যাক্সেস হারাবেন। যাঁরা ইতিমধ্যে যোগ দিয়েছেন তাঁরা নিজেদের অ্যাক্সেস রাখবেন, এবং তাঁদের জমা দেওয়া কিছুই মুছে যাবে না।",
     "removeAccessAction": "অ্যাক্সেস সরান",
     "removingProgress": "সরানো হচ্ছে…",
-    "removePublicAccessSuccess": "এই সিদ্ধান্তটি আর সার্বজনীন নয়।",
-    "showOnPhaseEntryLabel": "Show automatically when user enters this phase",
-    "showOnPhaseEntryHint": "The form opens when a participant enters this phase. It does not open again after they submit it. If they dismiss it, it opens again after 7 days."
+    "removePublicAccessSuccess": "এই সিদ্ধান্তটি আর সার্বজনীন নয়।"
   },
   "editor": {
     "removePreviewAction": "প্রিভিউ সরান",

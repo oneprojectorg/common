@@ -4,10 +4,11 @@ import { trpc } from '@op/api/client';
 import type {
   AdminDecisionPhase,
   CustomFormDefinitionInput,
+  CustomFormShowOn,
   CustomFormWithPhaseDTO,
 } from '@op/common/client';
+import { customFormShowOnSchema } from '@op/common/client';
 import { Button } from '@op/sense/Button';
-import { Checkbox } from '@op/sense/Checkbox';
 import {
   Dialog,
   DialogContent,
@@ -247,28 +248,11 @@ const FormDetailsFields = ({
         onChange={(phaseId) => onChange({ ...draft, phaseId })}
       />
 
-      <Field>
-        <div className="flex items-center gap-3">
-          <Checkbox
-            id={`${fieldId}-show-on-entry`}
-            checked={draft.showOnPhaseEntry}
-            onCheckedChange={(checked) =>
-              onChange({
-                ...draft,
-                showOnPhaseEntry:
-                  typeof checked === 'boolean' ? checked : false,
-              })
-            }
-          />
-          <FieldLabel
-            htmlFor={`${fieldId}-show-on-entry`}
-            className="cursor-pointer"
-          >
-            {t('admin.showOnPhaseEntryLabel')}
-          </FieldLabel>
-        </div>
-        <FieldDescription>{t('admin.showOnPhaseEntryHint')}</FieldDescription>
-      </Field>
+      <ShowOnField
+        id={`${fieldId}-show-on`}
+        showOn={draft.showOn}
+        onChange={(showOn) => onChange({ ...draft, showOn })}
+      />
 
       <CountedInputField
         id={`${fieldId}-title`}
@@ -347,6 +331,52 @@ const PhaseField = ({
       </Select>
       <FieldDescription>{t('admin.formPhaseHint')}</FieldDescription>
       <ProblemMessages problems={problems} />
+    </Field>
+  );
+};
+
+const ShowOnField = ({
+  id,
+  showOn,
+  onChange,
+}: {
+  id: string;
+  showOn: CustomFormShowOn;
+  onChange: (showOn: CustomFormShowOn) => void;
+}) => {
+  const t = useTranslations();
+  const labels: Record<CustomFormShowOn, string> = {
+    action: t('admin.formShowOnActionOption'),
+    entry: t('admin.formShowOnEntryOption'),
+  };
+
+  return (
+    <Field>
+      <FieldLabel htmlFor={id}>{t('admin.formShowOnLabel')}</FieldLabel>
+      <Select
+        value={showOn}
+        items={labels}
+        onValueChange={(next) => {
+          const parsed = customFormShowOnSchema.safeParse(next);
+          if (parsed.success) {
+            onChange(parsed.data);
+          }
+        }}
+      >
+        <SelectTrigger id={id} className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {customFormShowOnSchema.options.map((option) => (
+              <SelectItem key={option} value={option}>
+                {labels[option]}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <FieldDescription>{t('admin.formShowOnHint')}</FieldDescription>
     </Field>
   );
 };

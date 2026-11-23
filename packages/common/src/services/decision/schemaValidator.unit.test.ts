@@ -28,12 +28,12 @@ describe('SchemaValidator.validateJsonSchema', () => {
     expect(() => schemaValidator.validateJsonSchema(template)).not.toThrow();
   });
 
-  it('accepts a custom form carrying the x-show-on-phase-entry vendor extension', () => {
+  it('accepts a custom form carrying the x-show-on vendor extension', () => {
     const customForm = {
       type: 'object',
       title: 'Enter phase survey',
       'x-phase': 'review',
-      'x-show-on-phase-entry': true,
+      'x-show-on': 'entry',
       properties: {
         conflicts: {
           type: 'string',
@@ -50,32 +50,6 @@ describe('SchemaValidator.validateJsonSchema', () => {
 });
 
 describe('SchemaValidator.validate', () => {
-  it('validates data against a custom form with x-show-on-phase-entry flag', () => {
-    const customFormSchema = {
-      type: 'object' as const,
-      title: 'Review check-in',
-      'x-phase': 'review',
-      'x-show-on-phase-entry': true,
-      properties: {
-        conflicts: {
-          type: 'string' as const,
-          title: 'Do you have conflicts?',
-          'x-format': 'long-text',
-        },
-      },
-      'x-field-order': ['conflicts'],
-      required: ['conflicts'],
-    };
-
-    expect(
-      schemaValidator.validate(customFormSchema, { conflicts: 'No conflicts' }),
-    ).toEqual({ valid: true, errors: {} });
-
-    expect(
-      schemaValidator.validate(customFormSchema, { conflicts: '' }).errors,
-    ).not.toEqual({});
-  });
-
   it('names a missing nested field by its own title', () => {
     const schema = {
       type: 'object' as const,

@@ -1,11 +1,13 @@
 import type {
   CustomFormDefinitionInput,
   CustomFormField,
+  CustomFormShowOn,
   XFormatPropertySchema,
 } from '@op/common/client';
 import {
   CUSTOM_FORM_MAX_FIELDS,
   customFormDefinitionInputSchema,
+  getFormShowOn,
 } from '@op/common/client';
 
 /**
@@ -75,7 +77,7 @@ export type BuilderForm = {
   title: string;
   description: string;
   phaseId: string;
-  showOnPhaseEntry: boolean;
+  showOn: CustomFormShowOn;
   fields: BuilderField[];
 };
 
@@ -84,7 +86,7 @@ const createEmptyForm = (phaseId: string): BuilderForm => ({
   title: '',
   description: '',
   phaseId,
-  showOnPhaseEntry: false,
+  showOn: 'action',
   fields: [],
 });
 
@@ -116,7 +118,7 @@ export const buildDefinition = (
       ? { description: form.description.trim() }
       : {}),
     'x-phase': form.phaseId,
-    ...(form.showOnPhaseEntry ? { 'x-show-on-phase-entry': true } : {}),
+    'x-show-on': form.showOn,
     required: form.fields
       .filter((field) => field.isRequired)
       .map((field) => field.key),
@@ -159,7 +161,7 @@ const ROUND_TRIPPED_DEFINITION_KEYS = new Set([
   'title',
   'description',
   'x-phase',
-  'x-show-on-phase-entry',
+  'x-show-on',
   'required',
   'properties',
   'x-field-order',
@@ -215,10 +217,7 @@ export const parseDefinition = ({
       description:
         typeof schema.description === 'string' ? schema.description : '',
       phaseId,
-      showOnPhaseEntry:
-        typeof schema['x-show-on-phase-entry'] === 'boolean'
-          ? schema['x-show-on-phase-entry']
-          : false,
+      showOn: getFormShowOn(schema),
       fields,
     },
     unsupportedKeys: [...unsupportedKeys, ...unsupportedRoot],

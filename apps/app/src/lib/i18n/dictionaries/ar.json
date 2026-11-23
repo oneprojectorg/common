@@ -518,7 +518,11 @@
     "formInternalNameHint": "يراه المسؤولون فقط. يرى المشاركون العنوان أدناه.",
     "formPhaseLabel": "المرحلة",
     "formPhasePlaceholder": "اختر مرحلة",
-    "formPhaseHint": "Each process phase can have a custom form.",
+    "formPhaseHint": "يمكن للمرحلة أن تضم نموذجًا واحدًا. المراحل التي لديها نموذج بالفعل غير متاحة.",
+    "formShowOnLabel": "إظهار هذا النموذج",
+    "formShowOnActionOption": "بعد أن يتخذ المشارك إجراءً في المرحلة",
+    "formShowOnEntryOption": "عندما يفتح المشارك المرحلة",
+    "formShowOnHint": "النموذج الذي يُفتح عند الدخول لا يُفتح مرة أخرى بعد أن يرسله المشارك. إذا أغلقه، يُفتح مرة أخرى بعد 7 أيام.",
     "formHeadingLabel": "العنوان",
     "formIntroLabel": "نص تمهيدي",
     "formUnsupportedTitle": "يحتاج هذا النموذج إلى مهندس",
@@ -573,9 +577,7 @@
     "removePublicAccessConfirmHint": "يفقد الزوار الذين ليس لديهم حساب الوصول إلى هذا القرار وكل ما فيه. أما من انضم بالفعل فيحتفظ بوصوله الخاص، ولا يُحذف أي شيء قدّمه.",
     "removeAccessAction": "إزالة الوصول",
     "removingProgress": "جارٍ الإزالة…",
-    "removePublicAccessSuccess": "لم يعد هذا القرار عامًا.",
-    "showOnPhaseEntryLabel": "Show automatically when user enters this phase",
-    "showOnPhaseEntryHint": "The form opens when a participant enters this phase. It does not open again after they submit it. If they dismiss it, it opens again after 7 days."
+    "removePublicAccessSuccess": "لم يعد هذا القرار عامًا."
   },
   "editor": {
     "removePreviewAction": "إزالة المعاينة",

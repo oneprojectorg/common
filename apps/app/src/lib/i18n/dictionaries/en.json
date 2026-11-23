@@ -518,7 +518,11 @@
     "formInternalNameHint": "Only admins see this. Participants see the heading below.",
     "formPhaseLabel": "Phase",
     "formPhasePlaceholder": "Select a phase",
-    "formPhaseHint": "Each process phase can have a custom form.",
+    "formPhaseHint": "A phase can hold one form. Phases that already have one are unavailable.",
+    "formShowOnLabel": "Show this form",
+    "formShowOnActionOption": "After the participant acts in the phase",
+    "formShowOnEntryOption": "When the participant opens the phase",
+    "formShowOnHint": "A form that opens on entry does not open again after the participant submits it. If they close it, it opens again after 7 days.",
     "formHeadingLabel": "Heading",
     "formIntroLabel": "Intro text",
     "formUnsupportedTitle": "This form needs an engineer",
@@ -573,9 +577,7 @@
     "removePublicAccessConfirmHint": "Visitors without an account lose access to this decision and everything in it. Anyone who already joined keeps their own access, and nothing they submitted is deleted.",
     "removeAccessAction": "Remove access",
     "removingProgress": "Removing…",
-    "removePublicAccessSuccess": "This decision is no longer public.",
-    "showOnPhaseEntryLabel": "Show automatically when user enters this phase",
-    "showOnPhaseEntryHint": "The form opens when a participant enters this phase. It does not open again after they submit it. If they dismiss it, it opens again after 7 days."
+    "removePublicAccessSuccess": "This decision is no longer public."
   },
   "editor": {
     "removePreviewAction": "Remove preview",

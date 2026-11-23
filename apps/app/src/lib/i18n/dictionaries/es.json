@@ -518,7 +518,11 @@
     "formInternalNameHint": "Solo lo ven los administradores. Los participantes ven el encabezado de abajo.",
     "formPhaseLabel": "Fase",
     "formPhasePlaceholder": "Selecciona una fase",
-    "formPhaseHint": "Each process phase can have a custom form.",
+    "formPhaseHint": "Cada fase admite un formulario. Las fases que ya tienen uno no están disponibles.",
+    "formShowOnLabel": "Mostrar este formulario",
+    "formShowOnActionOption": "Después de que la persona participante actúe en la fase",
+    "formShowOnEntryOption": "Cuando la persona participante abra la fase",
+    "formShowOnHint": "Un formulario que se abre al entrar no se vuelve a abrir después de que la persona participante lo envíe. Si lo cierra, se abre otra vez después de 7 días.",
     "formHeadingLabel": "Encabezado",
     "formIntroLabel": "Texto introductorio",
     "formUnsupportedTitle": "Este formulario necesita a una persona de ingeniería",
@@ -573,9 +577,7 @@
     "removePublicAccessConfirmHint": "Las personas sin cuenta pierden el acceso a esta decisión y a todo su contenido. Quienes ya se unieron conservan su propio acceso y no se elimina nada de lo que enviaron.",
     "removeAccessAction": "Quitar el acceso",
     "removingProgress": "Quitando…",
-    "removePublicAccessSuccess": "Esta decisión ya no es pública.",
-    "showOnPhaseEntryLabel": "Show automatically when user enters this phase",
-    "showOnPhaseEntryHint": "The form opens when a participant enters this phase. It does not open again after they submit it. If they dismiss it, it opens again after 7 days."
+    "removePublicAccessSuccess": "Esta decisión ya no es pública."
   },
   "editor": {
     "removePreviewAction": "Eliminar vista previa",

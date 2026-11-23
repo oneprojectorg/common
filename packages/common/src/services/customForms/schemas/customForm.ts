@@ -21,11 +21,15 @@ export interface CustomFormDefinitionSchema extends JSONSchema7 {
    */
   'x-phase'?: string;
   /**
-   * When true, the form opens automatically when a participant enters its phase.
-   * Absent means it does not.
+   * When the form opens in its phase: on `entry` to the phase, or after the
+   * participant's `action` there (submit, vote, review). Absent means `action`.
    */
-  'x-show-on-phase-entry'?: boolean;
+  'x-show-on'?: CustomFormShowOn;
 }
+
+export const customFormShowOnSchema = z.enum(['entry', 'action']);
+
+export type CustomFormShowOn = z.infer<typeof customFormShowOnSchema>;
 
 /** True for a stored form definition with an object root and `properties`. */
 export function isCustomFormDefinition(
@@ -171,7 +175,7 @@ export const customFormDefinitionInputSchema = z
     title: z.string().min(1).max(200),
     description: z.string().max(2000).optional(),
     'x-phase': z.string().min(1).max(256),
-    'x-show-on-phase-entry': z.boolean().optional(),
+    'x-show-on': customFormShowOnSchema.optional(),
     required: z.array(customFormFieldKeySchema),
     properties: z.record(customFormFieldKeySchema, customFormFieldSchema),
     'x-field-order': z.array(customFormFieldKeySchema),

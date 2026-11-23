@@ -61,6 +61,7 @@ const form = (fields: BuilderField[]): BuilderForm => ({
   title: 'Your voice shapes Common.',
   description: 'Take our 1-minute survey.',
   phaseId: 'voting',
+  showOn: 'action',
   fields,
 });
 
@@ -87,6 +88,30 @@ describe('buildDefinition', () => {
     const definition = buildDefinition(form([field({ key: 'answer' })]));
 
     expect(definition['x-phase']).toBe('voting');
+  });
+
+  it('round-trips when the form opens', () => {
+    const { form: parsed, unsupportedKeys } = parseDefinition({
+      schema: buildDefinition({
+        ...form([field({ key: 'answer' })]),
+        showOn: 'entry',
+      }),
+      phaseId: 'voting',
+      name: 'Exit survey',
+    });
+
+    expect(unsupportedKeys).toEqual([]);
+    expect(parsed.showOn).toBe('entry');
+  });
+
+  it('opens a stored form with no x-show-on after the action', () => {
+    const { form: parsed } = parseDefinition({
+      schema: { type: 'object', properties: {} },
+      phaseId: 'voting',
+      name: 'Exit survey',
+    });
+
+    expect(parsed.showOn).toBe('action');
   });
 
   it('orders fields as the editor lists them', () => {

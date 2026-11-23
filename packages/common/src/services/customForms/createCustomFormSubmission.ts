@@ -4,14 +4,15 @@ import { customFormSubmissions } from '@op/db/schema';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
-import { assertProfileAccess } from '../assert';
+import { assertProfileAccess, assertUserByAuthId } from '../assert';
+import { assertDecisionProfileReadAccess } from '../decision/assertDecisionProfileReadAccess';
 import { schemaValidator } from '../decision/schemaValidator';
 import { readInstancePhaseSet } from './customFormAuth';
 import type {
   CreateCustomFormSubmissionInput,
   CustomFormDefinitionSchema,
 } from './schemas/customForm';
-import { getEffectiveFormPhase } from './utils';
+import { getEffectiveFormPhase, getFormShowOn } from './utils';
 
 /**
  * Records a submission against a custom form, attached to the target
@@ -22,6 +23,8 @@ import { getEffectiveFormPhase } from './utils';
  * collaborators). The target must also belong to the form's owning process,
  * via one of these attachment sites:
  *   - a proposal whose decision process owns the form (submission/edit forms),
+ *   - a participant's own profile that can read the process (forms that open
+ *     on phase entry),
  *   - a participant's own profile that has voted in the process (post-vote
  *     forms), or
  *   - a reviewer's own profile with a review assignment in the form's phase
@@ -76,6 +79,11 @@ export const createCustomFormSubmission = async ({
 
   const belongsToForm =
     belongsViaProposal ||
+    (await isEntryFormParticipant({
+      participantProfileId: input.profileId,
+      form,
+      authUserId,
+    })) ||
     (await isParticipantInFormProcess({
       participantProfileId: input.profileId,
       form,
@@ -133,6 +141,33 @@ export const createCustomFormSubmission = async ({
   }
 
   return submission;
+};
+
+const isEntryFormParticipant = async ({
+  participantProfileId,
+  form,
+  authUserId,
+}: {
+  participantProfileId: string;
+  form: CustomForm;
+  authUserId: string;
+}): Promise<boolean> => {
+  if (getFormShowOn(form.schema) !== 'entry') {
+    return false;
+  }
+
+  const user = await assertUserByAuthId(authUserId);
+
+  if (user.profileId !== participantProfileId) {
+    return false;
+  }
+
+  await assertDecisionProfileReadAccess({
+    user: { id: authUserId },
+    profileId: form.profileId,
+  });
+
+  return true;
 };
 
 const isParticipantInFormProcess = async ({
