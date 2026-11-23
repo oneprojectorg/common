@@ -518,7 +518,7 @@
     "formInternalNameHint": "Apenas os administradores veem isto. Os participantes veem o título abaixo.",
     "formPhaseLabel": "Fase",
     "formPhasePlaceholder": "Selecione uma fase",
-    "formPhaseHint": "Uma fase comporta um formulário. As fases que já têm um ficam indisponíveis.",
+    "formPhaseHint": "Each process phase can have a custom form.",
     "formHeadingLabel": "Título",
     "formIntroLabel": "Texto introdutório",
     "formUnsupportedTitle": "Este formulário precisa de uma pessoa de engenharia",
@@ -575,7 +575,7 @@
     "removingProgress": "Removendo…",
     "removePublicAccessSuccess": "Esta decisão não é mais pública.",
     "showOnPhaseEntryLabel": "Show automatically when user enters this phase",
-    "showOnPhaseEntryHint": "If enabled, this form will appear automatically when the user enters this phase. Like the NPS survey, users who complete the form or dismiss it will not see it again."
+    "showOnPhaseEntryHint": "The form opens when a participant enters this phase. It does not open again after they submit it. If they dismiss it, it opens again after 7 days."
   },
   "editor": {
     "removePreviewAction": "Remover pré-visualização",

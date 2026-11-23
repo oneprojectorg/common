@@ -4,19 +4,16 @@ import { trpc } from '@op/api/client';
 import type { CustomFormWithPhaseDTO } from '@op/common/client';
 import { logger } from '@op/logging/client';
 import { toast } from '@op/sense/Toast';
-import { useSearchParams } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useQueryState } from 'nuqs';
+import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { hasFormSkipCookie, setFormSkipCookie } from './formSkipCookie';
 import {
   CustomFormModal,
   type CustomFormValues,
 } from './proposalEditor/CustomFormModal';
-import {
-  hasFormSkipCookie,
-  setFormSkipCookie,
-} from './formSkipCookie';
 
 interface PhaseEntryCustomFormProps {
   profileId: string;
@@ -29,11 +26,11 @@ export const PhaseEntryCustomForm = ({
   currentPhaseId,
   initialPhaseId,
 }: PhaseEntryCustomFormProps) => {
-  const searchParams = useSearchParams();
-  // The post-publish success modal owns the screen while `?resultsLive=1` is in
-  // the URL. Holding the form back until that param is stripped prevents the
-  // form's backdrop from intercepting clicks on the success modal.
-  const isResultsLiveDialogActive = searchParams.get('resultsLive') === '1';
+  const [resultsLive] = useQueryState('resultsLive');
+  // The post-publish success modal owns the screen. Holding the form back
+  // until that param is stripped prevents the form's backdrop from
+  // intercepting clicks on the success modal.
+  const isResultsLiveDialogActive = resultsLive === '1';
 
   if (!currentPhaseId || isResultsLiveDialogActive) {
     return null;
@@ -54,9 +51,6 @@ function PhaseEntryCustomFormInner({
   initialPhaseId,
 }: PhaseEntryCustomFormProps) {
   const t = useTranslations('decisions.proposals');
-  const [skipped, setSkipped] = useState(
-    () => hasFormSkipCookie(currentPhaseId),
-  );
   const [submitted, setSubmitted] = useState(false);
 
   const { data: form } = trpc.customForm.getForProfile.useQuery(
@@ -65,21 +59,17 @@ function PhaseEntryCustomFormInner({
       phaseId: currentPhaseId,
       initialPhaseId,
     },
-    { retry: false, staleTime: Infinity, enabled: !skipped },
+    { enabled: !submitted },
   );
 
-  const shouldShow = useMemo(() => {
-    if (!form || skipped || submitted) {
-      return false;
-    }
+  if (!form || submitted) {
+    return null;
+  }
 
-    const schema = form.schema as Record<string, unknown>;
-    const showOnPhaseEntry = schema['x-show-on-phase-entry'] === true;
+  const schema = form.schema as Record<string, unknown>;
+  const showOnPhaseEntry = schema['x-show-on-phase-entry'] === true;
 
-    return showOnPhaseEntry;
-  }, [form, skipped, submitted]);
-
-  if (!shouldShow) {
+  if (!showOnPhaseEntry || hasFormSkipCookie(form.id)) {
     return null;
   }
 
@@ -87,11 +77,6 @@ function PhaseEntryCustomFormInner({
     <CustomFormModalWrapper
       form={form}
       profileId={profileId}
-      currentPhaseId={currentPhaseId}
-      onSkip={() => {
-        setFormSkipCookie(currentPhaseId);
-        setSkipped(true);
-      }}
       onSubmitted={() => {
         setSubmitted(true);
       }}
@@ -102,33 +87,39 @@ function PhaseEntryCustomFormInner({
 function CustomFormModalWrapper({
   form,
   profileId,
-  currentPhaseId,
-  onSkip,
   onSubmitted,
 }: {
   form: CustomFormWithPhaseDTO;
   profileId: string;
-  currentPhaseId: string;
-  onSkip: () => void;
   onSubmitted: () => void;
 }) {
   const t = useTranslations('decisions.proposals');
-  const submitCustomForm = trpc.customForm.submit.useMutation();
-
-  const handleSubmit = async (values: CustomFormValues) => {
-    try {
-      await submitCustomForm.mutateAsync({
-        customFormId: form.id,
-        profileId,
-        data: values,
-      });
+  const utils = trpc.useUtils();
+  const submitCustomForm = trpc.customForm.submit.useMutation({
+    onSuccess: async () => {
+      await utils.customForm.getForProfile.invalidate({ profileId });
       onSubmitted();
-    } catch (error) {
+    },
+    onError: (error) => {
       logger.error('Failed to submit phase entry custom form', {
         error,
         context: 'PhaseEntryCustomForm.handleSubmit',
       });
       toast.error(t('submitFormError'));
+    },
+  });
+
+  const handleSubmit = (values: CustomFormValues) => {
+    submitCustomForm.mutate({
+      customFormId: form.id,
+      profileId,
+      data: values,
+    });
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open && !submitCustomForm.isPending) {
+      setFormSkipCookie(form.id);
     }
   };
 
@@ -139,11 +130,7 @@ function CustomFormModalWrapper({
       schema={form.schema}
       isSubmitting={submitCustomForm.isPending}
       onSubmit={handleSubmit}
-      onOpenChange={(open) => {
-        if (!open && !submitCustomForm.isPending) {
-          onSkip();
-        }
-      }}
+      onOpenChange={handleOpenChange}
     />
   );
 }

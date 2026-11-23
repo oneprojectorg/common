@@ -518,7 +518,7 @@
     "formInternalNameHint": "يراه المسؤولون فقط. يرى المشاركون العنوان أدناه.",
     "formPhaseLabel": "المرحلة",
     "formPhasePlaceholder": "اختر مرحلة",
-    "formPhaseHint": "يمكن للمرحلة أن تضم نموذجًا واحدًا. المراحل التي لديها نموذج بالفعل غير متاحة.",
+    "formPhaseHint": "Each process phase can have a custom form.",
     "formHeadingLabel": "العنوان",
     "formIntroLabel": "نص تمهيدي",
     "formUnsupportedTitle": "يحتاج هذا النموذج إلى مهندس",
@@ -575,7 +575,7 @@
     "removingProgress": "جارٍ الإزالة…",
     "removePublicAccessSuccess": "لم يعد هذا القرار عامًا.",
     "showOnPhaseEntryLabel": "Show automatically when user enters this phase",
-    "showOnPhaseEntryHint": "If enabled, this form will appear automatically when the user enters this phase. Like the NPS survey, users who complete the form or dismiss it will not see it again."
+    "showOnPhaseEntryHint": "The form opens when a participant enters this phase. It does not open again after they submit it. If they dismiss it, it opens again after 7 days."
   },
   "editor": {
     "removePreviewAction": "إزالة المعاينة",

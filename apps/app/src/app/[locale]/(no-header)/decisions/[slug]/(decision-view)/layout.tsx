@@ -96,9 +96,13 @@ const DecisionViewLayout = async ({
       </Suspense>
       {/*
        * Custom form that shows automatically when user enters a phase.
-       * Like the survey, it won't show again if completed or dismissed.
+       * Only mounted for authenticated users (the endpoint is authenticatedProcedure).
        */}
-      <PhaseEntryCustomFormGate instanceId={instanceId} instance={instance} />
+      {access?.read || access?.submitProposals ? (
+        <Suspense fallback={null}>
+          <PhaseEntryCustomFormGate instance={instance} />
+        </Suspense>
+      ) : null}
       {/*
        * Header "Join" modal (account claim on public processes). Mounted in the
        * layout like PromoteAccountModal so `?join=1` works on both tabs; reads

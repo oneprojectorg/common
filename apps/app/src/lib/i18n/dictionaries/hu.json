@@ -518,7 +518,7 @@
     "formInternalNameHint": "Ezt csak az adminisztrátorok látják. A résztvevők az alábbi címet látják.",
     "formPhaseLabel": "Szakasz",
     "formPhasePlaceholder": "Válasszon szakaszt",
-    "formPhaseHint": "Egy szakaszhoz egy űrlap tartozhat. Azok a szakaszok, amelyeknek már van, nem választhatók.",
+    "formPhaseHint": "Each process phase can have a custom form.",
     "formHeadingLabel": "Cím",
     "formIntroLabel": "Bevezető szöveg",
     "formUnsupportedTitle": "Ehhez az űrlaphoz fejlesztő szükséges",
@@ -575,7 +575,7 @@
     "removingProgress": "Visszavonás…",
     "removePublicAccessSuccess": "Ez a döntés már nem nyilvános.",
     "showOnPhaseEntryLabel": "Show automatically when user enters this phase",
-    "showOnPhaseEntryHint": "If enabled, this form will appear automatically when the user enters this phase. Like the NPS survey, users who complete the form or dismiss it will not see it again."
+    "showOnPhaseEntryHint": "The form opens when a participant enters this phase. It does not open again after they submit it. If they dismiss it, it opens again after 7 days."
   },
   "editor": {
     "removePreviewAction": "Előnézet eltávolítása",

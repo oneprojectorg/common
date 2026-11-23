@@ -518,7 +518,7 @@
     "formInternalNameHint": "Only admins see this. Participants see the heading below.",
     "formPhaseLabel": "Phase",
     "formPhasePlaceholder": "Select a phase",
-    "formPhaseHint": "If this form applies to multiple phases, create a separate form for each.",
+    "formPhaseHint": "Each process phase can have a custom form.",
     "formHeadingLabel": "Heading",
     "formIntroLabel": "Intro text",
     "formUnsupportedTitle": "This form needs an engineer",
@@ -575,7 +575,7 @@
     "removingProgress": "Removing…",
     "removePublicAccessSuccess": "This decision is no longer public.",
     "showOnPhaseEntryLabel": "Show automatically when user enters this phase",
-    "showOnPhaseEntryHint": "If enabled, this form will appear automatically when the user enters this phase. Like the NPS survey, users who complete the form or dismiss it will not see it again."
+    "showOnPhaseEntryHint": "The form opens when a participant enters this phase. It does not open again after they submit it. If they dismiss it, it opens again after 7 days."
   },
   "editor": {
     "removePreviewAction": "Remove preview",
