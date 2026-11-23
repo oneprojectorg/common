@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -32,5 +32,19 @@ describe('ProcessAdminsDialog', () => {
       await screen.findByRole('dialog', { name: 'Manage admins' }),
     ).toBeTruthy();
     expect(screen.getByText('Admins of profile-9')).toBeTruthy();
+  });
+
+  it('closes on Done', async () => {
+    render(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <ProcessAdminsDialog profileId="profile-9" />
+      </NextIntlClientProvider>,
+    );
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Manage admins' }));
+    await user.click(await screen.findByRole('button', { name: 'Done' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 });
