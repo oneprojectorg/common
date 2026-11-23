@@ -17,6 +17,7 @@ const mutate = vi.fn();
 let mutationOptions: { onSuccess?: () => void } = {};
 let resultsLive: string | null = null;
 let currentPhaseId = 'review';
+let canRead = true;
 let user: { profileId: string | null } | undefined;
 
 vi.mock('@op/api/client', () => ({
@@ -27,6 +28,7 @@ vi.mock('@op/api/client', () => ({
           data: {
             profileId: 'decision-profile',
             currentStateId: currentPhaseId,
+            access: { read: canRead },
             instanceData: { phases: [{ phaseId: 'submission' }] },
           },
         }),
@@ -94,6 +96,7 @@ describe('PhaseEntryCustomForm', () => {
   beforeEach(() => {
     resultsLive = null;
     currentPhaseId = 'review';
+    canRead = true;
     user = { profileId: 'participant-profile' };
     useQuery.mockReturnValue({ data: entryForm });
     document.cookie =
@@ -155,6 +158,16 @@ describe('PhaseEntryCustomForm', () => {
     resultsLive = '1';
     renderForm();
     expect(screen.queryByRole('button', { name: 'submit form' })).toBeNull();
+  });
+
+  it('does not ask for a viewer who cannot read the decision', () => {
+    canRead = false;
+
+    renderForm();
+
+    expect(useQuery).toHaveBeenCalledWith(expect.anything(), {
+      enabled: false,
+    });
   });
 
   it('opens nothing when there is no entry form to answer', () => {

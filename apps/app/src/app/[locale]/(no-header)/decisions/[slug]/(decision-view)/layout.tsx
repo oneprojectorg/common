@@ -95,11 +95,9 @@ const DecisionViewLayout = async ({
         <PromoteAccountModal />
       </Suspense>
       {/* Reads `?resultsLive=` via nuqs, hence the Suspense. */}
-      {access?.read ? (
-        <Suspense fallback={null}>
-          <PhaseEntryCustomForm instanceId={instanceId} />
-        </Suspense>
-      ) : null}
+      <Suspense fallback={null}>
+        <PhaseEntryCustomForm instanceId={instanceId} />
+      </Suspense>
       {/*
        * Header "Join" modal (account claim on public processes). Mounted in the
        * layout like PromoteAccountModal so `?join=1` works on both tabs; reads

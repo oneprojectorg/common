@@ -28,7 +28,10 @@ export const PhaseEntryCustomForm = ({
   const { data: instance } = trpc.decision.getInstance.useQuery({ instanceId });
   const [resultsLive] = useQueryState(RESULTS_LIVE_QUERY_PARAM);
   const [closedFormId, setClosedFormId] = useState<string>();
-  const participantProfileId = user?.profileId;
+  // The lookup asserts read access, so a viewer without it never asks.
+  const participantProfileId = instance?.access?.read
+    ? user?.profileId
+    : undefined;
   const decisionProfileId = instance?.profileId;
   const currentPhaseId = instance?.currentStateId;
   // The post-publish success modal owns the screen while `?resultsLive=1` is in
