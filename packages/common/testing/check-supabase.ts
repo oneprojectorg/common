@@ -31,10 +31,7 @@ async function checkSupabase() {
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.message?.includes('ECONNREFUSED')) {
       console.error('❌ Cannot connect to Supabase. Is it running?');
-      console.log('\nTo start Supabase locally:');
-      console.log('  1. Make sure Docker is running');
-      console.log('  2. Run: supabase start');
-      console.log('  3. Wait for all services to be ready');
+      console.log('\nTo start Supabase locally, run: pnpm test:supabase:start');
     } else {
       console.error('❌ Error connecting to Supabase:', err.message);
     }

@@ -4,3 +4,8 @@
 .env
 seed.sql
 config.toml
+.link.json
+..link.json.*.tmp
+.supabase.lock.*.tmp
+.supabase.lock.lease
+supabase.lock

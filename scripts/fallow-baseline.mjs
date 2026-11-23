@@ -88,7 +88,7 @@ const assertCompleteCoverage = () => {
       `The merged coverage report has nothing from:\n` +
         missing.map((workspace) => `  ${workspace}`).join('\n') +
         `\n\nRun the full \`pnpm test:coverage\` before baselining. services/api needs a\n` +
-        `local Supabase (\`supabase start && pnpm w:db migrate:test\`); without it those\n` +
+        `local Supabase (\`pnpm test:supabase:start && pnpm w:db migrate:test\`); without it those\n` +
         `files silently fall back to the static coverage estimate.`,
     );
     process.exit(1);

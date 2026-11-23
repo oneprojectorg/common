@@ -21,6 +21,10 @@ sql_paths = [ './seed.sql' ]
 [realtime]
 enabled = true
 
+# The native runtime will not start Studio once `[api]` is off.
+[studio]
+enabled = false
+
 [storage]
 enabled = true
 file_size_limit = "50MiB"
@@ -143,6 +147,8 @@ skip_nonce_check = false
 enabled = false
 
 [experimental]
+# Lets `supabase start --runtime native` run the stack without Docker.
+stack = true
 orioledb_version = ""
 s3_host = "env(S3_HOST)"
 s3_region = "env(S3_REGION)"

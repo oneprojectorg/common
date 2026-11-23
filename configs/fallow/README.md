@@ -12,7 +12,7 @@ reports and what it fails on.
 Re-record all three from one full instrumented run:
 
 ```bash
-pnpm test:coverage    # needs Docker + `pnpm w:api test:supabase:start`
+pnpm test:coverage    # needs `pnpm w:api test:supabase:start`
 pnpm health:baseline
 ```
 

@@ -33,9 +33,8 @@ port = 54323
 api_url = "http://127.0.0.1"
 openai_api_key = "env(OPENAI_API_KEY)"
 
-[inbucket]
+[local_smtp]
 enabled = true
-# Test Inbucket port (different from dev port 54324)
 port = 54324
 # Explicit SMTP port so app-sent mail can target it via EMAIL_SMTP_URL
 smtp_port = 54325

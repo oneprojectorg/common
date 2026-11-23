@@ -73,8 +73,8 @@ try {
   ]);
 } catch (error) {
   console.error(
-    `[e2e] could not start Redis. The e2e stack needs Docker, which it ` +
-      `already requires for Supabase.\n${error.message ?? error}`,
+    `[e2e] could not start Redis. The e2e stack needs Docker for Redis.\n` +
+      `${error.message ?? error}`,
   );
   process.exit(1);
 }

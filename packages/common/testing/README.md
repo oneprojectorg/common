@@ -29,9 +29,6 @@ The test setup uses a **separate Supabase instance** running on different ports:
 | --------- | ----------- | --------- |
 | API       | 54321       | **55321** |
 | Database  | 54322       | **55322** |
-| Studio    | 54323       | **55323** |
-| Inbucket  | 54324       | **55324** |
-| Analytics | 54327       | **55327** |
 
 This allows you to:
 
@@ -42,8 +39,10 @@ This allows you to:
 
 ## Prerequisites
 
-1. **Docker** - Make sure Docker is installed and running
-2. **Supabase CLI** - Install the Supabase CLI
+1. **macOS on Apple silicon (14 or later) or Linux with glibc 2.35 or later** - The test
+   instance runs as native processes, not in Docker. The first start downloads the
+   service binaries to `~/.supabase/cache/stack`.
+2. **Supabase CLI** - `pnpm install` installs the pinned version
 
 ## Getting Started
 
@@ -245,14 +244,11 @@ it('should handle real-time subscriptions', async () => {
 ❌ Cannot connect to Supabase. Is it running?
 
 To start Supabase locally:
-  1. Make sure Docker is running
-  2. Run: supabase start
-  3. Wait for all services to be ready
+  Run: pnpm test:supabase:start
 ```
 
 ### Connection Issues
 
-- Verify Docker is running: `docker ps`
 - Check Supabase status: `pnpm test:supabase:status`
 - Restart Supabase: `pnpm test:supabase:stop && pnpm test:supabase:start`
 
@@ -269,8 +265,14 @@ Ports from `supabase/supabase-test.toml`:
 - API: 55321
 - DB: 55322
 
-Studio and Inbucket are disabled for the test instance. Change ports in that
+Studio and Mailpit are disabled for the test instance. Change ports in that
 file if they conflict with other services.
+
+The CLI keys a native stack by project root and git branch. A test stack that
+still runs on another branch or worktree holds these ports, and `start` names
+its project. Stop it there, or run `pnpm exec supabase stop --all`. A
+Docker test instance from an older CLI holds them too: stop it with
+`docker stop $(docker ps -q --filter name=common-test)`.
 
 ## File Structure
 
@@ -279,7 +281,6 @@ packages/common/testing/
 ├── README.md            # This file
 ├── index.ts             # `@op/common/testing` entry point
 ├── constants.ts         # TEST_USER_DEFAULT_PASSWORD
-├── authPool.ts          # Widens the auth server's connection pool
 ├── globalSetup.ts       # Migrate + seed once per run, verify empty tables after
 ├── setup.ts             # Per-file setup: module mocks, Supabase clients
 ├── mocks/               # Shared module mocks, see mocks/README.md
