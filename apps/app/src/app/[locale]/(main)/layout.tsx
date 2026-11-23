@@ -20,7 +20,13 @@ export const dynamic = 'force-dynamic';
  * Main app layout — the front door for the walled garden. This route group is
  * closed-network only; public surfaces live in `(no-header)`.
  */
-const AppRoot = async ({ children }: { children: React.ReactNode }) => {
+const AppRoot = async ({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) => {
   const user = await getUser();
 
   // Onboarding is asked first, because /start admits a non-member and this
@@ -28,9 +34,10 @@ const AppRoot = async ({ children }: { children: React.ReactNode }) => {
   // could never clear — the flow built for that account was on the other side
   // of the wall.
   if (shouldRedirectToOnboarding(user)) {
-    const requestHeaders = await headers();
+    const [{ locale }, requestHeaders] = await Promise.all([params, headers()]);
     redirect(
       buildOnboardingRedirect(
+        locale,
         requestHeaders.get('x-pathname'),
         requestHeaders.get('x-search'),
       ),
