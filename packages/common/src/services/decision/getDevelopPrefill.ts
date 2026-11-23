@@ -171,7 +171,7 @@ export const buildDevelopPrefill = async ({
 
   const [targetForm, decisionRoles] = await Promise.all([
     // The form a proposal stamped with the phase's `formSchemaId` is read
-    // under. `createDevelopedProposal` does not stamp it yet.
+    // under; `createDevelopedProposal` stamps it.
     resolveProposalTemplate(
       instance.instanceData,
       instance.processId,
