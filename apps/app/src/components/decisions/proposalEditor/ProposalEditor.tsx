@@ -7,6 +7,7 @@ import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { logger } from '@op/logging/client';
+import { Alert, AlertDescription, AlertTitle } from '@op/sense/Alert';
 import { Header2 } from '@op/sense/Header';
 import { toast } from '@op/sense/Toast';
 import { useLocale } from 'next-intl';
@@ -21,7 +22,10 @@ import {
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
-import { CollaborativePresence } from '../../collaboration';
+import {
+  CollaborativePresence,
+  useCollaborativeDoc,
+} from '../../collaboration';
 import { ProposalAttachments } from '../ProposalAttachments';
 import { ProposalEditorLayout } from '../ProposalEditorLayout';
 import { ProposalEditorSkeleton } from '../ProposalEditorSkeleton';
@@ -97,6 +101,7 @@ function ProposalEditorInner({
   // upgrade. `isAnonymous` is session-derived, not the stale DB relation.
   const isAnonymous = Boolean(user?.isAnonymous);
   const versionPreview = useOptionalVersionPreview();
+  const { isAccessDenied } = useCollaborativeDoc();
   const {
     state: { draft, isDraft },
     actions: { validate, save },
@@ -389,6 +394,16 @@ function ProposalEditorInner({
                   ? t('decisions.proposals.editProposalTitle')
                   : t('decisions.proposals.createProposalTitle')}
               </Header2>
+              {isAccessDenied && (
+                <Alert variant="warning">
+                  <AlertTitle>
+                    {t('decisions.proposals.editingClosedTitle')}
+                  </AlertTitle>
+                  <AlertDescription>
+                    {t('decisions.proposals.editingClosedDescription')}
+                  </AlertDescription>
+                </Alert>
+              )}
               {editorBody}
             </div>
           </div>

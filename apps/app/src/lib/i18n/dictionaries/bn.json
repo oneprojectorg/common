@@ -1369,6 +1369,8 @@
       "createProposalError": "প্রস্তাব তৈরি করতে ব্যর্থ",
       "submitProposalError": "প্রস্তাব জমা দিতে ব্যর্থ",
       "updateProposalError": "প্রস্তাব আপডেট করতে ব্যর্থ",
+      "editingClosedTitle": "সম্পাদনা বন্ধ",
+      "editingClosedDescription": "আপনি আর এই প্রস্তাবটি সম্পাদনা করতে পারবেন না। এখন করা পরিবর্তনগুলো সংরক্ষিত হবে না।",
       "submitFormError": "ফর্ম জমা দিতে ব্যর্থ",
       "unexpectedError": "একটি অপ্রত্যাশিত ত্রুটি ঘটেছে",
       "anonymousAuthor": "বেনামী",

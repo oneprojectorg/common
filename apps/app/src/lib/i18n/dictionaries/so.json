@@ -1369,6 +1369,8 @@
       "createProposalError": "Ku guuldareystay abuurista soo jeedinta",
       "submitProposalError": "Ku guuldareystay gudbinta soo jeedinta",
       "updateProposalError": "Ku guuldareystay cusboonaysiinta soo jeedinta",
+      "editingClosedTitle": "Wax ka beddelka waa xiran yahay",
+      "editingClosedDescription": "Mar dambe wax kama beddeli kartid soo jeedintan. Isbeddellada aad hadda samayso lama kaydinayo.",
       "submitFormError": "Ku guuldareystay gudbinta foomka",
       "unexpectedError": "Khalad aan la filayn ayaa dhacay",
       "anonymousAuthor": "Aan la aqoon",
