@@ -71,13 +71,16 @@ export const createCustomFormSubmission = async ({
   // (`form.profileId` is the process instance's profile). This stops a caller
   // from attaching their own entity to an unrelated form.
   if (getFormShowOn(form.schema) === 'entry') {
-    await assertEntryFormParticipant({
+    await assertEntryFormParticipantInPhase({
       participantProfileId: input.profileId,
       form,
       authUserId,
     });
   } else {
-    await assertActionFormTarget({ targetProfileId: input.profileId, form });
+    await assertActionFormTargetInProcess({
+      targetProfileId: input.profileId,
+      form,
+    });
   }
 
   // Single cast point at the DB boundary — the jsonb column holds the same
@@ -128,8 +131,11 @@ export const createCustomFormSubmission = async ({
   return submission;
 };
 
-/** Anyone who can read the process answers an entry form, on their own profile. */
-const assertEntryFormParticipant = async ({
+/**
+ * Anyone who can read the process answers an entry form, on their own profile,
+ * while the form's phase is current.
+ */
+const assertEntryFormParticipantInPhase = async ({
   participantProfileId,
   form,
   authUserId,
@@ -150,9 +156,26 @@ const assertEntryFormParticipant = async ({
     user: { id: authUserId },
     profileId: form.profileId,
   });
+
+  const instance = await db.query.processInstances.findFirst({
+    where: { profileId: form.profileId },
+    columns: { id: true, instanceData: true, currentStateId: true },
+  });
+
+  if (!instance) {
+    throw new NotFoundError('Decision process', form.profileId);
+  }
+
+  const formPhaseId =
+    getEffectiveFormPhase({ schema: form.schema }) ??
+    (await readInstancePhaseSet({ instance })).initialPhaseId;
+
+  if (!instance.currentStateId || formPhaseId !== instance.currentStateId) {
+    throw new ValidationError('This form is not open in the current phase');
+  }
 };
 
-const assertActionFormTarget = async ({
+const assertActionFormTargetInProcess = async ({
   targetProfileId,
   form,
 }: {

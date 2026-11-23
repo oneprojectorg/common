@@ -56,8 +56,7 @@ interface CustomFormModalProps {
   schema: Record<string, unknown>;
   isSubmitting?: boolean;
   onSubmit: (values: CustomFormValues) => void | Promise<void>;
-  /** Dismissing the modal cancels the whole submission (the proposal stays
-   *  a draft) — completing the form is required to finish submitting. */
+  /** Called when the user dismisses the modal. */
   onOpenChange: (open: boolean) => void;
   /** Label for the submit button; defaults to a generic "Submit". */
   submitLabel?: string;

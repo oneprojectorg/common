@@ -37,6 +37,12 @@ describe('customFormDefinitionInputSchema', () => {
     expect(parse(withoutPhase).success).toBe(false);
   });
 
+  it('accepts each x-show-on timing and rejects an unknown one', () => {
+    expect(parse(definition({ 'x-show-on': 'entry' })).success).toBe(true);
+    expect(parse(definition({ 'x-show-on': 'action' })).success).toBe(true);
+    expect(parse(definition({ 'x-show-on': 'later' })).success).toBe(false);
+  });
+
   it('rejects a form with no fields', () => {
     expect(
       parse(definition({ properties: {}, 'x-field-order': [] })).success,

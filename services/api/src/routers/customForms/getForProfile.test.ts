@@ -1,3 +1,4 @@
+import type { CustomFormShowOn } from '@op/common/client';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { customFormSubmissions, customForms } from '@op/db/schema';
@@ -27,6 +28,7 @@ async function attachForm(
   profileId: string,
   onTestFinished: (fn: () => Promise<void>) => void,
   phaseId?: string,
+  showOn?: CustomFormShowOn,
 ) {
   const [form] = await db
     .insert(customForms)
@@ -37,6 +39,7 @@ async function attachForm(
         type: 'object',
         properties: {},
         ...(phaseId ? { 'x-phase': phaseId } : {}),
+        ...(showOn ? { 'x-show-on': showOn } : {}),
       },
     })
     .returning();
@@ -106,6 +109,35 @@ describe.concurrent('customForm.getForProfile', () => {
 
     expect(result?.id).toBe(form.id);
     expect(result?.name).toBe('Attached Form');
+  });
+
+  it('returns an entry form only to a caller who asks at phase entry', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const form = await attachForm(
+      setup.instance.profileId,
+      onTestFinished,
+      undefined,
+      'entry',
+    );
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const [atAction, atEntry] = await Promise.all([
+      caller.customForm.getForProfile({ profileId: setup.instance.profileId }),
+      caller.customForm.getForProfile({
+        profileId: setup.instance.profileId,
+        showOn: 'entry',
+      }),
+    ]);
+
+    expect(atAction).toBeNull();
+    expect(atEntry?.id).toBe(form.id);
   });
 
   it('returns null when no form is attached', async ({

@@ -325,7 +325,7 @@ export const getCustomFormForProfileInputSchema = z.object({
   // belonging to this phase, so legacy forms keep gating submission.
   initialPhaseId: z.string().optional(),
   // The moment the caller asks at. A form set to open at another moment is
-  // not returned.
+  // not returned. Omitted means `action`, so entry forms never come back.
   showOn: customFormShowOnSchema.default('action'),
 });
 

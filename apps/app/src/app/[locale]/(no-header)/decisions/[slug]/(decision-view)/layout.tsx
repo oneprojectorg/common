@@ -95,9 +95,7 @@ const DecisionViewLayout = async ({
         <PromoteAccountModal />
       </Suspense>
       {/* Reads `?resultsLive=` via nuqs, hence the Suspense. */}
-      {instance?.profileId &&
-      instance.currentStateId &&
-      (access?.read || access?.submitProposals) ? (
+      {instance?.profileId && instance.currentStateId && access?.read ? (
         <Suspense fallback={null}>
           <PhaseEntryCustomForm
             decisionProfileId={instance.profileId}

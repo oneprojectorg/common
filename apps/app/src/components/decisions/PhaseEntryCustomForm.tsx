@@ -76,8 +76,14 @@ function PhaseEntryCustomFormModal({
   onClose: () => void;
 }) {
   const t = useTranslations('decisions.proposals');
+  const utils = trpc.useUtils();
   const submitForm = trpc.customForm.submit.useMutation({
-    onSuccess: onClose,
+    onSuccess: () => {
+      onClose();
+      void utils.customForm.getForProfile.invalidate({
+        profileId: form.profileId,
+      });
+    },
     onError: (error) => {
       logger.error('Failed to submit phase entry custom form', {
         error,

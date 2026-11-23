@@ -40,6 +40,19 @@ const TEST_FORM_SCHEMA = {
   },
 };
 
+async function getCurrentPhaseId(instanceProfileId: string) {
+  const instance = await db.query.processInstances.findFirst({
+    where: { profileId: instanceProfileId },
+    columns: { currentStateId: true },
+  });
+
+  if (!instance?.currentStateId) {
+    throw new Error('Test setup: instance has no current phase');
+  }
+
+  return instance.currentStateId;
+}
+
 async function createCustomForm(
   profileId: string,
   onTestFinished: (fn: () => Promise<void>) => void,
@@ -377,7 +390,7 @@ describe.concurrent('customForm.submit', () => {
     const form = await createCustomForm(
       context.instance.profileId,
       onTestFinished,
-      'review',
+      await getCurrentPhaseId(context.instance.profileId),
       'entry',
     );
 
@@ -390,6 +403,63 @@ describe.concurrent('customForm.submit', () => {
     });
 
     expect(submission.profileId).toBe(member.profileId);
+  });
+
+  it('rejects an entry form submission outside the form phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    const member = await testData.createInstanceMember(context);
+    const form = await createCustomForm(
+      context.instance.profileId,
+      onTestFinished,
+      'not-the-current-phase',
+      'entry',
+    );
+
+    const caller = await createAuthenticatedCaller(member.email);
+
+    await expect(
+      caller.customForm.submit({
+        customFormId: form.id,
+        profileId: member.profileId,
+        data: { neighborhood: 'Downtown' },
+      }),
+    ).rejects.toThrow(/not open in the current phase/i);
+  });
+
+  it("rejects an entry form submission attached to a profile other than the caller's own", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const form = await createCustomForm(
+      setup.instance.profileId,
+      onTestFinished,
+      await getCurrentPhaseId(setup.instance.profileId),
+      'entry',
+    );
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Entry form answers belong to a person' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.customForm.submit({
+        customFormId: form.id,
+        profileId: proposal.profileId,
+        data: { neighborhood: 'Downtown' },
+      }),
+    ).rejects.toThrow(/does not belong to this form/i);
   });
 
   it('rejects an entry form submission from a member of another process', async ({
@@ -405,7 +475,7 @@ describe.concurrent('customForm.submit', () => {
     const form = await createCustomForm(
       context.instance.profileId,
       onTestFinished,
-      'review',
+      await getCurrentPhaseId(context.instance.profileId),
       'entry',
     );
 
@@ -417,7 +487,12 @@ describe.concurrent('customForm.submit', () => {
         profileId: outsider.profileId,
         data: { neighborhood: 'Downtown' },
       }),
-    ).rejects.toThrow(/access/i);
+    ).rejects.toThrow(/don't have access/i);
+
+    const rows = await db.query.customFormSubmissions.findMany({
+      where: { customFormId: form.id },
+    });
+    expect(rows).toEqual([]);
   });
 });
 

@@ -1,9 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // `@op/db/client` pulls in `server-only`, which Vitest can't load. Stub it with
-// a fake `db` exposing the `customForms` query helpers and the submission
+// a fake `db` exposing the `customForms` query helper and the submission
 // lookup this service uses.
-const findFirst = vi.fn();
 const findMany = vi.fn();
 const submissionLimit = vi.fn();
 
@@ -18,7 +17,6 @@ vi.mock('@op/db/client', () => ({
   db: {
     query: {
       customForms: {
-        findFirst: (...args: unknown[]) => findFirst(...args),
         findMany: (...args: unknown[]) => findMany(...args),
       },
     },
@@ -63,7 +61,6 @@ function form(schema: Record<string, unknown>, id = 'form') {
 
 describe('getCustomFormForProfile', () => {
   beforeEach(() => {
-    findFirst.mockReset();
     findMany.mockReset();
     submissionLimit.mockReset();
     assertUserByAuthId.mockReset();
@@ -88,7 +85,6 @@ describe('getCustomFormForProfile', () => {
     });
 
     expect(result?.id).toBe('review-form');
-    expect(findFirst).not.toHaveBeenCalled();
   });
 
   it('treats a form with no x-phase as the initial phase', async () => {
@@ -118,16 +114,18 @@ describe('getCustomFormForProfile', () => {
     expect(submissionLimit).not.toHaveBeenCalled();
   });
 
-  it('falls back to the first form when no phaseId is given', async () => {
-    findFirst.mockResolvedValue(form({ 'x-phase': 'review' }, 'first-form'));
+  it('falls back to the first action form when no phaseId is given', async () => {
+    findMany.mockResolvedValue([
+      form({ 'x-phase': 'submission', 'x-show-on': 'entry' }, 'entry-form'),
+      form({ 'x-phase': 'review' }, 'action-form'),
+    ]);
 
     const result = await getCustomFormForProfile({
       profileId: 'p1',
       authUserId: 'auth-user',
     });
 
-    expect(result?.id).toBe('first-form');
-    expect(findMany).not.toHaveBeenCalled();
+    expect(result?.id).toBe('action-form');
   });
 
   it('returns null when the caller already submitted the matched form', async () => {
@@ -169,7 +167,7 @@ describe('getCustomFormForProfile', () => {
     expect(submissionLimit).not.toHaveBeenCalled();
   });
 
-  it('returns an entry form only to a caller asking at phase entry', async () => {
+  it('defaults to action timing and returns an entry form only when asked at entry', async () => {
     findMany.mockResolvedValue([
       form({ 'x-phase': 'review', 'x-show-on': 'entry' }, 'entry-form'),
     ]);

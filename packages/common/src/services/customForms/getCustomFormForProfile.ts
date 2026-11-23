@@ -49,10 +49,10 @@ export const getCustomFormForProfile = async ({
       user: { id: authUserId },
       profileId,
     }),
-    getFormForPhase({ profileId, phaseId, initialPhaseId }),
+    getFormForPhase({ profileId, phaseId, initialPhaseId, showOn }),
   ]);
 
-  if (!form || getFormShowOn(form.schema) !== showOn) {
+  if (!form) {
     return null;
   }
 
@@ -65,22 +65,13 @@ const getFormForPhase = async ({
   profileId,
   phaseId,
   initialPhaseId,
+  showOn,
 }: {
   profileId: string;
   phaseId?: string;
   initialPhaseId?: string;
+  showOn: CustomFormShowOn;
 }): Promise<CustomForm | null> => {
-  if (!phaseId) {
-    const form = await db.query.customForms.findFirst({
-      where: {
-        profileId,
-        deletedAt: { isNull: true },
-      },
-    });
-
-    return form ?? null;
-  }
-
   const forms = await db.query.customForms.findMany({
     where: {
       profileId,
@@ -90,8 +81,10 @@ const getFormForPhase = async ({
 
   const match = forms.find(
     (form) =>
-      getEffectiveFormPhase({ schema: form.schema, initialPhaseId }) ===
-      phaseId,
+      getFormShowOn(form.schema) === showOn &&
+      (!phaseId ||
+        getEffectiveFormPhase({ schema: form.schema, initialPhaseId }) ===
+          phaseId),
   );
 
   return match ?? null;
