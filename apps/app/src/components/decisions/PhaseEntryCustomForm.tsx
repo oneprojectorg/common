@@ -31,7 +31,7 @@ export const PhaseEntryCustomForm = ({
 }: PhaseEntryCustomFormProps) => {
   const { user } = useUser();
   const [resultsLive] = useQueryState(RESULTS_LIVE_QUERY_PARAM);
-  const [isClosed, setIsClosed] = useState(false);
+  const [closedFormId, setClosedFormId] = useState<string>();
   const participantProfileId = user?.profileId;
   // The post-publish success modal owns the screen while `?resultsLive=1` is in
   // the URL, so the form waits until that param is stripped.
@@ -50,7 +50,7 @@ export const PhaseEntryCustomForm = ({
   if (
     !participantProfileId ||
     !form ||
-    isClosed ||
+    form.id === closedFormId ||
     isResultsLiveDialogActive ||
     hasSkipCookie(getFormSkipCookieName(form.id))
   ) {
@@ -61,7 +61,7 @@ export const PhaseEntryCustomForm = ({
     <PhaseEntryCustomFormModal
       form={form}
       participantProfileId={participantProfileId}
-      onClose={() => setIsClosed(true)}
+      onClose={() => setClosedFormId(form.id)}
     />
   );
 };

@@ -157,18 +157,13 @@ const assertEntryFormParticipantInPhase = async ({
     profileId: form.profileId,
   });
 
-  const instance = await db.query.processInstances.findFirst({
-    where: { profileId: form.profileId },
-    columns: { id: true, instanceData: true, currentStateId: true },
-  });
+  const formInstancePhase = await getFormInstancePhase(form);
 
-  if (!instance) {
+  if (!formInstancePhase) {
     throw new NotFoundError('Decision process', form.profileId);
   }
 
-  const formPhaseId =
-    getEffectiveFormPhase({ schema: form.schema }) ??
-    (await readInstancePhaseSet({ instance })).initialPhaseId;
+  const { instance, formPhaseId } = formInstancePhase;
 
   if (!instance.currentStateId || formPhaseId !== instance.currentStateId) {
     throw new ValidationError('This form is not open in the current phase');
@@ -211,19 +206,14 @@ const isParticipantInFormProcess = async ({
   participantProfileId: string;
   form: CustomForm;
 }): Promise<boolean> => {
-  const instance = await db.query.processInstances.findFirst({
-    where: { profileId: form.profileId },
-    columns: { id: true, instanceData: true },
-  });
+  const formInstancePhase = await getFormInstancePhase(form);
 
-  if (!instance) {
+  if (!formInstancePhase) {
     return false;
   }
 
   // A reviewer answers only the form of a phase they review in.
-  const formPhaseId =
-    getEffectiveFormPhase({ schema: form.schema }) ??
-    (await readInstancePhaseSet({ instance })).initialPhaseId;
+  const { instance, formPhaseId } = formInstancePhase;
 
   const [vote, reviewAssignment] = await Promise.all([
     db.query.decisionsVoteSubmissions.findFirst({
@@ -246,4 +236,22 @@ const isParticipantInFormProcess = async ({
   ]);
 
   return !!vote || !!reviewAssignment;
+};
+
+/** The form's process instance and the phase the form belongs to in it. */
+const getFormInstancePhase = async (form: CustomForm) => {
+  const instance = await db.query.processInstances.findFirst({
+    where: { profileId: form.profileId },
+    columns: { id: true, instanceData: true, currentStateId: true },
+  });
+
+  if (!instance) {
+    return null;
+  }
+
+  const formPhaseId =
+    getEffectiveFormPhase({ schema: form.schema }) ??
+    (await readInstancePhaseSet({ instance })).initialPhaseId;
+
+  return { instance, formPhaseId };
 };

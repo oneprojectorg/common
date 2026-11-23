@@ -4,7 +4,9 @@ export const hasSkipCookie = (name: string): boolean => {
   if (typeof document === 'undefined') {
     return false;
   }
-  return document.cookie.split('; ').some((c) => c.startsWith(`${name}=`));
+  return document.cookie
+    .split('; ')
+    .some((cookie) => cookie.startsWith(`${name}=`));
 };
 
 export const setSkipCookie = (name: string) => {

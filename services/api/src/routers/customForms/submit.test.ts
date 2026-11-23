@@ -428,6 +428,11 @@ describe.concurrent('customForm.submit', () => {
         data: { neighborhood: 'Downtown' },
       }),
     ).rejects.toThrow(/not open in the current phase/i);
+
+    const rows = await db.query.customFormSubmissions.findMany({
+      where: { customFormId: form.id },
+    });
+    expect(rows).toEqual([]);
   });
 
   it("rejects an entry form submission attached to a profile other than the caller's own", async ({
