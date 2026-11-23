@@ -518,7 +518,7 @@
     "formInternalNameHint": "Only admins see this. Participants see the heading below.",
     "formPhaseLabel": "Phase",
     "formPhasePlaceholder": "Select a phase",
-    "formPhaseHint": "A phase can hold one form. Phases that already have one are unavailable.",
+    "formPhaseHint": "If this form applies to multiple phases, create a separate form for each.",
     "formHeadingLabel": "Heading",
     "formIntroLabel": "Intro text",
     "formUnsupportedTitle": "This form needs an engineer",
@@ -573,7 +573,9 @@
     "removePublicAccessConfirmHint": "Visitors without an account lose access to this decision and everything in it. Anyone who already joined keeps their own access, and nothing they submitted is deleted.",
     "removeAccessAction": "Remove access",
     "removingProgress": "Removing…",
-    "removePublicAccessSuccess": "This decision is no longer public."
+    "removePublicAccessSuccess": "This decision is no longer public.",
+    "showOnPhaseEntryLabel": "Show automatically when user enters this phase",
+    "showOnPhaseEntryHint": "If enabled, this form will appear automatically when the user enters this phase. Like the NPS survey, users who complete the form or dismiss it will not see it again."
   },
   "editor": {
     "removePreviewAction": "Remove preview",

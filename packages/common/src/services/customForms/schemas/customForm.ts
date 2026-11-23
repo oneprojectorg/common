@@ -20,6 +20,12 @@ export interface CustomFormDefinitionSchema extends JSONSchema7 {
    * initial (submission) phase. Used to decide which phase surfaces the form.
    */
   'x-phase'?: string;
+  /**
+   * When true, the form shows automatically when the user enters the phase.
+   * Similar to the NPS survey, the form won't show again if completed or
+   * if the user dismisses it (skip sets a cookie that expires after 7 days).
+   */
+  'x-show-on-phase-entry'?: boolean;
 }
 
 /** True for a stored form definition with an object root and `properties`. */
@@ -166,6 +172,7 @@ export const customFormDefinitionInputSchema = z
     title: z.string().min(1).max(200),
     description: z.string().max(2000).optional(),
     'x-phase': z.string().min(1).max(256),
+    'x-show-on-phase-entry': z.boolean().optional(),
     required: z.array(customFormFieldKeySchema),
     properties: z.record(customFormFieldKeySchema, customFormFieldSchema),
     'x-field-order': z.array(customFormFieldKeySchema),

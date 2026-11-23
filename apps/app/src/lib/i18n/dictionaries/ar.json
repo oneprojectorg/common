@@ -573,7 +573,9 @@
     "removePublicAccessConfirmHint": "يفقد الزوار الذين ليس لديهم حساب الوصول إلى هذا القرار وكل ما فيه. أما من انضم بالفعل فيحتفظ بوصوله الخاص، ولا يُحذف أي شيء قدّمه.",
     "removeAccessAction": "إزالة الوصول",
     "removingProgress": "جارٍ الإزالة…",
-    "removePublicAccessSuccess": "لم يعد هذا القرار عامًا."
+    "removePublicAccessSuccess": "لم يعد هذا القرار عامًا.",
+    "showOnPhaseEntryLabel": "Show automatically when user enters this phase",
+    "showOnPhaseEntryHint": "If enabled, this form will appear automatically when the user enters this phase. Like the NPS survey, users who complete the form or dismiss it will not see it again."
   },
   "editor": {
     "removePreviewAction": "إزالة المعاينة",

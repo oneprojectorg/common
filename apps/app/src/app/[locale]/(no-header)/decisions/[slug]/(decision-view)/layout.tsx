@@ -5,6 +5,7 @@ import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 import { DecisionViewToggle } from '@/components/decisions/DecisionViewToggle';
 import { JoinAccountModal } from '@/components/decisions/JoinAccountModal';
+import { PhaseEntryCustomFormGate } from '@/components/decisions/PhaseEntryCustomFormGate';
 import { PromoteAccountModal } from '@/components/decisions/PromoteAccountModal';
 import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 import { getDecisionDetectionText } from '@/components/decisions/translationDetectionText';
@@ -93,6 +94,11 @@ const DecisionViewLayout = async ({
       <Suspense fallback={null}>
         <PromoteAccountModal />
       </Suspense>
+      {/*
+       * Custom form that shows automatically when user enters a phase.
+       * Like the survey, it won't show again if completed or dismissed.
+       */}
+      <PhaseEntryCustomFormGate instanceId={instanceId} instance={instance} />
       {/*
        * Header "Join" modal (account claim on public processes). Mounted in the
        * layout like PromoteAccountModal so `?join=1` works on both tabs; reads

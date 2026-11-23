@@ -7,6 +7,7 @@ import type {
   CustomFormWithPhaseDTO,
 } from '@op/common/client';
 import { Button } from '@op/sense/Button';
+import { Checkbox } from '@op/sense/Checkbox';
 import {
   Dialog,
   DialogContent,
@@ -245,6 +246,29 @@ const FormDetailsFields = ({
         problems={getProblemsWithCode(problems, 'missing-phase')}
         onChange={(phaseId) => onChange({ ...draft, phaseId })}
       />
+
+      <Field>
+        <div className="flex items-center gap-3">
+          <Checkbox
+            id={`${fieldId}-show-on-entry`}
+            checked={draft.showOnPhaseEntry}
+            onCheckedChange={(checked) =>
+              onChange({
+                ...draft,
+                showOnPhaseEntry:
+                  typeof checked === 'boolean' ? checked : false,
+              })
+            }
+          />
+          <FieldLabel
+            htmlFor={`${fieldId}-show-on-entry`}
+            className="cursor-pointer"
+          >
+            {t('admin.showOnPhaseEntryLabel')}
+          </FieldLabel>
+        </div>
+        <FieldDescription>{t('admin.showOnPhaseEntryHint')}</FieldDescription>
+      </Field>
 
       <CountedInputField
         id={`${fieldId}-title`}

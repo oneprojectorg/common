@@ -573,7 +573,9 @@
     "removePublicAccessConfirmHint": "A fiók nélküli látogatók elveszítik a hozzáférésüket ehhez a döntéshez és mindenhez, ami benne van. Aki már csatlakozott, megtartja a saját hozzáférését, és semmi sem törlődik abból, amit beküldött.",
     "removeAccessAction": "Hozzáférés visszavonása",
     "removingProgress": "Visszavonás…",
-    "removePublicAccessSuccess": "Ez a döntés már nem nyilvános."
+    "removePublicAccessSuccess": "Ez a döntés már nem nyilvános.",
+    "showOnPhaseEntryLabel": "Show automatically when user enters this phase",
+    "showOnPhaseEntryHint": "If enabled, this form will appear automatically when the user enters this phase. Like the NPS survey, users who complete the form or dismiss it will not see it again."
   },
   "editor": {
     "removePreviewAction": "Előnézet eltávolítása",

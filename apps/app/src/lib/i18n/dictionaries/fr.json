@@ -573,7 +573,9 @@
     "removePublicAccessConfirmHint": "Les personnes sans compte perdent l'accès à cette décision et à tout son contenu. Celles qui l'ont déjà rejointe conservent leur propre accès, et rien de ce qu'elles ont soumis n'est supprimé.",
     "removeAccessAction": "Retirer l'accès",
     "removingProgress": "Retrait…",
-    "removePublicAccessSuccess": "Cette décision n'est plus publique."
+    "removePublicAccessSuccess": "Cette décision n'est plus publique.",
+    "showOnPhaseEntryLabel": "Show automatically when user enters this phase",
+    "showOnPhaseEntryHint": "If enabled, this form will appear automatically when the user enters this phase. Like the NPS survey, users who complete the form or dismiss it will not see it again."
   },
   "editor": {
     "removePreviewAction": "Supprimer l'aperçu",

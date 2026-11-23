@@ -573,7 +573,9 @@
     "removePublicAccessConfirmHint": "অ্যাকাউন্ট নেই এমন দর্শকরা এই সিদ্ধান্ত ও এর ভেতরের সবকিছুর অ্যাক্সেস হারাবেন। যাঁরা ইতিমধ্যে যোগ দিয়েছেন তাঁরা নিজেদের অ্যাক্সেস রাখবেন, এবং তাঁদের জমা দেওয়া কিছুই মুছে যাবে না।",
     "removeAccessAction": "অ্যাক্সেস সরান",
     "removingProgress": "সরানো হচ্ছে…",
-    "removePublicAccessSuccess": "এই সিদ্ধান্তটি আর সার্বজনীন নয়।"
+    "removePublicAccessSuccess": "এই সিদ্ধান্তটি আর সার্বজনীন নয়।",
+    "showOnPhaseEntryLabel": "Show automatically when user enters this phase",
+    "showOnPhaseEntryHint": "If enabled, this form will appear automatically when the user enters this phase. Like the NPS survey, users who complete the form or dismiss it will not see it again."
   },
   "editor": {
     "removePreviewAction": "প্রিভিউ সরান",

@@ -573,7 +573,9 @@
     "removePublicAccessConfirmHint": "Booqdayaasha aan koonto lahayn way lumiyaan gelitaanka go'aankan iyo wax kasta oo ku jira. Qofkii horey u soo biiray wuxuu haystaa gelitaankiisa, waxna lagama tirtirayo wixii uu soo gudbiyay.",
     "removeAccessAction": "Ka saar gelitaanka",
     "removingProgress": "Waa la saarayaa…",
-    "removePublicAccessSuccess": "Go'aankan hadda ma aha mid dadweyne."
+    "removePublicAccessSuccess": "Go'aankan hadda ma aha mid dadweyne.",
+    "showOnPhaseEntryLabel": "Show automatically when user enters this phase",
+    "showOnPhaseEntryHint": "If enabled, this form will appear automatically when the user enters this phase. Like the NPS survey, users who complete the form or dismiss it will not see it again."
   },
   "editor": {
     "removePreviewAction": "Ka saar muuqaalka hore",
