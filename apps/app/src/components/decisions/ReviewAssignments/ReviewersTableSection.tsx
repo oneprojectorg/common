@@ -53,7 +53,6 @@ import {
   Suspense,
   useCallback,
   useDeferredValue,
-  useMemo,
   useState,
 } from 'react';
 import {
@@ -75,11 +74,13 @@ import {
 } from '../FilterBar';
 import { ReviewStatusBadge } from '../ReviewStatusBadge';
 import { StickyFilterBar } from '../StickyFilterBar';
+import { reviewerPageHref } from '../proposalHrefs';
 import { useLastOpenId } from '../useLastOpenId';
 import { useSearchParam } from '../useSearchParam';
 import { ManageAssignmentsDialogContent } from './ManageAssignmentsDialog';
 import { ReviewersTableSkeleton } from './ReviewAssignmentsSkeletons';
-import { REVIEWER_PANEL_PARAM, ReviewerSheet } from './ReviewerSheet';
+import { AssignmentsLoadError } from './ReviewerAssignmentsParts';
+import { ReviewerSheet } from './ReviewerSheet';
 import {
   SendReminderDialog,
   type SendReminderTarget,
@@ -95,6 +96,9 @@ interface ReviewersTableSectionProps {
 }
 
 const reviewerStatusParser = parseAsStringLiteral(reviewerStatusSchema.options);
+/** Not `reviewer`, so it cannot collide with a filter param. */
+const REVIEWER_PANEL_PARAM = 'reviewerPanel';
+
 const reviewerSortParser = parseAsStringLiteral(
   reviewerSortSchema.options,
 ).withDefault(DEFAULT_REVIEWER_SORT);
@@ -103,7 +107,6 @@ export function ReviewersTableSection({
   ownerSlug,
   ...props
 }: ReviewersTableSectionProps) {
-  const t = useTranslations();
   const { decisionSlug, processInstanceId, phaseId } = props;
   const isMobile = useIsMobile();
   const [openReviewerId, setOpenReviewerId] = useQueryState(
@@ -112,36 +115,15 @@ export function ReviewersTableSection({
   );
 
   // Pushed, so Back closes the panel; a phone goes to the reviewer page instead.
-  const openReviewer = useCallback(
-    (reviewerProfileId: string) => {
-      void setOpenReviewerId(reviewerProfileId, { history: 'push' });
-    },
-    [setOpenReviewerId],
-  );
-  const route = useMemo(
-    () => ({ decisionSlug, slug: ownerSlug, instanceId: processInstanceId }),
-    [decisionSlug, ownerSlug, processInstanceId],
-  );
+  const openReviewer = (reviewerProfileId: string) => {
+    void setOpenReviewerId(reviewerProfileId, { history: 'push' });
+  };
 
   return (
     <>
       <APIErrorBoundary
         fallbacks={{
-          default: () => (
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <LuUsers className="size-6" />
-                </EmptyMedia>
-                <EmptyTitle>
-                  {t('decisions.review.loadAssignmentsError')}
-                </EmptyTitle>
-                <EmptyDescription>
-                  {t('decisions.proposals.refreshPageHint')}
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ),
+          default: () => <AssignmentsLoadError />,
         }}
       >
         <Suspense fallback={<ReviewersTableSkeleton />}>
@@ -154,11 +136,12 @@ export function ReviewersTableSection({
       <ReviewerSheet
         processInstanceId={processInstanceId}
         phaseId={phaseId}
-        route={route}
+        route={{
+          decisionSlug,
+          slug: ownerSlug,
+          instanceId: processInstanceId,
+        }}
         reviewerProfileId={isMobile ? null : openReviewerId}
-        pageHref={(reviewerProfileId) =>
-          reviewerPageHref({ decisionSlug, reviewerProfileId })
-        }
         onClose={() => void setOpenReviewerId(null)}
       />
     </>
@@ -624,14 +607,4 @@ function ReviewerRowCells({
       </TableCell>
     </TableRow>
   );
-}
-
-function reviewerPageHref({
-  decisionSlug,
-  reviewerProfileId,
-}: {
-  decisionSlug: string;
-  reviewerProfileId: string;
-}): string {
-  return `/decisions/${decisionSlug}/assignments/${reviewerProfileId}`;
 }

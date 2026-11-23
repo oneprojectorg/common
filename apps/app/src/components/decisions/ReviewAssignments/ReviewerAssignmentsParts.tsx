@@ -16,7 +16,7 @@ import { Skeleton } from '@op/sense/Skeleton';
 import { cn } from '@op/sense/lib/utils';
 import { useFormatter } from 'next-intl';
 import { type ReactNode, useCallback, useState } from 'react';
-import { LuBell, LuListChecks, LuUserX } from 'react-icons/lu';
+import { LuBell, LuListChecks, LuUserX, LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -172,6 +172,24 @@ export function ReviewerNotFound() {
         <EmptyTitle>{t('decisions.review.reviewerNotFound')}</EmptyTitle>
         <EmptyDescription>
           {t('decisions.review.reviewerNotInPhase')}
+        </EmptyDescription>
+      </EmptyHeader>
+    </Empty>
+  );
+}
+
+export function AssignmentsLoadError({ className }: { className?: string }) {
+  const t = useTranslations();
+
+  return (
+    <Empty className={className}>
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuUsers className="size-6" />
+        </EmptyMedia>
+        <EmptyTitle>{t('decisions.review.loadAssignmentsError')}</EmptyTitle>
+        <EmptyDescription>
+          {t('decisions.proposals.refreshPageHint')}
         </EmptyDescription>
       </EmptyHeader>
     </Empty>

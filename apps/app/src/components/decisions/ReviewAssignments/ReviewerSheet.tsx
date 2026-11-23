@@ -2,18 +2,11 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { Button } from '@op/sense/Button';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@op/sense/Empty';
 import { Header2, Header3 } from '@op/sense/Header';
 import { Sheet, SheetContent, SheetFooter, SheetTitle } from '@op/sense/Sheet';
 import { Skeleton } from '@op/sense/Skeleton';
 import { type ReactNode, Suspense, useId, useState } from 'react';
-import { LuMaximize2, LuUsers, LuX } from 'react-icons/lu';
+import { LuMaximize2, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -22,10 +15,12 @@ import {
   ProposalSheetContext,
   type ProposalSheetRoute,
 } from '../ProposalSheet/proposalSheetState';
+import { reviewerPageHref } from '../proposalHrefs';
 import { useLastOpenId } from '../useLastOpenId';
 import { ManageAssignmentsAction } from './ManageAssignmentsAction';
 import { ReviewerAssignmentList } from './ReviewerAssignmentList';
 import {
+  AssignmentsLoadError,
   AssignmentsNextPage,
   ReviewerActions,
   ReviewerNoAssignments,
@@ -39,17 +34,13 @@ import {
   useReviewerAssignments,
 } from './useReviewerAssignments';
 
-/** Not `reviewer`, so it cannot collide with a filter param. */
-export const REVIEWER_PANEL_PARAM = 'reviewerPanel';
-
 interface ReviewerSheetProps {
   processInstanceId: string;
   phaseId: string;
-  route: ProposalSheetRoute;
+  /** The reviewer page needs the decision route, not the legacy one. */
+  route: ProposalSheetRoute & { decisionSlug: string };
   /** The reviewer shown, or null when the panel is closed. */
   reviewerProfileId: string | null;
-  /** The reviewer page that the expand button opens. */
-  pageHref: (reviewerProfileId: string) => string;
   onClose: () => void;
 }
 
@@ -59,7 +50,6 @@ export function ReviewerSheet({
   phaseId,
   route,
   reviewerProfileId,
-  pageHref,
   onClose,
 }: ReviewerSheetProps) {
   const t = useTranslations();
@@ -88,7 +78,10 @@ export function ReviewerSheet({
         <div className="flex shrink-0 items-center justify-end gap-1 px-4 pt-4">
           {shownId ? (
             <ButtonLink
-              href={pageHref(shownId)}
+              href={reviewerPageHref({
+                decisionSlug: route.decisionSlug,
+                reviewerProfileId: shownId,
+              })}
               variant="ghost"
               size="icon-sm"
               className="text-muted-foreground hover:text-foreground"
@@ -117,7 +110,7 @@ export function ReviewerSheet({
               fallbacks={{
                 default: () => (
                   <ScrollRegion>
-                    <ReviewerUnavailable />
+                    <AssignmentsLoadError className="border-0" />
                   </ScrollRegion>
                 ),
               }}
@@ -195,11 +188,10 @@ function ReviewerSheetContent({
             })}
           </Header3>
           {summary.total === 0 ? (
-            // The design's compact empty state: no side padding, smaller copy.
             <ReviewerNoAssignments
               input={input}
               name={name}
-              className="gap-4 px-0 pt-0 pb-2 **:data-[slot=empty-description]:text-sm **:data-[slot=empty-title]:text-title **:data-[slot=empty-title]:font-normal"
+              className="gap-4 p-0 pb-2"
             />
           ) : (
             <>
@@ -277,23 +269,5 @@ function ReviewerSheetSkeleton() {
         </div>
       </div>
     </>
-  );
-}
-
-function ReviewerUnavailable() {
-  const t = useTranslations();
-
-  return (
-    <Empty className="border-0">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <LuUsers className="size-6" />
-        </EmptyMedia>
-        <EmptyTitle>{t('decisions.review.loadAssignmentsError')}</EmptyTitle>
-        <EmptyDescription>
-          {t('decisions.proposals.refreshPageHint')}
-        </EmptyDescription>
-      </EmptyHeader>
-    </Empty>
   );
 }
