@@ -205,6 +205,21 @@ export const readPhaseSettings = (data: unknown): PhaseSettingsFields => {
   };
 };
 
+export const assertPhaseEndsOnOrAfterStart = (data: unknown): void => {
+  if (
+    !isJsonObject(data) ||
+    typeof data.startDate !== 'string' ||
+    typeof data.endDate !== 'string'
+  ) {
+    return;
+  }
+  if (Date.parse(data.endDate) < Date.parse(data.startDate)) {
+    throw new ValidationError('A phase cannot end before it starts', {
+      endDate: 'End the phase on or after its start date',
+    });
+  }
+};
+
 export const getPhaseAsDecisionAdmin = async ({
   user,
   phaseId,

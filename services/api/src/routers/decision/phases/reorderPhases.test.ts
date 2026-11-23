@@ -85,6 +85,50 @@ describe.concurrent('reorderPhases', () => {
     expect(result.items[1]?.data).toEqual({});
   });
 
+  it('refuses dates that end a phase before it starts and keeps the order', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phases, instanceId, adminCaller } = await setupPhases(
+      task,
+      onTestFinished,
+    );
+    const [review, vote, results] = phases;
+    await adminCaller.decision.updatePhase({
+      phaseId: results.id,
+      data: { startDate: '2026-11-08T00:00:00.000Z' },
+    });
+
+    const reversedPlacements = [
+      {
+        phaseId: vote.id,
+        startDate: '2026-10-07T00:00:00.000Z',
+        endDate: '2026-10-01T00:00:00.000Z',
+      },
+      { phaseId: results.id, endDate: '2026-11-01T00:00:00.000Z' },
+    ];
+
+    for (const placement of reversedPlacements) {
+      await expect(
+        adminCaller.decision.reorderPhases({
+          instanceId,
+          phases: [
+            placement,
+            ...phases
+              .filter((phase) => phase.id !== placement.phaseId)
+              .map((phase) => ({ phaseId: phase.id })),
+          ],
+        }),
+      ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    }
+
+    const rows = await loadPhaseRows(instanceId);
+    expect(rows.map((row) => row.id)).toEqual([review.id, vote.id, results.id]);
+    expect(rows.find((row) => row.id === results.id)?.data).toEqual({
+      startDate: '2026-11-08T00:00:00.000Z',
+    });
+  });
+
   it('refuses a list that leaves out, repeats or adds a phase', async ({
     task,
     onTestFinished,

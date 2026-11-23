@@ -10,6 +10,7 @@ import type { User } from '@op/supabase/lib';
 import { NotFoundError, ValidationError } from '../../utils';
 import {
   type PhaseData,
+  assertPhaseEndsOnOrAfterStart,
   assertPhaseSchemasCompile,
   assertPhaseSettings,
   getPhaseAsDecisionAdmin,
@@ -100,7 +101,7 @@ export const updatePhase = async ({
         });
       }
       if (touchesDates) {
-        assertPhaseEndsAfterStart(phase.data);
+        assertPhaseEndsOnOrAfterStart(phase.data);
       }
 
       return { phase, profile };
@@ -108,24 +109,6 @@ export const updatePhase = async ({
   });
 
   return result;
-};
-
-const assertPhaseEndsAfterStart = (data: unknown): void => {
-  if (
-    typeof data !== 'object' ||
-    data === null ||
-    !('startDate' in data) ||
-    !('endDate' in data) ||
-    typeof data.startDate !== 'string' ||
-    typeof data.endDate !== 'string'
-  ) {
-    return;
-  }
-  if (Date.parse(data.endDate) < Date.parse(data.startDate)) {
-    throw new ValidationError('A phase cannot end before it starts', {
-      endDate: 'End the phase on or after its start date',
-    });
-  }
 };
 
 const toPhaseDataPatch = (
