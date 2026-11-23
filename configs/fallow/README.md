@@ -16,10 +16,14 @@ pnpm test:coverage    # needs `pnpm w:api test:supabase:start`
 pnpm health:baseline
 ```
 
-`health-baseline.json` keys each complexity finding by file and function name
-(`--baseline-mode identity`), not by line, so edits above a function do not
-move it out of the baseline. A renamed or moved function reports as new;
-re-record after that kind of refactor.
+`health-baseline.json` keys each complexity and CRAP finding by file and
+function name (`--baseline-mode identity`), not by line, so edits above a
+function do not move it out of the baseline. Two limits:
+
+- A renamed or moved function reports as new. Re-record after that kind of
+  refactor.
+- Unnamed functions in one file share one identity (`<arrow>`), so a new
+  complex arrow function can hide behind one that is already baselined.
 
 ## What CRAP is scored on
 
