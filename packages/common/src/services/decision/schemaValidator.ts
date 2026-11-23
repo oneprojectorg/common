@@ -36,6 +36,8 @@ export class SchemaValidator {
     this.ajv.addKeyword('x-unit');
     // Phase designation on custom forms (see CustomFormDefinitionSchema).
     this.ajv.addKeyword('x-phase');
+    // Show custom form automatically when user enters its phase.
+    this.ajv.addKeyword('x-show-on-phase-entry');
   }
 
   /**

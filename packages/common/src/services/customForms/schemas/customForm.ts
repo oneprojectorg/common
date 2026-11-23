@@ -21,9 +21,8 @@ export interface CustomFormDefinitionSchema extends JSONSchema7 {
    */
   'x-phase'?: string;
   /**
-   * When true, the form shows automatically when the user enters the phase.
-   * Similar to the NPS survey, the form won't show again if completed or
-   * if the user dismisses it (skip sets a cookie that expires after 7 days).
+   * When true, the form opens automatically when a participant enters its phase.
+   * Absent means it does not.
    */
   'x-show-on-phase-entry'?: boolean;
 }
