@@ -53,6 +53,11 @@ export const updatePhase = async ({
     patch !== undefined &&
     (patch.set.settings !== undefined ||
       patch.set.settingsSchema !== undefined);
+  // Only when touched: a stored pair that is already reversed must not block
+  // unrelated edits.
+  const touchesDates =
+    patch !== undefined &&
+    (patch.set.startDate !== undefined || patch.set.endDate !== undefined);
 
   const { result } = await writePhasesWithLock({
     processInstanceId,
@@ -94,12 +99,33 @@ export const updatePhase = async ({
           phaseLabel: profile.name,
         });
       }
+      if (touchesDates) {
+        assertPhaseEndsAfterStart(phase.data);
+      }
 
       return { phase, profile };
     },
   });
 
   return result;
+};
+
+const assertPhaseEndsAfterStart = (data: unknown): void => {
+  if (
+    typeof data !== 'object' ||
+    data === null ||
+    !('startDate' in data) ||
+    !('endDate' in data) ||
+    typeof data.startDate !== 'string' ||
+    typeof data.endDate !== 'string'
+  ) {
+    return;
+  }
+  if (Date.parse(data.endDate) < Date.parse(data.startDate)) {
+    throw new ValidationError('A phase cannot end before it starts', {
+      endDate: 'End the phase on or after its start date',
+    });
+  }
 };
 
 const toPhaseDataPatch = (

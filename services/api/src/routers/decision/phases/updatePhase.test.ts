@@ -127,6 +127,57 @@ describe.concurrent('updatePhase', () => {
     await expectPhase(phase, UNCHANGED);
   });
 
+  it('rejects an end date before the start date', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: phase.id,
+        data: { startDate: DAY_2, endDate: DAY_1 },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expectPhase(phase, UNCHANGED);
+  });
+
+  it('rejects an end date that lands before the stored start date', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: { startDate: DAY_2 },
+    });
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: phase.id,
+        data: { endDate: DAY_1 },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    await expectPhase(phase, { name: PHASE_NAME, data: { startDate: DAY_2 } });
+  });
+
+  it('accepts a phase that starts and ends on the same day', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: { startDate: DAY_1, endDate: DAY_1 },
+    });
+
+    await expectPhase(phase, {
+      name: PHASE_NAME,
+      data: { startDate: DAY_1, endDate: DAY_1 },
+    });
+  });
+
   it('keeps every field when updates to different fields run at once', async ({
     task,
     onTestFinished,
@@ -674,6 +725,9 @@ describe.concurrent('updatePhase', () => {
 });
 
 const UNCHANGED = { name: PHASE_NAME, data: {} };
+
+const DAY_1 = '2026-12-01T00:00:00.000Z';
+const DAY_2 = '2026-12-02T00:00:00.000Z';
 
 const BUDGET_SCHEMA = {
   type: 'object' as const,
