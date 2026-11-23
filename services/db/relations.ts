@@ -673,6 +673,54 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.decisionPhoneNumbers.id,
       optional: true,
     }),
+    conversation: r.one.conversations({
+      from: r.decisionChatSessions.conversationId,
+      to: r.conversations.id,
+      optional: true,
+    }),
+  },
+
+  conversations: {
+    profile: r.one.profiles({
+      from: r.conversations.profileId,
+      to: r.profiles.id,
+      optional: false,
+    }),
+    processInstance: r.one.processInstances({
+      from: r.conversations.processInstanceId,
+      to: r.processInstances.id,
+      optional: true,
+    }),
+    phoneNumber: r.one.decisionPhoneNumbers({
+      from: r.conversations.phoneNumberId,
+      to: r.decisionPhoneNumbers.id,
+      optional: true,
+    }),
+    items: r.many.conversationItems({
+      from: r.conversations.id,
+      to: r.conversationItems.conversationId,
+    }),
+  },
+
+  conversationItems: {
+    conversation: r.one.conversations({
+      from: r.conversationItems.conversationId,
+      to: r.conversations.id,
+      optional: false,
+    }),
+    smsMessage: r.one.smsMessages({
+      from: r.conversationItems.smsMessageId,
+      to: r.smsMessages.id,
+      optional: true,
+    }),
+  },
+
+  smsMessages: {
+    phoneNumber: r.one.decisionPhoneNumbers({
+      from: r.smsMessages.phoneNumberId,
+      to: r.decisionPhoneNumbers.id,
+      optional: true,
+    }),
   },
 
   decisionVoterEnrolments: {

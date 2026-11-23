@@ -117,6 +117,7 @@ keyword without a handler fails the typecheck.
 | `INFO <code>`               | One proposal's title, cost and summary.                                                                                                     |
 | `<code>` or `<code> <code>` | Adds each proposal to the draft ballot in order and says what is left of the budget; a pick that does not fit is refused with the make-room reply. |
 | `LIST`                      | The draft ballot in rank order with the allocated and unspent amounts.                                                                      |
+| `L <question>`              | An LLM assistant answers in one text and can read the decision, registration and ballot, change draft picks, and — only on an explicit ask — submit the ballot. It never registers the member (VOTE/AGREE stay typed). Needs `AI_BASE_URL` and `AI_API_KEY`; `AI_MODEL_ID` overrides the default model. Without an endpoint the member gets the help text. |
 | `REMOVE <code>`             | Takes a pick off the draft.                                                                                                                 |
 | `MOVE <code> <position>`    | Reorders a pick; order is rank.                                                                                                             |
 | `DONE`                      | The full ballot, the ranking note and the SUBMIT prompt.                                                                                     |

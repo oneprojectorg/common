@@ -2,6 +2,7 @@ import {
   type PhoneNumber,
   RateLimitError,
   getSmsProvider,
+  recordSmsMessage,
   safeParsePhoneNumber,
 } from '@op/common';
 import type { inngest } from '@op/events';
@@ -34,6 +35,7 @@ export const SMS_COMMAND_LIST_MESSAGE = [
   'REMOVE [code] drop a pick',
   'DONE review your ballot',
   'SUBMIT cast it',
+  'L [question] ask the assistant',
   'INFO-HELP this list',
   'Reply STOP to unsubscribe.',
 ].join('\n');
@@ -58,12 +60,16 @@ export const createTextSender = ({
   from,
   purpose,
   context,
+  authUserId,
+  phoneNumberId,
 }: {
   step: GetStepTools<typeof inngest>;
   to: PhoneNumber;
   from?: PhoneNumber;
   purpose: string;
   context?: Record<string, unknown>;
+  authUserId?: string | null;
+  phoneNumberId?: string | null;
 }) => {
   const provider = getSmsProvider();
   if (!provider?.sendSms) {
@@ -79,6 +85,22 @@ export const createTextSender = ({
       const result = await sendSms({ to, body, ...(from ? { from } : {}) });
       if (result.status === 'rejected' && result.retryable) {
         throw new RateLimitError(`${label} send rejected: ${result.reason}`);
+      }
+      // A log failure must not fail the step: the SMS already went out, and a
+      // retried step would send it again.
+      try {
+        await recordSmsMessage({
+          direction: 'outbound',
+          body,
+          phoneNumberId: phoneNumberId ?? null,
+          authUserId: authUserId ?? null,
+          counterpartE164: to,
+          providerSid:
+            result.status === 'accepted' ? result.providerMessageId : null,
+          status: result.status === 'accepted' ? 'sent' : 'failed',
+        });
+      } catch (error) {
+        logger.error('Outbound SMS could not be logged', { error });
       }
       return result;
     });

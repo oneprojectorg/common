@@ -15,6 +15,7 @@ import {
   decisionsVoteDraftProposals,
   processInstances,
   profileUsers,
+  smsMessages,
 } from '@op/db/schema';
 import { Events, inngest } from '@op/events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -26,6 +27,17 @@ import {
   resetRecordedSms,
 } from '../../../testing/mocks/sms';
 import { SmsCommandFixture } from '../../../testing/smsCommandFixture';
+
+const isInferenceRequest = (input: RequestInfo | URL): boolean => {
+  try {
+    return (
+      new URL(input instanceof Request ? input.url : String(input)).host ===
+      'inference.test.invalid'
+    );
+  } catch {
+    return false;
+  }
+};
 import { smsInboundEvent } from '../../../testing/smsInboundEvent';
 import { handleSMSCommand } from './handleSMSCommand';
 import { SMS_COMMAND_HELP_MESSAGE } from './smsReply';
@@ -38,6 +50,7 @@ const NUMBERS = {
   chatter: '+15005550095',
   bareInfo: '+15005550097',
   infoHelp: '+15005550038',
+  asker: '+15005550107',
   owner: '+15005550098',
   outsider: '+15005550099',
   codeReply: '+15005550089',
@@ -230,6 +243,120 @@ describe('handleSMSCommand against the database', () => {
       expect(body).toContain(keyword.toUpperCase());
     }
     expect(body!.length).toBeLessThanOrEqual(SMS_MAX_BODY_LENGTH);
+  });
+
+  it('given a member texts L with a question, then the model answers in one text', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.asker);
+    await fixture.createPhoneOnlyAccount(phone);
+    const realFetch = globalThis.fetch;
+    vi.stubEnv('AI_BASE_URL', 'https://inference.test.invalid/v1');
+    vi.stubEnv('AI_API_KEY', 'test-key');
+    vi.stubGlobal('fetch', ((input: RequestInfo | URL, init?: RequestInit) =>
+      isInferenceRequest(input)
+        ? Promise.resolve(
+            new Response(
+              JSON.stringify({
+                id: 'mock',
+                object: 'chat.completion',
+                created: 0,
+                model: 'glm-5.3-flash',
+                choices: [
+                  {
+                    index: 0,
+                    message: {
+                      role: 'assistant',
+                      content: 'Text SHOW to see your decisions.',
+                    },
+                    finish_reason: 'stop',
+                  },
+                ],
+                usage: {
+                  prompt_tokens: 1,
+                  completion_tokens: 1,
+                  total_tokens: 2,
+                },
+              }),
+              {
+                status: 200,
+                headers: { 'content-type': 'application/json' },
+              },
+            ),
+          )
+        : realFetch(input, init)) as typeof fetch);
+    onTestFinished(() => {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    });
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [
+        smsInboundEvent({
+          from: phone,
+          keyword: 'l',
+          argument: 'how do i vote',
+          body: 'L how do I vote?',
+        }),
+      ],
+    });
+
+    expect(result).toEqual({ message: 'question answered' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'Text SHOW to see your decisions.',
+    ]);
+  });
+
+  it('given a member texts L alone, then they are told how to ask', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.asker);
+    await fixture.createPhoneOnlyAccount(phone);
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [smsInboundEvent({ from: phone, keyword: 'l', body: 'L' })],
+    });
+
+    expect(result).toEqual({ message: 'ask needs a question' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      'Text L and your question, for example: L how do I vote?',
+    ]);
+  });
+
+  it('given the model is unreachable, when a member texts L with a question, then they get the help text', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(NUMBERS.asker);
+    await fixture.createPhoneOnlyAccount(phone);
+    vi.stubEnv('AI_BASE_URL', '');
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
+    const t = new InngestTestEngine({ function: handleSMSCommand });
+
+    const { result } = await t.execute({
+      events: [
+        smsInboundEvent({
+          from: phone,
+          keyword: 'l',
+          argument: 'how do i vote',
+          body: 'L how do I vote?',
+        }),
+      ],
+    });
+
+    expect(result).toEqual({ message: 'ask failed, help sent' });
+    expect(recordedSms.map((sms) => sms.body)).toEqual([
+      SMS_COMMAND_HELP_MESSAGE,
+    ]);
   });
 
   it('given a member texts SHOW and the slug of a decision still taking submissions, then they are told voting is closed', async ({
@@ -531,8 +658,15 @@ describe('handleSMSCommand against the database', () => {
     }
   });
 
-  it('given a number with no account texts a command, then nothing is sent because the signup function owns unknown numbers', async () => {
+  it('given a number with no account texts a command, then nothing is sent because the signup function owns unknown numbers', async ({
+    onTestFinished,
+  }) => {
     const phone = parsePhoneNumber(NUMBERS.stranger);
+    onTestFinished(async () => {
+      await db
+        .delete(smsMessages)
+        .where(eq(smsMessages.counterpartE164, phone));
+    });
     const t = new InngestTestEngine({ function: handleSMSCommand });
 
     const { result } = await t.execute({
@@ -1755,6 +1889,120 @@ describe('handleSMSCommand building and casting the ballot', () => {
         messageSid: `SM-${from}-${kw}-${argument ?? ''}`,
       }),
     );
+
+  it('given a member asks L to add a proposal, then the model adds it through the tools and the draft changes', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { instanceId } = await seed(fixture, {
+      phone: NUMBERS.asker,
+      line: '+16145550251',
+      name: 'Ask tools decision',
+    });
+    const realFetch = globalThis.fetch;
+    vi.stubEnv('AI_BASE_URL', 'https://inference.test.invalid/v1');
+    vi.stubEnv('AI_API_KEY', 'test-key');
+    const aiBodies: string[] = [];
+    const aiResponses = [
+      new Response(
+        JSON.stringify({
+          id: 'mock-tool-call',
+          object: 'chat.completion',
+          created: 0,
+          model: 'glm-5.3-flash',
+          choices: [
+            {
+              index: 0,
+              message: {
+                role: 'assistant',
+                content: null,
+                tool_calls: [
+                  {
+                    id: 'call-1',
+                    type: 'function',
+                    function: {
+                      name: 'add_picks',
+                      arguments: JSON.stringify({ codes: [101] }),
+                    },
+                  },
+                ],
+              },
+              finish_reason: 'tool_calls',
+            },
+          ],
+          usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+      new Response(
+        JSON.stringify({
+          id: 'mock-answer',
+          object: 'chat.completion',
+          created: 0,
+          model: 'glm-5.3-flash',
+          choices: [
+            {
+              index: 0,
+              message: {
+                role: 'assistant',
+                content:
+                  'Added 101 Crosswalk lighting. $915,000 left. Text REMOVE 101 to undo.',
+              },
+              finish_reason: 'stop',
+            },
+          ],
+          usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    ];
+    vi.stubGlobal('fetch', ((input: RequestInfo | URL, init?: RequestInit) => {
+      if (isInferenceRequest(input)) {
+        aiBodies.push(String(init?.body));
+        return Promise.resolve(aiResponses.shift()!);
+      }
+      return realFetch(input, init);
+    }) as typeof fetch);
+    onTestFinished(() => {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    });
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: parsePhoneNumber(NUMBERS.asker),
+        to: '+16145550251',
+        keyword: 'l',
+        argument: 'add the crosswalk one',
+        body: 'L add the crosswalk one',
+      }),
+    );
+
+    expect(result).toEqual({ message: 'question answered' });
+    expect(recordedSms.at(-1)?.body).toContain('Added 101');
+    const picks = await readDraftPicks(instanceId);
+    expect(picks).toHaveLength(1);
+    const firstRequestTools = JSON.stringify(
+      JSON.parse(aiBodies[0] ?? '{}').tools,
+    );
+    for (const tool of [
+      'get_decision',
+      'get_registration',
+      'get_ballot',
+      'list_proposals',
+      'get_proposal',
+      'add_picks',
+      'remove_pick',
+      'move_pick',
+      'submit_ballot',
+    ]) {
+      expect(firstRequestTools).toContain(tool);
+    }
+    expect(JSON.stringify(JSON.parse(aiBodies[1] ?? '{}').messages)).toContain(
+      'added',
+    );
+  });
 
   it("given a confirmed non-member texts a code to a private decision's line, then the reply is generic and names no decision", async ({
     task,
@@ -2979,5 +3227,345 @@ describe('handleSMSCommand with a pick limit', () => {
     expect(recordedSms.at(-1)?.body).toBe(
       '"Bike lane" was not added: your ballot already holds the most picks allowed (1). REMOVE one to add another.',
     );
+  });
+});
+
+describe('handleSMSCommand conversation storage', () => {
+  beforeEach(() => {
+    resetRecordedSms();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const STORAGE_NUMBERS = {
+    talker: '+15005550140',
+    lister: '+15005550141',
+    stranger: '+15005550142',
+    registrant: '+15005550143',
+  } as const;
+
+  const STORAGE_LINE = '+16145550290';
+
+  const run = (event: ReturnType<typeof smsInboundEvent>) =>
+    new InngestTestEngine({ function: handleSMSCommand }).execute({
+      events: [event],
+    });
+
+  const seed = async (
+    fixture: SmsCommandFixture,
+    phone: string,
+    enrolment?: { attestation: string; boundary: boolean },
+  ) => {
+    const member = await fixture.createPhoneOnlyAccount(
+      parsePhoneNumber(phone),
+    );
+    const { instanceId, instanceProfileId } =
+      await fixture.createVotingInstance({
+        owner: member,
+        name: `Storage ${phone}`,
+        proposalTitles: [{ title: 'Crosswalk lighting', budget: 85_000 }],
+        votingRules: { voterBudget: 1_000_000, maxVotesPerMember: 10 },
+        ...(enrolment ? { enrolment } : {}),
+      });
+    await fixture.addMember(instanceProfileId, member);
+    await fixture.bindLine(instanceId, parsePhoneNumber(STORAGE_LINE));
+    return { member, instanceId };
+  };
+
+  const toolCallAnswer = (toolName: string, args: object) =>
+    new Response(
+      JSON.stringify({
+        id: 'mock-tool-call',
+        object: 'chat.completion',
+        created: 0,
+        model: 'glm-5.3-flash',
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: null,
+              tool_calls: [
+                {
+                  id: `call-${toolName}`,
+                  type: 'function',
+                  function: { name: toolName, arguments: JSON.stringify(args) },
+                },
+              ],
+            },
+            finish_reason: 'tool_calls',
+          },
+        ],
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+
+  const textAnswer = (content: string) =>
+    new Response(
+      JSON.stringify({
+        id: 'mock-answer',
+        object: 'chat.completion',
+        created: 0,
+        model: 'glm-5.3-flash',
+        choices: [
+          {
+            index: 0,
+            message: { role: 'assistant', content },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+
+  const stubAssistant = (
+    responses: Response[],
+    onTestFinished: (fn: () => void) => void,
+  ) => {
+    const realFetch = globalThis.fetch;
+    vi.stubEnv('AI_BASE_URL', 'https://inference.test.invalid/v1');
+    vi.stubEnv('AI_API_KEY', 'test-key');
+    const aiBodies: string[] = [];
+    vi.stubGlobal('fetch', ((input: RequestInfo | URL, init?: RequestInit) => {
+      if (isInferenceRequest(input)) {
+        aiBodies.push(String(init?.body));
+        return Promise.resolve(responses.shift()!);
+      }
+      return realFetch(input, init);
+    }) as typeof fetch);
+    onTestFinished(() => {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    });
+    return aiBodies;
+  };
+
+  it('given a member asks L twice, then the second request replays the first exchange and every turn is stored', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { member, instanceId } = await seed(fixture, STORAGE_NUMBERS.talker);
+    const aiBodies = stubAssistant(
+      [
+        textAnswer('Text SHOW to see your decisions.'),
+        textAnswer('You asked how to vote.'),
+      ],
+      onTestFinished,
+    );
+
+    const first = await run(
+      smsInboundEvent({
+        from: STORAGE_NUMBERS.talker,
+        to: STORAGE_LINE,
+        keyword: 'l',
+        argument: 'how do I vote?',
+        body: 'L how do I vote?',
+        messageSid: `SM-${task.id}-ask-1`,
+      }),
+    );
+    const second = await run(
+      smsInboundEvent({
+        from: STORAGE_NUMBERS.talker,
+        to: STORAGE_LINE,
+        keyword: 'l',
+        argument: 'what did I just ask?',
+        body: 'L what did I just ask?',
+        messageSid: `SM-${task.id}-ask-2`,
+      }),
+    );
+
+    expect(first.result).toEqual({ message: 'question answered' });
+    expect(second.result).toEqual({ message: 'question answered' });
+
+    const secondRequest = JSON.stringify(
+      JSON.parse(aiBodies[1] ?? '{}').messages,
+    );
+    expect(secondRequest).toContain('how do I vote?');
+    expect(secondRequest).toContain('Text SHOW to see your decisions.');
+
+    const conversation = await db.query.conversations.findFirst({
+      where: { processInstanceId: instanceId },
+    });
+    if (!conversation) {
+      throw new Error('no conversation was stored');
+    }
+
+    const items = await db.query.conversationItems.findMany({
+      where: { conversationId: conversation.id },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(items.map((item) => ({ kind: item.kind, role: item.role }))).toEqual(
+      [
+        { kind: 'message', role: 'user' },
+        { kind: 'message', role: 'assistant' },
+        { kind: 'message', role: 'user' },
+        { kind: 'message', role: 'assistant' },
+      ],
+    );
+    const assistantItems = items.filter((item) => item.role === 'assistant');
+    expect(
+      assistantItems.every(
+        (item) =>
+          item.agentId === 'sms-voting-assistant' &&
+          item.promptVersion !== null,
+      ),
+    ).toBe(true);
+
+    const inbound = await db.query.smsMessages.findMany({
+      where: { direction: 'inbound', authUserId: member.authUserId },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(inbound.map((row) => row.providerSid)).toEqual([
+      `SM-${task.id}-ask-1`,
+      `SM-${task.id}-ask-2`,
+    ]);
+    expect(items[0]?.smsMessageId).toBe(inbound[0]?.id);
+    expect(items[2]?.smsMessageId).toBe(inbound[1]?.id);
+
+    const outbound = await db.query.smsMessages.findMany({
+      where: { direction: 'outbound', counterpartE164: STORAGE_NUMBERS.talker },
+    });
+    expect(outbound).toHaveLength(2);
+    expect(
+      outbound.every(
+        (row) => row.status === 'sent' && row.providerSid !== null,
+      ),
+    ).toBe(true);
+  });
+
+  it('given a member texts INFO-HELP, then the exchange lands in the transport log and no conversation items are written', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const phone = parsePhoneNumber(STORAGE_NUMBERS.lister);
+    const { authUserId } = await fixture.createPhoneOnlyAccount(phone);
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: STORAGE_NUMBERS.lister,
+        to: null,
+        keyword: 'info-help',
+        messageSid: `SM-${task.id}-help`,
+      }),
+    );
+
+    expect(result).toEqual({ message: 'command list sent' });
+    const rows = await db.query.smsMessages.findMany({
+      where: { counterpartE164: STORAGE_NUMBERS.lister },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(rows.map((row) => row.direction)).toEqual(['inbound', 'outbound']);
+    expect(rows[0]?.providerSid).toBe(`SM-${task.id}-help`);
+    expect(rows[0]?.authUserId).toBe(authUserId);
+    const linkedItems = await db.query.conversationItems.findMany({
+      where: { smsMessageId: rows[0]?.id },
+    });
+    expect(linkedItems).toEqual([]);
+  });
+
+  it('given a member asks L to register and then agrees, the agent completes registration through the tools', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    const { member, instanceId } = await seed(
+      fixture,
+      STORAGE_NUMBERS.registrant,
+      { attestation: 'I live in the city and vote once.', boundary: false },
+    );
+    stubAssistant(
+      [
+        toolCallAnswer('start_registration', {}),
+        textAnswer(
+          'To register, agree to: "I live in the city and vote once." Reply yes to agree.',
+        ),
+        toolCallAnswer('affirm_attestation', {}),
+        textAnswer('You are registered to vote.'),
+      ],
+      onTestFinished,
+    );
+
+    const first = await run(
+      smsInboundEvent({
+        from: STORAGE_NUMBERS.registrant,
+        to: STORAGE_LINE,
+        keyword: 'l',
+        argument: 'register me to vote',
+        body: 'L register me to vote',
+        messageSid: `SM-${task.id}-reg-1`,
+      }),
+    );
+    expect(first.result).toEqual({ message: 'question answered' });
+    expect(recordedSms.at(-1)?.body).toContain('I live in the city');
+
+    const notYet = await findVoterEnrolment({
+      processInstanceId: instanceId,
+      authUserId: member.authUserId,
+    });
+    expect(notYet?.enrolledAt ?? null).toBeNull();
+
+    const second = await run(
+      smsInboundEvent({
+        from: STORAGE_NUMBERS.registrant,
+        to: STORAGE_LINE,
+        keyword: 'l',
+        argument: 'yes, I agree to that attestation',
+        body: 'L yes, I agree to that attestation',
+        messageSid: `SM-${task.id}-reg-2`,
+      }),
+    );
+    expect(second.result).toEqual({ message: 'question answered' });
+    expect(recordedSms.at(-1)?.body).toBe('You are registered to vote.');
+
+    const enrolled = await findVoterEnrolment({
+      processInstanceId: instanceId,
+      authUserId: member.authUserId,
+    });
+    expect(enrolled?.enrolledAt).not.toBeNull();
+
+    const conversation = await db.query.conversations.findFirst({
+      where: { processInstanceId: instanceId },
+    });
+    const toolItems = await db.query.conversationItems.findMany({
+      where: { conversationId: conversation?.id, kind: 'tool_call' },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(JSON.stringify(toolItems.map((item) => item.content))).toContain(
+      'affirm_attestation',
+    );
+  });
+
+  it('given a stranger texts the line, then only an inbound transport row is written', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const fixture = new SmsCommandFixture(task.id, onTestFinished);
+    fixture.trackPhone(STORAGE_NUMBERS.stranger);
+
+    const { result } = await run(
+      smsInboundEvent({
+        from: STORAGE_NUMBERS.stranger,
+        to: null,
+        keyword: 'show',
+        messageSid: `SM-${task.id}-stranger`,
+      }),
+    );
+
+    expect(result).toEqual({ message: 'unknown number, skipped' });
+    const rows = await db.query.smsMessages.findMany({
+      where: { counterpartE164: STORAGE_NUMBERS.stranger },
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      direction: 'inbound',
+      authUserId: null,
+      providerSid: `SM-${task.id}-stranger`,
+    });
   });
 });

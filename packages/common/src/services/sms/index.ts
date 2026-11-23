@@ -1,4 +1,6 @@
+export * from './answerVotingQuestion';
 export * from './text';
+export * from './votingAssistantTools';
 export * from './formatSmsDecisionInfo';
 export * from './formatSmsDecisionList';
 export * from './parseSmsCommand';
