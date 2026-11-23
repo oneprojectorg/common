@@ -1,7 +1,7 @@
 import type { ProposalTemplateSchema } from '@op/common/client';
 
-/** The develop heading and page title: the form's title, else `fallback`. */
-export function getDevelopEntryHeading({
+/** The form schema's title, else `fallback`. */
+export function getSchemaName({
   template,
   fallback,
 }: {

@@ -4,14 +4,12 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { ProcessInstance } from '@op/api/encoders';
 import { Suspense } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
-
 import {
   DevelopProposalsList,
   DevelopProposalsListSkeleton,
 } from '../DevelopProposals/DevelopProposalsList';
 import { ProposalsLoadError } from '../ProposalsLoadError';
-import { DevelopPageShell, getEntryName } from './DevelopPageShell';
+import { DevelopPageShell } from './DevelopPageShell';
 
 /**
  * The develop screen: what a holder of the Develop Proposals permission
@@ -27,7 +25,6 @@ export function DevelopProposalsPage({
   instance: ProcessInstance;
   decisionSlug: string;
 }) {
-  const t = useTranslations('decisions');
   const phases = instance.instanceData.phases ?? [];
   const currentIndex = phases.findIndex(
     (phase) => phase.phaseId === instance.currentStateId,
@@ -44,10 +41,6 @@ export function DevelopProposalsPage({
             instance={instance}
             sourcePhase={sourcePhase}
             decisionSlug={decisionSlug}
-            entryName={getEntryName({
-              developPhase: phases[currentIndex],
-              t,
-            })}
           />
         </Suspense>
       </APIErrorBoundary>

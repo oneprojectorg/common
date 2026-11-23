@@ -24,6 +24,7 @@ import { LuCircleCheck } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalsLoadError } from '../ProposalsLoadError';
+import { getSchemaName } from '../getSchemaName';
 import {
   ConfirmSelectionsAction,
   UnconfirmSelectionsAction,
@@ -60,13 +61,11 @@ export function DevelopProposalsList({
   instance,
   sourcePhase,
   decisionSlug,
-  entryName,
 }: {
   instance: ProcessInstance;
   /** The phase the sources come from: the one before the develop phase. */
   sourcePhase: InstancePhaseData | null;
   decisionSlug: string;
-  entryName: string;
 }) {
   const t = useTranslations('decisions.develop');
   const [tab, setTab] = useState<DevelopTab>('proposals');
@@ -84,6 +83,10 @@ export function DevelopProposalsList({
     }),
     q.decision.getDevelopConfirmState({ processInstanceId }),
   ]);
+  const entryName = getSchemaName({
+    template: advancing.items[0]?.proposalTemplate ?? null,
+    fallback: t('defaultEntryName'),
+  });
   const isReadOnly = developState.lock !== null;
   const sourcesInput = sourcePhase
     ? getDevelopSourcesInput({

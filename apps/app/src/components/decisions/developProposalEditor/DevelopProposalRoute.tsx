@@ -23,13 +23,13 @@ import { useTranslations } from '@/lib/i18n';
 
 import { DocumentNotAvailable } from '../DocumentNotAvailable';
 import { compileProposalSchema } from '../forms/proposal';
+import { getSchemaName } from '../getSchemaName';
 import { ProposalFormRenderer } from '../proposalEditor/ProposalFormRenderer';
 import { decisionRootHref } from '../proposalHrefs';
 import { useLiveProposalDocument } from '../useLiveProposalDocument';
 import { DevelopProposalEditor } from './DevelopProposalEditor';
 import { DevelopProposalFrame } from './DevelopProposalFrame';
 import { DevelopSourceColumn } from './DevelopSourceColumn';
-import { getDevelopEntryHeading } from './getDevelopEntryHeading';
 import { isCurrentDevelopSource } from './isCurrentDevelopSource';
 
 type DevelopSources = ComponentProps<typeof DevelopSourceColumn>['sources'];
@@ -85,7 +85,7 @@ export function DevelopProposalRoute({
   );
 
   const backHref = getDevelopBackHref(decisionSlug);
-  const heading = getDevelopEntryHeading({
+  const heading = getSchemaName({
     template,
     fallback: t('decisions.developEditor.entryHeading'),
   });

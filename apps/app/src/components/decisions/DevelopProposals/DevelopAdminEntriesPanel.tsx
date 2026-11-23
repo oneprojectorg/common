@@ -23,6 +23,7 @@ import { CategoryFilterSelect } from '../CategoryFilterSelect';
 import { FilterBar, FilterBarEnd, FilterBarStart } from '../FilterBar';
 import { ProposalsLoadError } from '../ProposalsLoadError';
 import { usesDistrictCategoryTerm } from '../categoryTerm';
+import { getSchemaName } from '../getSchemaName';
 import { ALL_CATEGORIES } from '../proposalFilterQuery';
 import {
   DevelopEntriesEmpty,
@@ -203,6 +204,10 @@ function DevelopAdminEntriesTableSuspense({
 }) {
   const t = useTranslations();
   const { entries } = useDevelopEntries();
+  const schemaName = getSchemaName({
+    template: entries[0]?.proposalTemplate ?? null,
+    fallback: entryName,
+  });
   const [{ items: categoryStatuses }] =
     trpc.decision.listCategoryReviewerStatus.useSuspenseQuery({
       processInstanceId,
@@ -227,9 +232,9 @@ function DevelopAdminEntriesTableSuspense({
 
   return (
     <div className="flex flex-col">
-      <DevelopEntriesTable entryName={entryName}>
+      <DevelopEntriesTable entryName={schemaName}>
         <DevelopAdminEntriesTableHeader
-          entryName={entryName}
+          entryName={schemaName}
           decisionSlug={decisionSlug}
         />
         <TableBody>
@@ -255,7 +260,7 @@ function DevelopAdminEntriesTableSuspense({
 
       <DevelopEntriesNextPage>
         {/* No header row here, so the cells carry the column widths. */}
-        <DevelopEntriesTable entryName={entryName}>
+        <DevelopEntriesTable entryName={schemaName}>
           <TableBody>
             <DevelopAdminEntrySkeletonRows count={2} />
           </TableBody>

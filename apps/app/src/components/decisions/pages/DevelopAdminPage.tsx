@@ -15,7 +15,7 @@ import { DevelopAdminCategoriesPanel } from '../DevelopProposals/DevelopAdminCat
 import { DevelopAdminEntriesPanel } from '../DevelopProposals/DevelopAdminEntriesPanel';
 import { DevelopAdminPublishFooter } from '../DevelopProposals/DevelopAdminPublishFooter';
 import { DevelopAdminSourcesPanel } from '../DevelopProposals/DevelopAdminSourcesPanel';
-import { DevelopPageShell, getEntryName } from './DevelopPageShell';
+import { DevelopPageShell } from './DevelopPageShell';
 
 const DEVELOP_TABS = ['categories', 'proposals', 'entries'] as const;
 const DEFAULT_DEVELOP_TAB = 'categories';
@@ -41,14 +41,13 @@ export function DevelopAdminPage({
   const currentIndex = phases.findIndex(
     (phase) => phase.phaseId === instance.currentStateId,
   );
-  const developPhase = phases[currentIndex];
   const sourcePhase =
     currentIndex > 0 ? (phases[currentIndex - 1] ?? null) : null;
   const nextPhase = currentIndex >= 0 ? phases[currentIndex + 1] : undefined;
   const votingStartDate =
     nextPhase && isVotingPhase(nextPhase) ? nextPhase.startDate : undefined;
   const phaseId = instance.currentStateId ?? undefined;
-  const entryName = getEntryName({ developPhase, t });
+  const entryName = t('develop.defaultEntryName');
 
   const handleTabChange = (value: string) => {
     const next = developTabParser.parse(value);
