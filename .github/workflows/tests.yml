@@ -91,12 +91,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Use CI config
-        run: cp supabase/supabase-ci.toml supabase/config.toml
+      - name: Use test config
+        run: cp supabase/supabase-test.toml supabase/config.toml
 
       - name: Start Supabase
         run: |
-          echo "Starting Supabase with CI config..."
+          echo "Starting Supabase with test config..."
           # `pull_request_target` runs this file from dev against the PR's
           # config, so the config decides the runtime.
           if grep -qx 'stack = true' supabase/config.toml; then
