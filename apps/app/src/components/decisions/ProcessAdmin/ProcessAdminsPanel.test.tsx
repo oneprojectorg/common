@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -14,11 +20,12 @@ const REVIEWER = 'role-reviewer';
 const { data, spies, mutation } = vi.hoisted(() => {
   const data: {
     roles: object[];
-    members: { email: string; roles: { id: string }[] }[];
+    members: { email: string | null; roles: { id: string }[] }[];
     invites: object[];
     searchResults: object[] | undefined;
     searchFailed: boolean;
     loadFails: boolean;
+    debouncedQuery: string | undefined;
   } = {
     roles: [],
     members: [],
@@ -26,6 +33,7 @@ const { data, spies, mutation } = vi.hoisted(() => {
     searchResults: undefined,
     searchFailed: false,
     loadFails: false,
+    debouncedQuery: undefined,
   };
   const spies = {
     updateUserRoles: vi.fn(),
@@ -34,12 +42,13 @@ const { data, spies, mutation } = vi.hoisted(() => {
     invite: vi.fn(),
     updateInvite: vi.fn(),
     lookup: vi.fn(async ({ query }: { query: string }) => ({
-      items: data.members.filter((m) => m.email.includes(query)),
+      items: data.members.filter((m) => m.email?.includes(query)),
     })),
     invalidateUsers: vi.fn(async () => {}),
     invalidateInvites: vi.fn(async () => {}),
     toastSuccess: vi.fn(),
     toastError: vi.fn(),
+    logError: vi.fn(),
   };
   const mutation = (mutate: () => void) => ({
     useMutation: () => ({ mutate, mutateAsync: mutate, isPending: false }),
@@ -104,9 +113,9 @@ vi.mock('@/utils/UserProvider', () => ({
   useMaybeUser: () => ({ profileId: 'p-me', email: 'me@example.org' }),
 }));
 vi.mock('@op/hooks', () => ({
-  useDebounce: (value: string) => [value],
+  useDebounce: (value: string) => [data.debouncedQuery ?? value],
 }));
-vi.mock('@op/logging/client', () => ({ logger: { error: () => {} } }));
+vi.mock('@op/logging/client', () => ({ logger: { error: spies.logError } }));
 vi.mock('@op/sense/Toast', () => ({
   toast: { success: spies.toastSuccess, error: spies.toastError },
 }));
@@ -168,6 +177,8 @@ const toastMarkup = (spy: Mock) =>
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.restoreAllMocks();
+  data.debouncedQuery = undefined;
   data.roles = [role(ADMIN, 'Admin'), role(REVIEWER, 'Reviewer')];
   data.invites = [];
   data.searchResults = undefined;
@@ -182,6 +193,17 @@ const deferred = () => {
   });
   return { promise, resolve };
 };
+
+const adminList = () => screen.getByRole('list');
+
+const liveStatus = () => screen.getByRole('status').textContent;
+
+const person = (id: string, name: string) => ({
+  id: `p-${id}`,
+  name,
+  rank: 1,
+  user: { email: `${id}@example.org` },
+});
 
 const searchBox = () =>
   screen.getByRole('combobox', {
@@ -498,7 +520,7 @@ describe('ProcessAdminsPanel', () => {
     await pickEmail(user, 'fresh@example.org');
 
     expect(await screen.findByText('Adding…')).toBeTruthy();
-    expect(screen.getByText('fresh@example.org')).toBeTruthy();
+    expect(within(adminList()).getByText('fresh@example.org')).toBeTruthy();
     expect(
       screen.queryByRole('button', { name: 'Manage fresh@example.org' }),
     ).toBeNull();
@@ -562,12 +584,14 @@ describe('ProcessAdminsPanel', () => {
     const user = renderPanel();
 
     await pickEmail(user, 'fresh@example.org');
-    expect(await screen.findByText('fresh@example.org')).toBeTruthy();
+    expect(
+      await within(adminList()).findByText('fresh@example.org'),
+    ).toBeTruthy();
 
     fail(new Error('boom'));
 
     await waitFor(() =>
-      expect(screen.queryByText('fresh@example.org')).toBeNull(),
+      expect(within(adminList()).queryByText('fresh@example.org')).toBeNull(),
     );
     expect(toastMarkup(spies.toastError)).toEqual([
       '<bdi>fresh@example.org</bdi> could not be invited.',
@@ -591,7 +615,7 @@ describe('ProcessAdminsPanel', () => {
     await user.click(await screen.findByRole('menuitem', { name: 'Remove' }));
 
     expect(await screen.findByText('Removing…')).toBeTruthy();
-    expect(screen.getByText('Sam')).toBeTruthy();
+    expect(within(adminList()).getByText('Sam')).toBeTruthy();
 
     expect(
       screen
@@ -709,12 +733,6 @@ describe('ProcessAdminsPanel', () => {
     data.invites = [
       { id: 'inv-admin', email: 'ivy@example.org', accessRoleId: ADMIN },
     ];
-    const person = (id: string, name: string) => ({
-      id: `p-${id}`,
-      name,
-      rank: 1,
-      user: { email: `${id}@example.org` },
-    });
     data.searchResults = [
       {
         results: [
@@ -758,7 +776,291 @@ describe('ProcessAdminsPanel', () => {
     expect(screen.getByRole('alert').textContent).toBe(
       'The admins could not be loaded.',
     );
-    consoleError.mockRestore();
+    expect(consoleError).toHaveBeenCalled();
+  });
+
+  it('reports a grant as done when only the refresh after it fails', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+    ];
+    spies.invite.mockResolvedValueOnce({ details: { failed: [] } });
+    spies.invalidateUsers.mockRejectedValueOnce(new Error('offline'));
+    const user = renderPanel();
+
+    await pickEmail(user, 'fresh@example.org');
+
+    await waitFor(() =>
+      expect(toastMarkup(spies.toastSuccess)).toEqual([
+        'Invitation sent to <bdi>fresh@example.org</bdi>',
+      ]),
+    );
+    expect(spies.toastError).not.toHaveBeenCalled();
+    expect(spies.logError).toHaveBeenCalledWith(
+      'Process admin lists refresh failed',
+      { error: expect.any(Error) },
+    );
+    await waitFor(() => expect(screen.queryByText('Adding…')).toBeNull());
+  });
+
+  it('reports a removal as done when only the refresh after it fails', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+      member({ id: 'sam', name: 'Sam', roles: [ADMIN] }),
+    ];
+    spies.removeUser.mockResolvedValueOnce(undefined);
+    spies.invalidateUsers.mockRejectedValueOnce(new Error('offline'));
+    const user = renderPanel();
+
+    await removeVia(user, 'Sam');
+
+    await waitFor(() =>
+      expect(toastMarkup(spies.toastSuccess)).toEqual([
+        '<bdi>Sam</bdi> is no longer an admin.',
+      ]),
+    );
+    expect(spies.toastError).not.toHaveBeenCalled();
+    expect(spies.logError).toHaveBeenCalledWith(
+      'Process admin lists refresh failed',
+      { error: expect.any(Error) },
+    );
+    await waitFor(() => expect(screen.queryByText('Removing…')).toBeNull());
+  });
+
+  it('logs a failed removal', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+      member({ id: 'sam', name: 'Sam', roles: [ADMIN] }),
+    ];
+    spies.removeUser.mockRejectedValueOnce(new Error('boom'));
+    const user = renderPanel();
+
+    await removeVia(user, 'Sam');
+
+    await waitFor(() =>
+      expect(spies.logError).toHaveBeenCalledWith(
+        'Process admin removal failed',
+        { error: expect.any(Error) },
+      ),
+    );
+  });
+
+  it('invites the address as typed now, not as the search last saw it', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+    ];
+    data.debouncedQuery = 'fresh@exmaple.org';
+    spies.invite.mockResolvedValueOnce({ details: { failed: [] } });
+    const user = renderPanel();
+
+    await pickEmail(user, 'fresh@example.org');
+
+    expect(spies.invite).toHaveBeenCalledWith({
+      profileId: 'profile-1',
+      invitations: [{ email: 'fresh@example.org', roleId: ADMIN }],
+    });
+  });
+
+  it('gives focus back to the menu when a removal fails after focus was lost', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+      member({ id: 'sam', name: 'Sam', roles: [ADMIN] }),
+    ];
+    let fail = (_error: Error) => {};
+    spies.removeUser.mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        fail = reject;
+      }),
+    );
+    const user = renderPanel();
+
+    await removeVia(user, 'Sam');
+    await screen.findByText('Removing…');
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    expect(document.activeElement).toBe(document.body);
+
+    fail(new Error('boom'));
+
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByRole('button', { name: 'Manage Sam' }),
+      ),
+    );
+  });
+
+  it.each([
+    { outcome: 'succeeds', settle: 'resolve' },
+    { outcome: 'fails', settle: 'reject' },
+  ])(
+    'leaves focus where the user moved it when a removal $outcome',
+    async ({ settle }) => {
+      data.members = [
+        member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+        member({ id: 'rita', name: 'Rita', roles: [ADMIN] }),
+        member({ id: 'sam', name: 'Sam', roles: [ADMIN] }),
+      ];
+      let finish = () => {};
+      spies.removeUser.mockReturnValueOnce(
+        new Promise<void>((resolve, reject) => {
+          finish =
+            settle === 'resolve' ? resolve : () => reject(new Error('boom'));
+        }),
+      );
+      const user = renderPanel();
+
+      await removeVia(user, 'Sam');
+      await screen.findByText('Removing…');
+      const rita = screen.getByRole('button', { name: 'Manage Rita' });
+      rita.focus();
+
+      finish();
+
+      await waitFor(() => expect(screen.queryByText('Removing…')).toBeNull());
+      expect(document.activeElement).toBe(rita);
+    },
+  );
+
+  it('announces an admin being added and removed', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+      member({ id: 'sam', name: 'Sam', roles: [ADMIN] }),
+    ];
+    spies.invite.mockReturnValueOnce(new Promise(() => {}));
+    spies.removeUser.mockReturnValueOnce(new Promise(() => {}));
+    const user = renderPanel();
+
+    expect(liveStatus()).toBe('');
+
+    await pickEmail(user, 'fresh@example.org');
+    await waitFor(() =>
+      expect(liveStatus()).toBe('Adding fresh@example.org… '),
+    );
+
+    await removeVia(user, 'Sam');
+    await waitFor(() =>
+      expect(liveStatus()).toBe('Adding fresh@example.org… Removing Sam… '),
+    );
+  });
+
+  it('stops offering removal once the others in flight would leave one admin', async () => {
+    data.members = [
+      member({ id: 'rita', name: 'Rita', roles: [ADMIN] }),
+      member({ id: 'sam', name: 'Sam', roles: [ADMIN] }),
+    ];
+    spies.removeUser.mockReturnValueOnce(new Promise(() => {}));
+    const user = renderPanel();
+
+    expect(screen.getByRole('button', { name: 'Manage Rita' })).toBeTruthy();
+
+    await removeVia(user, 'Sam');
+
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Manage Rita' })).toBeNull(),
+    );
+    expect(screen.getByRole('button', { name: 'Manage Sam' })).toBeTruthy();
+  });
+
+  it('names an admin with no name or email', () => {
+    const anonymous = {
+      ...member({ id: 'anon', name: '', roles: [ADMIN] }),
+      email: null,
+      profile: null,
+    };
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+      anonymous,
+    ];
+    renderPanel();
+
+    expect(screen.getByText('Unnamed admin')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Manage Unnamed admin' }),
+    ).toBeTruthy();
+  });
+
+  it('offers an invite only for a valid email address', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+    ];
+    const user = renderPanel();
+    const input = searchBox();
+
+    await user.type(input, 'fresh@example');
+    expect(await screen.findByText('No results')).toBeTruthy();
+    expect(screen.queryByRole('option', { name: /Invite/ })).toBeNull();
+
+    await user.type(input, '.org');
+    expect(
+      await screen.findByRole('option', { name: 'Invite fresh@example.org' }),
+    ).toBeTruthy();
+  });
+
+  it.each([
+    { taken: 'an admin', email: 'rita@example.org' },
+    { taken: 'an admin invite', email: 'ivy@example.org' },
+    { taken: 'a pending pick', email: 'fresh@example.org' },
+  ])('does not offer to invite $taken again', async ({ email }) => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+      member({ id: 'rita', name: 'Rita', roles: [ADMIN] }),
+    ];
+    data.invites = [
+      { id: 'inv-ivy', email: 'ivy@example.org', accessRoleId: ADMIN },
+    ];
+    spies.invite.mockReturnValueOnce(new Promise(() => {}));
+    const user = renderPanel();
+    const input = searchBox();
+    await pickEmail(user, 'fresh@example.org');
+    await screen.findByText('Adding…');
+
+    await user.type(input, 'new@example.org');
+    expect(
+      await screen.findByRole('option', { name: 'Invite new@example.org' }),
+    ).toBeTruthy();
+
+    await user.clear(input);
+    await user.type(input, email);
+    expect(await screen.findByText('No results')).toBeTruthy();
+    expect(
+      screen.queryByRole('option', { name: `Invite ${email}` }),
+    ).toBeNull();
+  });
+
+  it('skips a search result that has no email', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+    ];
+    data.searchResults = [
+      {
+        results: [
+          person('nina', 'Nina'),
+          { id: 'p-ghost', name: 'Ghost', rank: 2, user: null },
+        ],
+      },
+    ];
+    const user = renderPanel();
+
+    await user.type(searchBox(), 'ni');
+
+    expect(await screen.findByRole('option', { name: /Nina/ })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: /Ghost/ })).toBeNull();
+  });
+
+  it('waits for two characters before showing results', async () => {
+    data.members = [
+      member({ id: 'me', name: 'Me', roles: [ADMIN], profileId: 'p-me' }),
+    ];
+    data.searchResults = [{ results: [person('nina', 'Nina')] }];
+    const user = renderPanel();
+    const input = searchBox();
+
+    await user.type(input, 'n');
+    expect(screen.queryByRole('option', { name: /Nina/ })).toBeNull();
+    expect(screen.queryByRole('listbox')).toBeNull();
+
+    await user.type(input, 'i');
+    expect(await screen.findByRole('option', { name: /Nina/ })).toBeTruthy();
   });
 
   it('says so when the process has no admin role', () => {

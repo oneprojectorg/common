@@ -40,6 +40,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { flushSync } from 'react-dom';
 import { LuEllipsisVertical, LuSearch, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -64,8 +65,14 @@ type PickerOption = AdminPickerOption<ProfileSearchResult>;
 interface PendingAdmin {
   /** The picked email, lowercased. */
   key: string;
+  name: string;
   /** The row to show, known once the lookup says which list the pick joins. */
   row?: PendingMember | PendingInvite;
+}
+
+interface PendingRemoval {
+  id: string;
+  name: string;
 }
 
 interface PendingMember {
@@ -140,6 +147,7 @@ function AdminsList({
     t.profile.listProfileInvites({ profileId }),
   ]);
   const [pendingAdmins, setPendingAdmins] = useState<PendingAdmin[]>([]);
+  const [removals, setRemovals] = useState<PendingRemoval[]>([]);
   const pickerInputRef = useRef<HTMLInputElement>(null);
   const focusPicker = () => pickerInputRef.current?.focus();
   const adminInvites = useMemo(
@@ -178,13 +186,13 @@ function AdminsList({
     const showPending = (row: PendingAdmin['row']) =>
       setPendingAdmins((current) =>
         current.map((pending) =>
-          pending.key === key ? { key, row } : pending,
+          pending.key === key ? { ...pending, row } : pending,
         ),
       );
     const name = getOptionLabel(option);
     let failureMessage = t.rich('adminAddFailed', { name, bdi });
     // Reserves the email at once; the row waits for the lookup so it appears where it will stay.
-    setPendingAdmins((current) => [...current, { key }]);
+    setPendingAdmins((current) => [...current, { key, name }]);
 
     try {
       // A member already in the process is promoted, not invited again; the
@@ -240,10 +248,7 @@ function AdminsList({
         }
       }
       // Hold the pending row until the lists carry the confirmed one.
-      await Promise.all([
-        utils.profile.listUsers.invalidate({ profileId }),
-        utils.profile.listProfileInvites.invalidate({ profileId }),
-      ]);
+      await refreshAdminLists(utils, profileId);
     } catch (error) {
       logger.error('Process admin grant failed', { error });
       toast.error(failureMessage);
@@ -254,8 +259,26 @@ function AdminsList({
     }
   };
 
+  const startRemoval = (removal: PendingRemoval) => {
+    setRemovals((current) => [...current, removal]);
+    return () =>
+      setRemovals((current) => current.filter(({ id }) => id !== removal.id));
+  };
+  const isRemoving = (id: string) =>
+    removals.some((removal) => removal.id === id);
+  const countAdminsKept = (adminId: string) =>
+    admins.filter(({ id }) => id === adminId || !isRemoving(id)).length;
+
   return (
     <div className="flex flex-col gap-4">
+      <p role="status" aria-live="polite" className="sr-only">
+        {pendingAdmins.map(({ key, name }) => (
+          <span key={key}>{t.rich('addingAdminStatus', { name, bdi })} </span>
+        ))}
+        {removals.map(({ id, name }) => (
+          <span key={id}>{t.rich('removingAdminStatus', { name, bdi })} </span>
+        ))}
+      </p>
       <AdminPicker
         inputRef={pickerInputRef}
         takenEmails={takenEmails}
@@ -271,7 +294,9 @@ function AdminsList({
               admin={row.confirmed}
               profileId={profileId}
               roleId={roleId}
-              adminCount={admins.length}
+              adminCount={countAdminsKept(row.confirmed.id)}
+              isRemoving={isRemoving(row.confirmed.id)}
+              startRemoval={startRemoval}
               onRemoved={focusPicker}
             />
           ) : (
@@ -289,6 +314,8 @@ function AdminsList({
               key={row.confirmed.id}
               invite={row.confirmed}
               profileId={profileId}
+              isRemoving={isRemoving(row.confirmed.id)}
+              startRemoval={startRemoval}
               onRemoved={focusPicker}
             />
           ) : (
@@ -300,7 +327,6 @@ function AdminsList({
   );
 }
 
-/** Slots pending rows into a server-ordered list at the place the server will give them. */
 function slotPending<Confirmed, Pending>(
   confirmed: Confirmed[],
   pending: Pending[],
@@ -321,10 +347,33 @@ const inServerOrder = (a: string, b: string) => a.localeCompare(b, 'en');
 
 const bdi = (chunks: ReactNode) => <bdi>{chunks}</bdi>;
 
+async function refreshAdminLists(
+  utils: ReturnType<typeof trpc.useUtils>,
+  profileId: string,
+) {
+  try {
+    await Promise.all([
+      utils.profile.listUsers.invalidate({ profileId }),
+      utils.profile.listProfileInvites.invalidate({ profileId }),
+    ]);
+  } catch (error) {
+    logger.error('Process admin lists refresh failed', { error });
+  }
+}
+
+const isFocusStranded = (control: HTMLElement | null) => {
+  const focused = document.activeElement;
+  return (
+    !focused ||
+    focused === document.body ||
+    !focused.isConnected ||
+    focused === control
+  );
+};
+
 const getOptionLabel = (option: PickerOption) =>
   option.kind === 'person' ? option.result.name : option.email;
 
-/** The members list comes back by name, then email. */
 const compareMembers = (a: ProfileUser, b: ProfileUser) =>
   inServerOrder(a.name ?? '', b.name ?? '') ||
   inServerOrder(a.email ?? '', b.email ?? '');
@@ -359,6 +408,7 @@ function AdminPicker({
     },
   );
 
+  const typedEmail = query.trim();
   const options = useMemo<PickerOption[]>(() => {
     const people = (searchResults ?? [])
       .flatMap(({ results }) => results)
@@ -371,16 +421,15 @@ function AdminPicker({
         return [{ value: result.id, kind: 'person' as const, result, email }];
       });
     const canAddEmail =
-      isValidEmail(debouncedQuery) &&
-      !takenEmails.has(debouncedQuery.toLowerCase());
+      isValidEmail(typedEmail) && !takenEmails.has(typedEmail.toLowerCase());
 
     return canAddEmail
       ? [
-          { value: 'add-email', kind: 'email' as const, email: debouncedQuery },
+          { value: 'add-email', kind: 'email' as const, email: typedEmail },
           ...people,
         ]
       : people;
-  }, [searchResults, takenEmails, debouncedQuery]);
+  }, [searchResults, takenEmails, typedEmail]);
 
   let emptyContent: ReactNode = tShared('No results');
   if (isFetching) {
@@ -462,27 +511,33 @@ function AdminRow({
   profileId,
   roleId,
   adminCount,
+  isRemoving,
+  startRemoval,
   onRemoved,
 }: {
   admin: ProfileUser;
   profileId: string;
   roleId: string;
   adminCount: number;
+  isRemoving: boolean;
+  startRemoval: (removal: PendingRemoval) => () => void;
   onRemoved: () => void;
 }) {
   const t = useTranslations('decisions.processAdmin');
   const user = useMaybeUser();
-  const name = admin.profile?.name || admin.name || admin.email || '';
+  const name =
+    admin.profile?.name || admin.name || admin.email || t('unnamedAdmin');
   const isSelf =
     (admin.profile?.id !== undefined && admin.profile.id === user?.profileId) ||
     (hasEmail(admin) && admin.email === user?.email);
 
   const demote = trpc.profile.updateUserRoles.useMutation();
   const removeUser = trpc.profile.removeUser.useMutation();
-  const { isRemoving, remove } = usePendingRemoval({
+  const { triggerRef, remove } = usePendingRemoval({
     profileId,
     failureLog: 'Process admin removal failed',
     successMessage: t.rich('adminRemoved', { name, bdi }),
+    startRemoval: () => startRemoval({ id: admin.id, name }),
     onRemoved,
     run: () => {
       const action = getAdminRemoveAction({ admin, roleId });
@@ -508,6 +563,7 @@ function AdminRow({
   } else if (canRemoveAdmin({ admin, adminCount })) {
     action = (
       <RemoveMenu
+        triggerRef={triggerRef}
         label={t('manageAdminLabel', { name })}
         disabled={isRemoving}
         onRemove={remove}
@@ -528,7 +584,8 @@ function AdminRow({
 
 function PendingMemberRow({ member }: { member: ProfileUser }) {
   const t = useTranslations('decisions.processAdmin');
-  const name = member.profile?.name || member.name || member.email || '';
+  const name =
+    member.profile?.name || member.name || member.email || t('unnamedAdmin');
 
   return (
     <AdminListRow
@@ -565,10 +622,14 @@ function PendingInviteRow({ pending }: { pending: PendingInvite }) {
 function InviteRow({
   invite,
   profileId,
+  isRemoving,
+  startRemoval,
   onRemoved,
 }: {
   invite: ProfileInvite;
   profileId: string;
+  isRemoving: boolean;
+  startRemoval: (removal: PendingRemoval) => () => void;
   onRemoved: () => void;
 }) {
   const t = useTranslations('decisions.processAdmin');
@@ -576,10 +637,11 @@ function InviteRow({
   const name = invite.inviteeProfile?.name || invite.email;
 
   const deleteInvite = trpc.profile.deleteProfileInvite.useMutation();
-  const { isRemoving, remove } = usePendingRemoval({
+  const { triggerRef, remove } = usePendingRemoval({
     profileId,
     failureLog: 'Process admin invite removal failed',
     successMessage: t.rich('adminInviteWithdrawn', { name, bdi }),
+    startRemoval: () => startRemoval({ id: invite.id, name }),
     onRemoved,
     run: () => deleteInvite.mutateAsync({ inviteId: invite.id }),
   });
@@ -594,6 +656,7 @@ function InviteRow({
       isBusy={isRemoving}
       action={
         <RemoveMenu
+          triggerRef={triggerRef}
           label={t('manageAdminLabel', { name })}
           disabled={isRemoving}
           onRemove={remove}
@@ -643,50 +706,62 @@ function AdminListRow({
   );
 }
 
-/** Runs a removal and keeps its row pending until the lists no longer carry it. */
 function usePendingRemoval({
   profileId,
   failureLog,
   successMessage,
+  startRemoval,
   onRemoved,
   run,
 }: {
   profileId: string;
   failureLog: string;
   successMessage: ReactNode;
+  startRemoval: () => () => void;
   onRemoved: () => void;
   run: () => Promise<unknown>;
 }) {
   const t = useTranslations('decisions.processAdmin');
   const utils = trpc.useUtils();
-  const [isRemoving, setIsRemoving] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const remove = async () => {
-    setIsRemoving(true);
+    const endRemoval = startRemoval();
+    let removed = false;
     try {
       await run();
-      await Promise.all([
-        utils.profile.listUsers.invalidate({ profileId }),
-        utils.profile.listProfileInvites.invalidate({ profileId }),
-      ]);
-      toast.success(successMessage);
-      onRemoved();
+      removed = true;
     } catch (error) {
       logger.error(failureLog, { error });
       toast.error(t('removeAdminError'));
-    } finally {
-      setIsRemoving(false);
+    }
+    if (removed) {
+      await refreshAdminLists(utils, profileId);
+      toast.success(successMessage);
+    }
+
+    const restoreFocus = isFocusStranded(triggerRef.current);
+    flushSync(endRemoval);
+    if (!restoreFocus) {
+      return;
+    }
+    if (removed) {
+      onRemoved();
+    } else {
+      triggerRef.current?.focus();
     }
   };
 
-  return { isRemoving, remove: () => void remove() };
+  return { triggerRef, remove: () => void remove() };
 }
 
 function RemoveMenu({
+  triggerRef,
   label,
   disabled,
   onRemove,
 }: {
+  triggerRef: RefObject<HTMLButtonElement | null>;
   label: string;
   disabled: boolean;
   onRemove: () => void;
@@ -696,6 +771,7 @@ function RemoveMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
+        ref={triggerRef}
         render={
           <Button
             variant="ghost"
