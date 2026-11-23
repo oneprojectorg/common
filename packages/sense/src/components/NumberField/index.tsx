@@ -31,6 +31,8 @@ interface NumberFieldProps extends Omit<
   /** Static text rendered at the inline start of the input (e.g. "$"). */
   prefixText?: string;
   className?: string;
+  /** Classes for the input and its prefix only. Omit to size them with the field. */
+  inputGroupClassName?: string;
 }
 
 function NumberField({
@@ -48,6 +50,7 @@ function NumberField({
   disabled,
   id,
   className,
+  inputGroupClassName,
   onBlur,
   ...inputProps
 }: NumberFieldProps) {
@@ -117,7 +120,7 @@ function NumberField({
           {required ? <RequiredAsterisk /> : null}
         </FieldLabel>
       ) : null}
-      <InputGroup>
+      <InputGroup className={inputGroupClassName}>
         {prefixText ? (
           <InputGroupAddon align="inline-start">
             <InputGroupText>{prefixText}</InputGroupText>
