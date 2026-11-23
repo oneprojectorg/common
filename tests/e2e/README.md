@@ -93,7 +93,7 @@ Do **not** add a CI step to start it. The e2e workflow triggers on `pull_request
 
 ## E2E Mocks
 
-When `E2E=true`, webpack aliases swap external services for in-process mocks:
+When `E2E=true`, `turbopack.resolveAlias` in each app's `next.config.mjs` swaps external services for in-process mocks:
 
 - **`@op/collab`** → `@op/collab/testing` (TipTap Cloud — no HTTP calls)
 - **`@op/analytics/client`** → `client.testing.ts` (PostHog — no network calls, reduces idle time)

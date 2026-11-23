@@ -4,16 +4,12 @@ import { getPreviewApiUrl } from '@op/core/previews';
 import { withPostHogConfig } from '@posthog/nextjs-config';
 import dotenv from 'dotenv';
 import createNextIntlPlugin from 'next-intl/plugin';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import {
   REPORTING_ENDPOINTS_HEADER,
   STATIC_POLICY_SOURCES,
   getStaticCspHeader,
 } from './src/lib/csp.mjs';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const withNextIntl = createNextIntlPlugin('./src/lib/i18n/request.ts');
 
@@ -85,49 +81,6 @@ const config = {
           }
         : {}),
     },
-  },
-  // Webpack equivalent of the turbopack resolveAlias above. Both the production
-  // build and e2e build use webpack (`next build --webpack`) because Turbopack's
-  // per-route partial client-reference manifests cause intermittent "Could not
-  // find module ... in the React Client Manifest" 500s on cross-route RSC
-  // navigation (Asana 1213980160576009; bug entered with the Turbopack migration
-  // #685). Webpack resolves client references across routes correctly. Dev still
-  // uses Turbopack via the config above.
-  webpack: (config, { isServer }) => {
-    config.resolve = config.resolve || {};
-    // Next builds webpack's tsconfig `paths` aliases via the TypeScript JS API,
-    // which the TypeScript 7 native compiler (@typescript/native-preview) does
-    // not expose, so the `@/*` alias must be registered here explicitly.
-    // Turbopack (dev) resolves it natively from tsconfig.
-    config.resolve.alias = {
-      ...(config.resolve.alias || {}),
-      '@': path.resolve(__dirname, 'src'),
-    };
-    if (!isServer) {
-      // Disable the 'tls' node core module on the client side.
-      config.resolve.fallback = {
-        ...(config.resolve.fallback || {}),
-        tls: false,
-      };
-    }
-    // In e2e mode, swap external services for in-process mocks on both the
-    // server and client bundles (mirrors turbopack.resolveAlias, which is not
-    // server/client-scoped) so SSR of these modules is mocked too.
-    if (process.env.E2E === 'true') {
-      config.resolve.alias = {
-        ...(config.resolve.alias || {}),
-        // `$` keeps the alias off `@op/collab/server`, which the mock lacks.
-        '@op/collab$': path.resolve(
-          __dirname,
-          '../../services/collab/__mocks__/index.ts',
-        ),
-        '@op/analytics/client': path.resolve(
-          __dirname,
-          '../../packages/analytics/src/client.testing.ts',
-        ),
-      };
-    }
-    return config;
   },
   async headers() {
     // The nonce policy is emitted per request by `src/proxy.ts`; this covers
