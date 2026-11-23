@@ -1,6 +1,8 @@
 'use client';
 
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { isPlainLeftClick } from '@/utils/isPlainLeftClick';
 import { trpc } from '@op/api/client';
 import {
   DEFAULT_REVIEWER_SORT,
@@ -14,6 +16,14 @@ import {
 } from '@op/common/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Button } from '@op/sense/Button';
+import { Dialog } from '@op/sense/Dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLinkItem,
+  DropdownMenuTrigger,
+} from '@op/sense/DropdownMenu';
 import {
   Empty,
   EmptyDescription,
@@ -37,9 +47,21 @@ import {
   TableRowHeader,
 } from '@op/sense/Table';
 import { useFormatter } from 'next-intl';
-import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { Suspense, useCallback, useDeferredValue, useState } from 'react';
-import { LuBell, LuUsers } from 'react-icons/lu';
+import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
+import {
+  type MouseEvent,
+  Suspense,
+  useCallback,
+  useDeferredValue,
+  useState,
+} from 'react';
+import {
+  LuBell,
+  LuEllipsis,
+  LuFileText,
+  LuPencil,
+  LuUsers,
+} from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -52,8 +74,13 @@ import {
 } from '../FilterBar';
 import { ReviewStatusBadge } from '../ReviewStatusBadge';
 import { StickyFilterBar } from '../StickyFilterBar';
+import { reviewerPageHref } from '../proposalHrefs';
+import { useLastOpenId } from '../useLastOpenId';
 import { useSearchParam } from '../useSearchParam';
+import { ManageAssignmentsDialogContent } from './ManageAssignmentsDialog';
 import { ReviewersTableSkeleton } from './ReviewAssignmentsSkeletons';
+import { AssignmentsLoadError } from './ReviewerAssignmentsParts';
+import { ReviewerSheet } from './ReviewerSheet';
 import {
   SendReminderDialog,
   type SendReminderTarget,
@@ -62,42 +89,62 @@ import { accountContactText } from './accountContactText';
 
 interface ReviewersTableSectionProps {
   decisionSlug: string;
+  /** Owning profile slug, for the proposal route. */
+  ownerSlug: string;
   processInstanceId: string;
   phaseId: string;
 }
 
 const reviewerStatusParser = parseAsStringLiteral(reviewerStatusSchema.options);
+/** Not `reviewer`, so it cannot collide with a filter param. */
+const REVIEWER_PANEL_PARAM = 'reviewerPanel';
+
 const reviewerSortParser = parseAsStringLiteral(
   reviewerSortSchema.options,
 ).withDefault(DEFAULT_REVIEWER_SORT);
 
-export function ReviewersTableSection(props: ReviewersTableSectionProps) {
-  const t = useTranslations();
+export function ReviewersTableSection({
+  ownerSlug,
+  ...props
+}: ReviewersTableSectionProps) {
+  const { decisionSlug, processInstanceId, phaseId } = props;
+  const isMobile = useIsMobile();
+  const [openReviewerId, setOpenReviewerId] = useQueryState(
+    REVIEWER_PANEL_PARAM,
+    parseAsString,
+  );
+
+  // Pushed, so Back closes the panel; a phone goes to the reviewer page instead.
+  const openReviewer = (reviewerProfileId: string) => {
+    void setOpenReviewerId(reviewerProfileId, { history: 'push' });
+  };
 
   return (
-    <APIErrorBoundary
-      fallbacks={{
-        default: () => (
-          <Empty>
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <LuUsers className="size-6" />
-              </EmptyMedia>
-              <EmptyTitle>
-                {t('decisions.review.loadAssignmentsError')}
-              </EmptyTitle>
-              <EmptyDescription>
-                {t('decisions.proposals.refreshPageHint')}
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        ),
-      }}
-    >
-      <Suspense fallback={<ReviewersTableSkeleton />}>
-        <ReviewersTableContent {...props} />
-      </Suspense>
-    </APIErrorBoundary>
+    <>
+      <APIErrorBoundary
+        fallbacks={{
+          default: () => <AssignmentsLoadError />,
+        }}
+      >
+        <Suspense fallback={<ReviewersTableSkeleton />}>
+          <ReviewersTableContent
+            {...props}
+            onOpenReviewer={isMobile ? undefined : openReviewer}
+          />
+        </Suspense>
+      </APIErrorBoundary>
+      <ReviewerSheet
+        processInstanceId={processInstanceId}
+        phaseId={phaseId}
+        route={{
+          decisionSlug,
+          slug: ownerSlug,
+          instanceId: processInstanceId,
+        }}
+        reviewerProfileId={isMobile ? null : openReviewerId}
+        onClose={() => void setOpenReviewerId(null)}
+      />
+    </>
   );
 }
 
@@ -105,7 +152,11 @@ function ReviewersTableContent({
   decisionSlug,
   processInstanceId,
   phaseId,
-}: ReviewersTableSectionProps) {
+  onOpenReviewer,
+}: Omit<ReviewersTableSectionProps, 'ownerSlug'> & {
+  /** Opens the reviewer panel. Omit to follow the link to the reviewer page. */
+  onOpenReviewer?: (reviewerProfileId: string) => void;
+}) {
   const t = useTranslations();
 
   const { search, setSearch, appliedSearch, isSearchPending } = useSearchParam({
@@ -159,6 +210,9 @@ function ReviewersTableContent({
     setReminderTarget(target);
     setIsReminderOpen(true);
   };
+
+  const [editReviewerId, setEditReviewerId] = useState<string | null>(null);
+  const shownEditReviewerId = useLastOpenId(editReviewerId);
 
   // A completed or idle reviewer has nothing open to be reminded of.
   const showSendReminder =
@@ -309,8 +363,13 @@ function ReviewersTableContent({
                 <ReviewerRowCells
                   key={row.reviewer.id}
                   row={row}
-                  href={`/decisions/${decisionSlug}/assignments/${row.reviewer.id}`}
+                  href={reviewerPageHref({
+                    decisionSlug,
+                    reviewerProfileId: row.reviewer.id,
+                  })}
+                  onOpen={onOpenReviewer}
                   onRemind={openReminder}
+                  onEditAssignments={setEditReviewerId}
                 />
               ))}
             </TableBody>
@@ -339,6 +398,23 @@ function ReviewersTableContent({
         open={isReminderOpen}
         onOpenChange={setIsReminderOpen}
       />
+      <Dialog
+        open={editReviewerId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditReviewerId(null);
+          }
+        }}
+      >
+        {shownEditReviewerId ? (
+          <ManageAssignmentsDialogContent
+            processInstanceId={processInstanceId}
+            phaseId={phaseId}
+            reviewerProfileId={shownEditReviewerId}
+            onSaved={() => setEditReviewerId(null)}
+          />
+        ) : null}
+      </Dialog>
     </div>
   );
 }
@@ -375,11 +451,15 @@ function ReviewerCount({
 function ReviewerRowCells({
   row,
   href,
+  onOpen,
   onRemind,
+  onEditAssignments,
 }: {
   row: PhaseReviewerSummary;
   href: string;
+  onOpen?: (reviewerProfileId: string) => void;
   onRemind: (target: SendReminderTarget) => void;
+  onEditAssignments: (reviewerProfileId: string) => void;
 }) {
   const t = useTranslations();
   const format = useFormatter();
@@ -403,6 +483,14 @@ function ReviewerRowCells({
         remainingCount: row.remainingCount,
       },
     });
+  const handleLinkClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (!onOpen || !isPlainLeftClick(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    onOpen(row.reviewer.id);
+  };
 
   return (
     // `relative` anchors the name link's stretched ::after (row-wide click).
@@ -416,6 +504,7 @@ function ReviewerRowCells({
             transform or `relative` here collapses the row-wide target. */}
         <Link
           href={href}
+          onClick={handleLinkClick}
           className="static inline-flex after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring/50 focus-visible:after:ring-inset"
         >
           <ProfileItem
@@ -466,18 +555,55 @@ function ReviewerRowCells({
           <ReviewStatusBadge status={row.status} />
         )}
       </TableCell>
-      <TableCell className="text-end">
-        {isRemindable ? (
-          // `z-10` lifts it above the name link's row-wide ::after.
-          <Button
-            variant="outline"
-            className="z-10"
-            aria-label={t('decisions.review.remindReviewerLabel', { name })}
-            onClick={remind}
-          >
-            {t('decisions.review.remindAction')}
-          </Button>
-        ) : null}
+      {/* `z-10` lifts the cell above the name link's row-wide ::after. */}
+      <TableCell className="relative z-10 text-end">
+        <span className="inline-flex items-center gap-1">
+          {isRemindable ? (
+            <Button
+              variant="outline"
+              aria-label={t('decisions.review.remindReviewerLabel', { name })}
+              onClick={remind}
+            >
+              {t('decisions.review.remindAction')}
+            </Button>
+          ) : null}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t('decisions.review.moreActionsForReviewer', {
+                    name,
+                  })}
+                />
+              }
+            >
+              <LuEllipsis className="size-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="bottom" align="end" className="min-w-44">
+              <DropdownMenuLinkItem
+                closeOnClick
+                render={<Link href={href} onClick={handleLinkClick} />}
+              >
+                <LuFileText />
+                {t('decisions.review.openReviewerAction')}
+              </DropdownMenuLinkItem>
+              <DropdownMenuItem
+                onClick={() => onEditAssignments(row.reviewer.id)}
+              >
+                <LuPencil />
+                {t('decisions.review.editAssignmentsAction')}
+              </DropdownMenuItem>
+              {isRemindable ? (
+                <DropdownMenuItem onClick={remind}>
+                  <LuBell />
+                  {t('decisions.review.sendReminderAction')}
+                </DropdownMenuItem>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </span>
       </TableCell>
     </TableRow>
   );

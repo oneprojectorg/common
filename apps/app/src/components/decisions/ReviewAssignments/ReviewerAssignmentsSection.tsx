@@ -1,16 +1,8 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@op/sense/Empty';
 import { Header3 } from '@op/sense/Header';
 import { Suspense, useCallback, useId, useMemo } from 'react';
-import { LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -23,6 +15,7 @@ import {
   ReviewerHeaderSkeleton,
 } from './ReviewAssignmentsSkeletons';
 import {
+  AssignmentsLoadError,
   AssignmentsNextPage,
   ReviewerActions,
   ReviewerNoAssignments,
@@ -53,7 +46,6 @@ export function ReviewerAssignmentsSection({
   decisionSlug,
   ownerSlug,
 }: ReviewerAssignmentsSectionProps) {
-  const t = useTranslations();
   const route = useMemo<ProposalSheetRoute>(
     () => ({ decisionSlug, slug: ownerSlug, instanceId: processInstanceId }),
     [decisionSlug, ownerSlug, processInstanceId],
@@ -71,25 +63,7 @@ export function ReviewerAssignmentsSection({
 
   return (
     <ProposalSheetProvider {...route} expandHref={expandHref}>
-      <APIErrorBoundary
-        fallbacks={{
-          default: () => (
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <LuUsers className="size-6" />
-                </EmptyMedia>
-                <EmptyTitle>
-                  {t('decisions.review.loadAssignmentsError')}
-                </EmptyTitle>
-                <EmptyDescription>
-                  {t('decisions.proposals.refreshPageHint')}
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          ),
-        }}
-      >
+      <APIErrorBoundary fallbacks={{ default: () => <AssignmentsLoadError /> }}>
         <Suspense
           fallback={
             <>

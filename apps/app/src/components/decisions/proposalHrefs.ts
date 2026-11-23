@@ -57,3 +57,13 @@ export function decisionProposalDevelopHref(route: {
 export function proposalReviewsHref(route: ProposalRoute): string {
   return `${proposalHref(route)}/reviews`;
 }
+
+export function reviewerPageHref({
+  decisionSlug,
+  reviewerProfileId,
+}: {
+  decisionSlug: string;
+  reviewerProfileId: string;
+}): string {
+  return `/decisions/${decisionSlug}/assignments/${reviewerProfileId}`;
+}
