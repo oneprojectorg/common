@@ -37,7 +37,7 @@ const NarrowInputDemo = () => {
   return (
     <NumberField
       label="Budget"
-      description="The description uses the full width of the field while the input stays narrow. Long helper text wraps at the field's edge, not at the input's."
+      description="Long helper text wraps at the field's edge, not at the input's."
       prefixText="$"
       value={amount}
       onChange={setAmount}

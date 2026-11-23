@@ -31,7 +31,7 @@ interface NumberFieldProps extends Omit<
   /** Static text rendered at the inline start of the input (e.g. "$"). */
   prefixText?: string;
   className?: string;
-  /** Classes for the input and its prefix only. Omit to size them with the field. */
+  /** Classes for the input and its prefix. */
   inputGroupClassName?: string;
 }
 
