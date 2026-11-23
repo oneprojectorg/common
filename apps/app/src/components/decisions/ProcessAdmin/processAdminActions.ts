@@ -26,7 +26,6 @@ type AdminPickAction<Member, Invite> =
   | { kind: 'moveInvite'; invite: Invite }
   | { kind: 'invite'; email: string };
 
-/** What removing an admin should call: drop the role when they hold others, else the membership. */
 type AdminRemoveAction =
   | { kind: 'demote'; profileUserId: string; roleIds: string[] }
   | { kind: 'remove'; profileUserId: string };

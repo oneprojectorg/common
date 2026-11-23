@@ -162,8 +162,6 @@ function ProcessAdminOverviewSuspense({
   );
 }
 
-// A draft manages its admins from the bar and cannot launch from here yet; a
-// live process links to what participants see.
 function ProcessAdminTopBar({
   slug,
   process,
