@@ -52,3 +52,15 @@ catalog:
   '@tiptap/extension-text-align': ^3.15.3
   '@tiptap/extension-underline': ^3.15.3
   '@tiptap/suggestion': ^3.15.3
+  # The browser tracing set in apps/app ships one OpenTelemetry release train.
+  # The 0.x packages (instrumentation, exporters) and the 2.x SDK packages
+  # (core, resources, sdk-trace-*) release together: 0.215.0 pairs with 2.7.0,
+  # and auto-instrumentations-web 0.60.0 depends on instrumentation ^0.215.0.
+  # The 2.x entries are exact: the exporter pins core and sdk-trace-base to
+  # 2.7.0, and a caret floats them to a newer minor. Bump the set together.
+  '@opentelemetry/auto-instrumentations-web': ^0.60.0
+  '@opentelemetry/context-zone': 2.7.0
+  '@opentelemetry/exporter-trace-otlp-http': ^0.215.0
+  '@opentelemetry/instrumentation': ^0.215.0
+  '@opentelemetry/resources': 2.7.0
+  '@opentelemetry/sdk-trace-web': 2.7.0
