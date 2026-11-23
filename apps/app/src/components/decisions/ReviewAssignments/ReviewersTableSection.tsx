@@ -175,6 +175,16 @@ function ReviewersTableContent({
   onOpenReviewer?: (reviewerProfileId: string) => void;
 }) {
   const t = useTranslations();
+  const utils = trpc.useUtils();
+  // Hover or focus starts the panel's read, so the panel usually opens with data.
+  const prefetchReviewer = onOpenReviewer
+    ? (reviewerProfileId: string) =>
+        void utils.decision.listReviewerAssignments.prefetchInfinite({
+          processInstanceId,
+          phaseId,
+          reviewerProfileId,
+        })
+    : undefined;
 
   const { search, setSearch, appliedSearch, isSearchPending } = useSearchParam({
     key: 'reviewerSearch',
@@ -385,6 +395,7 @@ function ReviewersTableContent({
                     reviewerProfileId: row.reviewer.id,
                   })}
                   onOpen={onOpenReviewer}
+                  onPrefetch={prefetchReviewer}
                   onRemind={openReminder}
                   onEditAssignments={setEditReviewerId}
                 />
@@ -469,12 +480,14 @@ function ReviewerRowCells({
   row,
   href,
   onOpen,
+  onPrefetch,
   onRemind,
   onEditAssignments,
 }: {
   row: PhaseReviewerSummary;
   href: string;
   onOpen?: (reviewerProfileId: string) => void;
+  onPrefetch?: (reviewerProfileId: string) => void;
   onRemind: (target: SendReminderTarget) => void;
   onEditAssignments: (reviewerProfileId: string) => void;
 }) {
@@ -508,6 +521,7 @@ function ReviewerRowCells({
     event.preventDefault();
     onOpen(row.reviewer.id);
   };
+  const prefetch = () => onPrefetch?.(row.reviewer.id);
 
   return (
     // `relative` anchors the name link's stretched ::after (row-wide click).
@@ -522,6 +536,8 @@ function ReviewerRowCells({
         <Link
           href={href}
           onClick={handleLinkClick}
+          onPointerEnter={prefetch}
+          onFocus={prefetch}
           className="static inline-flex after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring/50 focus-visible:after:ring-inset"
         >
           <ProfileItem

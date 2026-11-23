@@ -23,7 +23,7 @@ import { Link, useTranslations } from '@/lib/i18n';
 
 import type { ProposalSheetRoute } from '../ProposalSheet/proposalSheetState';
 import { ReviewStatusBadge } from '../ReviewStatusBadge';
-import { useAssignmentRow } from './ReviewerAssignmentsTable';
+import { useAssignmentRow } from './useAssignmentRow';
 
 interface ReviewerAssignmentListProps {
   assignments: ReviewAssignmentExtended[];
