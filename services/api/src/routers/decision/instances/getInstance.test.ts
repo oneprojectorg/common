@@ -1,4 +1,5 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
+import { db } from '@op/db/client';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -180,6 +181,54 @@ describe.concurrent('getInstance', () => {
         instanceId: instance.instance.id,
       }),
     ).rejects.toMatchObject({ cause: { statusCode: 403 } });
+  });
+
+  it('returns each phase with its row id, in order', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const [result, rows] = await Promise.all([
+      caller.decision.getInstance({ instanceId }),
+      db.query.processPhases.findMany({
+        where: { processInstanceId: instanceId },
+        columns: { id: true },
+        orderBy: { sortOrder: 'asc' },
+      }),
+    ]);
+
+    expect(rows.length).toBeGreaterThan(0);
+    expect(result.phases.map(({ id }) => id)).toEqual(rows.map(({ id }) => id));
+    expect(result.phases.map(({ phaseId }) => phaseId)).toEqual(
+      result.instanceData.phases?.map(({ phaseId }) => phaseId),
+    );
+    expect(result.instanceData.phases?.[0]).not.toHaveProperty('id');
+  });
+
+  it('returns a null row id for phases a decision has no rows for yet', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    await testData.removePhaseRows(instanceId);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getInstance({ instanceId });
+
+    expect(result.phases.length).toBeGreaterThan(0);
+    expect(result.phases.every(({ id }) => id === null)).toBe(true);
   });
 
   it('returns a wizard-created instance that has no process', async ({

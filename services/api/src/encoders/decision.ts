@@ -392,6 +392,21 @@ export const processInstanceWithSchemaEncoder = z.preprocess(
   processInstanceWithSchemaEncoderBase,
 );
 
+/** A phase with the row uuid the phase endpoints take; `null` before the decision has rows. */
+export const instancePhaseWithRowIdEncoder = instancePhaseDataEncoder.extend({
+  id: z.uuid().nullable(),
+});
+export type InstancePhaseWithRowId = z.infer<
+  typeof instancePhaseWithRowIdEncoder
+>;
+
+export const processInstanceWithPhasesEncoder = z.preprocess(
+  withPhasesInInstanceData,
+  processInstanceWithSchemaEncoderBase.extend({
+    phases: z.array(instancePhaseWithRowIdEncoder),
+  }),
+);
+
 /** Decision profile encoder  */
 export const decisionProfileWithSchemaEncoder = baseProfileEncoder.extend({
   processInstance: processInstanceWithSchemaEncoder,
