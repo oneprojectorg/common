@@ -5,8 +5,8 @@
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
-    "build": "next build --webpack",
-    "build:e2e": "NEXT_PUBLIC_APP_PORT=4100 NEXT_PUBLIC_API_PORT=4300 next build --webpack",
+    "build": "next build",
+    "build:e2e": "NEXT_PUBLIC_APP_PORT=4100 NEXT_PUBLIC_API_PORT=4300 next build",
     "dev": "next dev -p 3100",
     "dev:e2e": "NEXT_PUBLIC_APP_PORT=4100 NEXT_PUBLIC_API_PORT=4300 next dev -p 4100",
     "format:check": "oxfmt --check",

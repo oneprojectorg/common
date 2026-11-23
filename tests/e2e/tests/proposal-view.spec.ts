@@ -28,7 +28,7 @@ import { authenticateAnonymously, expect, test } from '../fixtures/index.js';
 
 /**
  * Any doc ID that doesn't contain "nonexistent" will return fixture content
- * from the mock (@op/collab/testing, aliased via webpack when E2E=true).
+ * from the mock (@op/collab/testing, aliased by Turbopack when E2E=true).
  */
 const MOCK_DOC_ID = 'test-proposal-view-doc';
 const VERSIONED_MOCK_DOC_ID = 'test-proposal-doc-versioned';

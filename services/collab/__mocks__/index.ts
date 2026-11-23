@@ -3,7 +3,7 @@
  *
  * - **Vitest**: seed per-doc responses via `mockCollab.setDocResponse()` or
  *   per-fragment responses via `mockCollab.setDocFragmentResponses()`.
- * - **E2E**: webpack aliases `@op/collab` here; `test-proposal-doc` is pre-seeded
+ * - **E2E**: `turbopack.resolveAlias` points `@op/collab` here; `test-proposal-doc` is pre-seeded
  *   with fixture content. Unseeded docs return 404.
  *
  * @example
