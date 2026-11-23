@@ -87,7 +87,7 @@
     "@types/three": "^0.174.0",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "@xyflow/react": "^12.5.2",
-    "concurrently": "^9.1.2",
+    "concurrently": "^9.2.5",
     "cookie": "^1.0.2",
     "cross-env": "^7.0.3",
     "d3-scale": "^4.0.2",
