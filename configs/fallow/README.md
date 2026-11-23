@@ -16,6 +16,11 @@ pnpm test:coverage    # needs `pnpm w:api test:supabase:start`
 pnpm health:baseline
 ```
 
+`health-baseline.json` keys each complexity finding by file and function name
+(`--baseline-mode identity`), not by line, so edits above a function do not
+move it out of the baseline. A renamed or moved function reports as new;
+re-record after that kind of refactor.
+
 ## What CRAP is scored on
 
 **Cognitive complexity, against coverage measured per function:**

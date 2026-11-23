@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-09-10T13:00:31.722Z",
+  "generated_at": "2026-11-23T19:42:43.551Z",
   "metric": "cognitive",
-  "functions_measured": 2004,
-  "functions_unmeasured": 170,
-  "files_scored": 569,
-  "files_unscored": 36,
+  "functions_measured": 3132,
+  "functions_unmeasured": 2,
+  "files_scored": 808,
+  "files_unscored": 1,
   "scope": {
     "source": "{apps,packages,services}/*/src/**/*.{ts,tsx}",
     "excluded": [
@@ -13,11 +13,11 @@
     ]
   },
   "summary": {
-    "scored": 569,
-    "clean": 481,
-    "atRisk": 42,
-    "median": 2.032,
-    "p90": 21,
+    "scored": 808,
+    "clean": 712,
+    "atRisk": 43,
+    "median": 2.0185185185185186,
+    "p90": 16.932180245789713,
     "max": 1190
   }
 }

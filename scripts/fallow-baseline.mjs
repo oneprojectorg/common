@@ -123,10 +123,16 @@ mkdirSync(dirname(BASELINE), { recursive: true });
 // fallow exits 1 whenever findings exist, which is the normal state here — the
 // baseline is the record of them. Only the write matters, so its status is not
 // forwarded: a run that recorded the baseline succeeded.
+//
+// `identity` keys each finding by file and function name. The default keys
+// carry the line too, so every edit above a baselined function moved it out
+// of the baseline and `pnpm health` failed on code nobody had touched.
 fallow([
   'health',
   '--coverage',
   COVERAGE,
+  '--baseline-mode',
+  'identity',
   '--save-baseline',
   BASELINE,
   '--save-snapshot',
