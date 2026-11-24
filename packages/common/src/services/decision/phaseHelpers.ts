@@ -225,7 +225,7 @@ export const readPhaseSettings = (data: unknown): PhaseSettingsFields => {
   };
 };
 
-export const assertPhaseEndsOnOrAfterStart = ({
+const assertPhaseEndsOnOrAfterStart = ({
   data,
   phaseLabel,
 }: {
@@ -257,8 +257,21 @@ const hasPhaseDatesChanged = ({
   const before = isJsonObject(stored) ? stored : {};
   const after = isJsonObject(merged) ? merged : {};
   return (
-    before.startDate !== after.startDate || before.endDate !== after.endDate
+    !isSameInstant(before.startDate, after.startDate) ||
+    !isSameInstant(before.endDate, after.endDate)
   );
+};
+
+const isSameInstant = (a: unknown, b: unknown): boolean => {
+  if (typeof a !== 'string' || typeof b !== 'string') {
+    return a === b;
+  }
+  const parsedA = Date.parse(a);
+  const parsedB = Date.parse(b);
+  if (Number.isNaN(parsedA) || Number.isNaN(parsedB)) {
+    return a === b;
+  }
+  return parsedA === parsedB;
 };
 
 export const getPhaseAsDecisionAdmin = async ({

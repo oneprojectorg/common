@@ -6,7 +6,6 @@ import { CommonError, NotFoundError } from '../../utils';
 import {
   type PhaseData,
   assertDecisionAdmin,
-  assertPhaseEndsOnOrAfterStart,
   assertPhaseSchemasCompile,
   assertPhaseSettings,
   insertPhase,
@@ -40,7 +39,6 @@ export const createPhase = async ({
   const phaseData = data ?? {};
   assertPhaseSchemasCompile(phaseData);
   assertPhaseSettings({ data: phaseData, phaseLabel: name });
-  assertPhaseEndsOnOrAfterStart({ data: phaseData, phaseLabel: name });
 
   const { result: created, phases } = await writePhasesWithLock({
     processInstanceId,
