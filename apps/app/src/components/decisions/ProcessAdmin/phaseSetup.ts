@@ -17,7 +17,7 @@ type SetupBlurbKey =
   | 'setupBlurbVote'
   | 'setupBlurbResults';
 
-/** A phase is ready once both its dates are set and, where it collects a form, the form has a field. */
+/** A phase is ready once both its dates are set and every form it collects has a field. */
 export function isPhaseReady(
   phase: DecisionPhase,
   templates: PhaseTemplates,
@@ -26,12 +26,18 @@ export function isPhaseReady(
     return false;
   }
 
-  if (isReviewPhase(phase)) {
-    return hasFields(phase.rubricTemplate ?? templates.rubricTemplate);
+  if (
+    isReviewPhase(phase) &&
+    !hasFields(phase.rubricTemplate ?? templates.rubricTemplate)
+  ) {
+    return false;
   }
 
-  if (isSubmitPhase(phase) || isDevelopPhase(phase)) {
-    return hasFields(phase.proposalTemplate ?? templates.proposalTemplate);
+  if (
+    (isSubmitPhase(phase) || isDevelopPhase(phase)) &&
+    !hasFields(phase.proposalTemplate ?? templates.proposalTemplate)
+  ) {
+    return false;
   }
 
   return true;
