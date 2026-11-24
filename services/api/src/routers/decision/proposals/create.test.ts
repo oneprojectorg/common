@@ -1,14 +1,14 @@
 import { cache } from '@op/cache';
-import { getInstancePhases } from '@op/common';
 import {
   TestDecisionsDataManager,
   ensureProposalCategoryTerms,
-  syncPhaseRows,
 } from '@op/common/testing';
-import { createDecisionBoundary } from '@op/common/testing/data';
+import {
+  createDecisionBoundary,
+  updatePhaseRowData,
+} from '@op/common/testing/data';
 import {
   ProposalStatus,
-  processInstances,
   proposalCategories,
   taxonomyTerms,
 } from '@op/db/schema';
@@ -56,20 +56,16 @@ const setCurrentPhaseFormSchema = async (
 ) => {
   const instance = await db.query.processInstances.findFirst({
     where: { id: instanceId },
-    columns: { instanceData: true, currentStateId: true },
+    columns: { currentStateId: true },
   });
-  if (!instance?.instanceData || !instance.currentStateId) {
+  if (!instance?.currentStateId) {
     throw new Error(`Instance ${instanceId} has no current phase`);
   }
-  const { instanceData, currentStateId } = instance;
-  const phases = getInstancePhases(instanceData).map((phase) =>
-    phase.phaseId === currentStateId ? { ...phase, formSchemaId } : phase,
-  );
-  await db
-    .update(processInstances)
-    .set({ instanceData: { ...instanceData, phases } })
-    .where(eq(processInstances.id, instanceId));
-  await syncPhaseRows(instanceId, phases);
+  await updatePhaseRowData({
+    processInstanceId: instanceId,
+    phaseId: instance.currentStateId,
+    data: { formSchemaId },
+  });
 };
 
 // Postgres error code: `proposals.form_schema_id` names no row.

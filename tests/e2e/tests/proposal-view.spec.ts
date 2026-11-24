@@ -3,6 +3,7 @@ import {
   createDecisionInstance,
   createProposal,
   getSeededTemplate,
+  insertPhaseRows,
   makeDecisionPublic,
 } from '@op/common/testing/data';
 import {
@@ -499,18 +500,6 @@ test.describe('Proposal View', () => {
     const cowopInstanceData = {
       budget: 100000,
       hideBudget: false,
-      phases: [
-        {
-          stateId: 'ideaCollection',
-          plannedStartDate: '2025-09-20',
-          plannedEndDate: '2025-10-01',
-        },
-        {
-          stateId: 'submission',
-          plannedStartDate: '2025-10-02',
-          plannedEndDate: '2025-10-20',
-        },
-      ],
       fieldValues: {
         categories: [
           'Ai. Direct funding to worker-owned co-ops.',
@@ -537,6 +526,24 @@ test.describe('Proposal View', () => {
     if (!processInstance) {
       throw new Error('Failed to create process instance');
     }
+
+    await insertPhaseRows({
+      processInstanceId: processInstance.id,
+      phases: [
+        {
+          phaseId: 'ideaCollection',
+          name: 'Proposal Concept Generation',
+          startDate: '2025-09-20',
+          endDate: '2025-10-01',
+        },
+        {
+          phaseId: 'submission',
+          name: 'Proposal Development',
+          startDate: '2025-10-02',
+          endDate: '2025-10-20',
+        },
+      ],
+    });
 
     const [profileUser] = await db
       .insert(profileUsers)

@@ -1,7 +1,9 @@
+import type { PhaseInstanceData } from '@op/common';
 import {
   createOrganization,
   createProposal,
   grantDecisionProfileAccess,
+  insertPhaseRows,
 } from '@op/common/testing/data';
 import {
   EntityType,
@@ -75,34 +77,32 @@ async function createProcessWithDefaultHidden({
     ],
   };
 
-  const instanceData = {
-    budget: 50000,
-    hideBudget: false,
-    phases: [
-      {
-        phaseId: 'submission',
-        name: 'Proposal Submission',
-        rules: {
-          proposals: { submit: true, defaults: { hidden: true } },
-          voting: { submit: false },
-          advancement: { method: 'manual' as const },
-        },
-        startDate: submissionStart,
-        endDate: submissionEnd,
+  const instanceData = { budget: 50000, hideBudget: false };
+
+  const phases: PhaseInstanceData[] = [
+    {
+      phaseId: 'submission',
+      name: 'Proposal Submission',
+      rules: {
+        proposals: { submit: true, defaults: { hidden: true } },
+        voting: { submit: false },
+        advancement: { method: 'manual' },
       },
-      {
-        phaseId: 'review',
-        name: 'Review',
-        rules: {
-          proposals: { submit: false },
-          voting: { submit: false },
-          advancement: { method: 'manual' as const },
-        },
-        startDate: reviewStart,
-        endDate: reviewEnd,
+      startDate: submissionStart,
+      endDate: submissionEnd,
+    },
+    {
+      phaseId: 'review',
+      name: 'Review',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: false },
+        advancement: { method: 'manual' },
       },
-    ],
-  };
+      startDate: reviewStart,
+      endDate: reviewEnd,
+    },
+  ];
 
   const processName = `Default Hidden ${randomUUID().slice(0, 8)}`;
 
@@ -148,6 +148,8 @@ async function createProcessWithDefaultHidden({
   if (!instance) {
     throw new Error('Failed to create process instance');
   }
+
+  await insertPhaseRows({ processInstanceId: instance.id, phases });
 
   const [profileUser] = await db
     .insert(profileUsers)

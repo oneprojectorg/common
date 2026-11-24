@@ -12,10 +12,8 @@ import {
   assertPhaseRowInvariants,
   listPhases,
   phaseIdOf,
-  reconcilePhases,
   toInstanceDataPhase,
 } from './phaseHelpers';
-import { getInstancePhases } from './schemas/instanceData';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
 /**
@@ -81,11 +79,7 @@ export const writePhasesInTx = async <T>({
   // The status this save leaves, when it also changes the status.
   nextStatus?: LockedProcessInstance['status'];
 }): Promise<{ result: T; phases: ProcessPhaseWithProfile[] }> => {
-  const before = await listPhasesForWrite({
-    tx,
-    processInstanceId,
-    instanceData: locked.instanceData,
-  });
+  const before = await listPhases({ db: tx, processInstanceId });
 
   const result = await write(tx, before);
 
@@ -138,28 +132,4 @@ const renumberPhases = async ({
   }
 
   return ordered.map((row, sortOrder) => ({ ...row, sortOrder }));
-};
-
-// TODO: drop the blob conversion when instanceData.phases is dropped.
-const listPhasesForWrite = async ({
-  tx,
-  processInstanceId,
-  instanceData,
-}: {
-  tx: TransactionType;
-  processInstanceId: string;
-  instanceData: unknown;
-}): Promise<ProcessPhaseWithProfile[]> => {
-  const phases = await listPhases({ db: tx, processInstanceId });
-  const blobPhases = getInstancePhases(instanceData);
-  if (phases.length > 0 || blobPhases.length === 0) {
-    return phases;
-  }
-
-  return reconcilePhases({
-    tx,
-    processInstanceId,
-    existing: [],
-    phases: blobPhases,
-  });
 };

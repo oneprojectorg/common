@@ -1,7 +1,4 @@
-import type {
-  DecisionInstanceData,
-  DecisionSchemaDefinition,
-} from '@op/common';
+import type { DecisionSchemaDefinition } from '@op/common';
 import {
   createDecisionInstance,
   createInstanceMember,
@@ -11,6 +8,7 @@ import {
   getSeededTemplate,
   grantDecisionProfileAccess,
   grantInstanceReviewerRole,
+  updatePhaseRowData,
 } from '@op/common/testing/data';
 import {
   ProposalReviewAssignmentStatus,
@@ -184,21 +182,17 @@ test.describe('Non-reviewer review-phase view', () => {
       schema: REVIEW_SCHEMA,
     });
 
-    // `additionalInfo` lives on instance phase data (not the schema), so we
-    // inject it directly after instance creation — matching how
+    // `additionalInfo` lives on the phase row (not the schema), so we inject
+    // it directly after instance creation — matching how
     // `updateDecisionInstance` writes it in production.
-    const instanceData = instance.instance.instanceData as DecisionInstanceData;
-    const patchedInstanceData: DecisionInstanceData = {
-      ...instanceData,
-      phases: instanceData.phases.map((phase) =>
-        phase.phaseId === 'review'
-          ? { ...phase, additionalInfo: PHASE_ADDITIONAL_INFO }
-          : phase,
-      ),
-    };
+    await updatePhaseRowData({
+      processInstanceId: instance.instance.id,
+      phaseId: 'review',
+      data: { additionalInfo: PHASE_ADDITIONAL_INFO },
+    });
     await db
       .update(processInstances)
-      .set({ currentStateId: 'review', instanceData: patchedInstanceData })
+      .set({ currentStateId: 'review' })
       .where(eq(processInstances.id, instance.instance.id));
 
     const memberOrg = await createOrganization({

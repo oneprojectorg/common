@@ -22,26 +22,13 @@ const PHASE_HELPERS =
 
 const BLOB_READS = [
   /instanceData\??\.phases/,
-  /getInstancePhases\(/,
   // A blob handed to a helper that reads its phases.
   new RegExp(`\\b(?:${PHASE_HELPERS})\\(\\s*[\\w.?]*[iI]nstanceData\\s*[,)]`),
 ];
 
 const ALLOWED: Record<string, string> = {
-  'packages/common/src/services/decision/instancePhases.ts':
-    'the resolver: its blob fallback',
-  'packages/common/src/services/decision/schemas/instanceData.ts':
-    'defines getInstancePhases',
-  'packages/common/src/services/decision/createInstanceFromTemplate.ts':
-    'writes the blob',
-  'packages/common/src/services/decision/assertVoterCostField.ts':
-    'validates the blob about to be written',
-  'packages/common/src/services/decision/phaseWrites.ts':
-    'mints rows from the blob for a blob-only decision before a write',
   'packages/common/src/services/decision/utils/instance.ts':
     "reads the client's wire instanceData",
-  'services/api/src/test/helpers/phaseTestUtils.ts':
-    'test helper: asserts writers leave the blob as created',
 };
 
 describe('phase reads', () => {

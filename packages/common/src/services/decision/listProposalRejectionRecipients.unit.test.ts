@@ -11,28 +11,42 @@ vi.mock('../email/recipients', () => ({
   listMemberProfileRecipients: vi.fn(),
 }));
 
+vi.mock('./instancePhases', () => ({
+  resolvePhases: vi.fn(),
+}));
+
 import { db } from '@op/db/client';
 
 import {
   type EmailRecipient,
   listMemberProfileRecipients,
 } from '../email/recipients';
+import { resolvePhases } from './instancePhases';
 import { listProposalRejectionRecipients } from './listProposalRejectionRecipients';
+import type { PhaseInstanceData } from './schemas/instanceData';
 
 const PROPOSAL_ID = '11111111-1111-4111-8111-111111111111';
 const ACTOR_AUTH_USER_ID = '22222222-2222-4222-8222-222222222222';
 const ADA_AUTH_USER_ID = '33333333-3333-4333-8333-333333333333';
 const PROPOSAL_PROFILE_ID = '44444444-4444-4444-8444-444444444444';
+const PROCESS_INSTANCE_ID = '55555555-5555-4555-8555-555555555555';
 
 const findFirst = vi.mocked(db.query.proposals.findFirst);
 const recipientsOf = vi.mocked(listMemberProfileRecipients);
+const readPhases = vi.mocked(resolvePhases);
+
+const returnPhases = (phases: PhaseInstanceData[]) =>
+  readPhases.mockImplementation(async ({ instance }) => ({
+    ...instance,
+    phases,
+  }));
 
 const ADA: EmailRecipient = {
   email: 'ada@example.com',
   authUserId: ADA_AUTH_USER_ID,
 };
 
-const PHASES: Array<{ phaseId: string; name?: string }> = [
+const PHASES: PhaseInstanceData[] = [
   { phaseId: 'submission', name: 'Proposal Submission' },
   { phaseId: 'review', name: 'Review & Shortlist' },
   { phaseId: 'voting', name: 'Voting' },
@@ -44,7 +58,6 @@ const rejectedProposal = ({
   deletedAt = null as string | null,
   moderationDetachedAt = null as string | null,
   currentStateId = 'review' as string | null,
-  phases = PHASES,
   steward = { name: 'Columbus Parks Coalition' } as { name: string } | null,
 } = {}) => ({
   status,
@@ -53,8 +66,9 @@ const rejectedProposal = ({
   profileId: PROPOSAL_PROFILE_ID,
   profile: { name: 'Community Garden Revamp' },
   processInstance: {
+    id: PROCESS_INSTANCE_ID,
     currentStateId,
-    instanceData: { phases },
+    instanceData: {},
     steward,
     profile: { name: 'Participatory Budgeting 2026', slug: 'pb-2026' },
   },
@@ -70,6 +84,7 @@ describe('listProposalRejectionRecipients', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     recipientsOf.mockResolvedValue([ADA]);
+    returnPhases(PHASES);
   });
 
   it('addresses the authors of a proposal that is still rejected', async () => {
@@ -87,17 +102,26 @@ describe('listProposalRejectionRecipients', () => {
       },
     });
     expect(recipientsOf).toHaveBeenCalledWith(PROPOSAL_PROFILE_ID);
+    expect(readPhases).toHaveBeenCalledWith({
+      instance: expect.objectContaining({ id: PROCESS_INSTANCE_ID }),
+    });
   });
 
   // The email drops the clause rather than naming a phase that isn't there.
   it.each([
-    ['the process has no current phase', { currentStateId: null }],
-    ['the current phase is not in the instance', { currentStateId: 'gone' }],
+    ['the process has no current phase', { currentStateId: null }, PHASES],
+    [
+      'the current phase is not in the instance',
+      { currentStateId: 'gone' },
+      PHASES,
+    ],
     [
       'the current phase was never named',
-      { phases: [{ phaseId: 'review' }, { phaseId: 'voting' }] },
+      {},
+      [{ phaseId: 'review' }, { phaseId: 'voting' }],
     ],
-  ])('names no phase when %s', async (_label, overrides) => {
+  ])('names no phase when %s', async (_label, overrides, phases) => {
+    returnPhases(phases);
     findFirst.mockResolvedValue(rejectedProposal(overrides) as never);
 
     const result = await run();

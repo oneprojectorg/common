@@ -20,7 +20,6 @@ import {
   posts,
   postsToOrganizations,
   postsToProfiles,
-  processInstances,
 } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import type { BrowserContext, Page } from '@playwright/test';
@@ -1034,37 +1033,14 @@ async function seedDecision({
     authUserId: org.adminUser.authUserId,
     email: org.adminUser.email,
     schema: REVIEW_SCHEMA,
+    currentStateId,
+    rubricTemplate,
+    overview,
+    ...(phaseCopy && {
+      phaseHeadlines: { [phaseCopy.phaseId]: phaseCopy.headline },
+      phaseDescriptions: { [phaseCopy.phaseId]: phaseCopy.description },
+    }),
   });
-
-  const seededData = instance.instance.instanceData as Record<string, unknown>;
-  const seededPhases = (seededData.phases ?? []) as Array<
-    Record<string, unknown>
-  >;
-
-  await db
-    .update(processInstances)
-    .set({
-      instanceData: {
-        ...seededData,
-        ...(rubricTemplate ? { rubricTemplate } : {}),
-        ...(overview ? { overview } : {}),
-        ...(phaseCopy
-          ? {
-              phases: seededPhases.map((phase) =>
-                phase.phaseId === phaseCopy.phaseId
-                  ? {
-                      ...phase,
-                      headline: phaseCopy.headline,
-                      description: phaseCopy.description,
-                    }
-                  : phase,
-              ),
-            }
-          : {}),
-      },
-      currentStateId,
-    })
-    .where(eq(processInstances.id, instance.instance.id));
 
   const { user: author } = await createInstanceMember({
     supabaseAdmin,

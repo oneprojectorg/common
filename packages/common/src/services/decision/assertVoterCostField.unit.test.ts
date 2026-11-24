@@ -9,7 +9,10 @@ import { db } from '@op/db/client';
 
 import { ValidationError } from '../../utils';
 import { assertVoterCostField } from './assertVoterCostField';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 
 const PROCESS_ID = 'process-1';
@@ -31,23 +34,22 @@ const dotsTemplate = template({
   cost: { type: 'number', 'x-unit': { kind: 'custom', label: 'dots' } },
 });
 
-const instanceData = ({
+const decision = ({
   proposalTemplate,
   voting,
 }: {
   proposalTemplate?: ProposalTemplateSchema;
   voting?: { voterBudget?: number; voterCostField?: string };
-}): DecisionInstanceData =>
-  ({
-    ...(proposalTemplate ? { proposalTemplate } : {}),
-    phases: [
-      { phaseId: 'submission', rules: { proposals: { submit: true } } },
-      {
-        phaseId: 'voting',
-        rules: { voting: { submit: true, maxVotesPerMember: 3, ...voting } },
-      },
-    ],
-  }) as DecisionInstanceData;
+}): { instanceData: DecisionInstanceData; phases: PhaseInstanceData[] } => ({
+  instanceData: proposalTemplate ? { proposalTemplate } : {},
+  phases: [
+    { phaseId: 'submission', rules: { proposals: { submit: true } } },
+    {
+      phaseId: 'voting',
+      rules: { voting: { submit: true, maxVotesPerMember: 3, ...voting } },
+    },
+  ],
+});
 
 describe('assertVoterCostField', () => {
   beforeEach(() => {
@@ -57,7 +59,7 @@ describe('assertVoterCostField', () => {
   it('accepts a cap on the default budget field', async () => {
     await expect(
       assertVoterCostField({
-        instanceData: instanceData({
+        ...decision({
           proposalTemplate: budgetTemplate,
           voting: { voterBudget: 5000 },
         }),
@@ -69,7 +71,7 @@ describe('assertVoterCostField', () => {
   it('accepts a cap on a numeric field the rules name', async () => {
     await expect(
       assertVoterCostField({
-        instanceData: instanceData({
+        ...decision({
           proposalTemplate: dotsTemplate,
           voting: { voterBudget: 10, voterCostField: 'cost' },
         }),
@@ -81,7 +83,7 @@ describe('assertVoterCostField', () => {
   it('rejects a cap whose cost field is missing from the template', async () => {
     await expect(
       assertVoterCostField({
-        instanceData: instanceData({
+        ...decision({
           proposalTemplate: budgetTemplate,
           voting: { voterBudget: 10, voterCostField: 'cost' },
         }),
@@ -93,7 +95,7 @@ describe('assertVoterCostField', () => {
   it('rejects a cap on a numeric field that declares no unit', async () => {
     await expect(
       assertVoterCostField({
-        instanceData: instanceData({
+        ...decision({
           proposalTemplate: template({ cost: { type: 'number' } }),
           voting: { voterBudget: 10, voterCostField: 'cost' },
         }),
@@ -105,7 +107,7 @@ describe('assertVoterCostField', () => {
   it('rejects a default-field cap when the template collects no budget', async () => {
     await expect(
       assertVoterCostField({
-        instanceData: instanceData({
+        ...decision({
           proposalTemplate: template({}),
           voting: { voterBudget: 5000 },
         }),
@@ -121,7 +123,7 @@ describe('assertVoterCostField', () => {
 
     await expect(
       assertVoterCostField({
-        instanceData: instanceData({ voting: { voterBudget: 5000 } }),
+        ...decision({ voting: { voterBudget: 5000 } }),
         processId: PROCESS_ID,
       }),
     ).resolves.toBeUndefined();
@@ -129,7 +131,7 @@ describe('assertVoterCostField', () => {
 
   it('does not read the process schema when no phase carries a cap', async () => {
     await assertVoterCostField({
-      instanceData: instanceData({ proposalTemplate: template({}) }),
+      ...decision({ proposalTemplate: template({}) }),
       processId: PROCESS_ID,
     });
 

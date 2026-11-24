@@ -5,7 +5,10 @@ import type {
   PhaseKind,
   ProcessType,
 } from './schemas/createInstance';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from './schemas/instanceData';
 import type {
   DecisionSchemaDefinition,
   PhaseDefinition,
@@ -76,16 +79,19 @@ export function composeInstanceTemplate(
 }
 
 /** The "start from scratch" choice: no phases until the admin adds one. */
-export function blankInstanceData(
-  draft: CreateInstanceInput,
-): DecisionInstanceData {
+export function blankInstanceData(draft: CreateInstanceInput): {
+  instanceData: DecisionInstanceData;
+  phases: PhaseInstanceData[];
+} {
   const { id, version, name, config } = processLevel(draft);
 
   return {
-    templateId: id,
-    templateVersion: version,
-    templateName: name,
-    config,
+    instanceData: {
+      templateId: id,
+      templateVersion: version,
+      templateName: name,
+      config,
+    },
     phases: [],
   };
 }

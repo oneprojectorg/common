@@ -20,7 +20,7 @@ export const createInstance = async ({
 }) => {
   const creator = await resolveInstanceCreator(user);
 
-  const instanceData =
+  const { instanceData, phases } =
     draft.phases.length > 0
       ? createInstanceDataFromTemplate({
           template: composeInstanceTemplate(draft),
@@ -31,6 +31,7 @@ export const createInstance = async ({
     ...creator,
     processId: null,
     instanceData,
+    phases,
     name: draft.name,
   });
 };
