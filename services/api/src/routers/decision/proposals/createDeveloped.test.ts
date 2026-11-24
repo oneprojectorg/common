@@ -1262,16 +1262,16 @@ describe.concurrent('createDevelopedProposal', () => {
       ).resolves.not.toHaveProperty('budget');
     });
 
-    it('leaves the budget empty for mixed currencies and for a total of zero', async ({
+    it('leaves the budget empty for mixed currencies and for a sum of plain numbers, and fills a total of zero', async ({
       task,
       onTestFinished,
     }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const { instanceId, sources, reviewers, createDraft } =
-        await setUpCostTotal({ testData, sourceCount: 2 });
-      const [mixed, zero] = sources;
-      if (!mixed || !zero) {
-        throw new Error('Expected two sources');
+        await setUpCostTotal({ testData, sourceCount: 3 });
+      const [mixed, plainNumbers, zero] = sources;
+      if (!mixed || !plainNumbers || !zero) {
+        throw new Error('Expected three sources');
       }
       await Promise.all([
         createCostReview({
@@ -1285,6 +1285,12 @@ describe.concurrent('createDevelopedProposal', () => {
         }),
         createCostReview({
           instanceId,
+          proposalId: plainNumbers.id,
+          reviewerProfileId: reviewers[0],
+          answers: { cost_design: 100, cost_construction: 200 },
+        }),
+        createCostReview({
+          instanceId,
           proposalId: zero.id,
           reviewerProfileId: reviewers[0],
           answers: { cost_design: usd(0) },
@@ -1294,9 +1300,12 @@ describe.concurrent('createDevelopedProposal', () => {
       await expect(createDraft([mixed.id])).resolves.not.toHaveProperty(
         'budget',
       );
-      await expect(createDraft([zero.id])).resolves.not.toHaveProperty(
+      await expect(createDraft([plainNumbers.id])).resolves.not.toHaveProperty(
         'budget',
       );
+      await expect(createDraft([zero.id])).resolves.toMatchObject({
+        budget: usd(0),
+      });
     });
   });
 });

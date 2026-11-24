@@ -172,28 +172,26 @@ function evaluateArithmetic(
   const operands: unknown[] = expr.operands.map((op) =>
     evaluateExpression(op, context),
   );
-  if (
-    expr.operator === 'add' &&
-    context.valueTypes &&
-    !operands.every((operand) => typeof operand === 'number')
-  ) {
-    return addTypedValues({ operands, valueTypes: context.valueTypes });
-  }
-  const values = operands.map((val) => (typeof val === 'number' ? val : 0));
+  const numbers = operands.map((value) =>
+    typeof value === 'number' ? value : 0,
+  );
 
   switch (expr.operator) {
     case 'add':
-      return values.reduce((a, b) => a + b, 0);
+      return context.valueTypes &&
+        !operands.every((operand) => typeof operand === 'number')
+        ? addTypedValues({ operands, valueTypes: context.valueTypes })
+        : numbers.reduce((a, b) => a + b, 0);
     case 'subtract':
-      return values.reduce((a, b) => a - b);
+      return numbers.reduce((a, b) => a - b);
     case 'multiply':
-      return values.reduce((a, b) => a * b, 1);
+      return numbers.reduce((a, b) => a * b, 1);
     case 'divide':
-      return values.reduce((a, b) => (b !== 0 ? a / b : 0));
+      return numbers.reduce((a, b) => (b !== 0 ? a / b : 0));
     case 'modulo':
-      return values.reduce((a, b) => (b !== 0 ? a % b : 0));
+      return numbers.reduce((a, b) => (b !== 0 ? a % b : 0));
     case 'power':
-      return values.reduce((a, b) => Math.pow(a, b));
+      return numbers.reduce((a, b) => Math.pow(a, b));
     default:
       throw new Error(`Unknown arithmetic operator: ${expr.operator}`);
   }
