@@ -49,6 +49,7 @@ const review = {
   slug: 'a1b2c3d4',
   phaseId: 'review',
   name: 'Review',
+  rules: { reviews: { submit: true } },
   startDate: '2026-03-01T12:00:00.000Z',
   endDate: '2026-03-20T12:00:00.000Z',
 };
@@ -68,14 +69,32 @@ afterEach(() => {
 });
 
 describe('ProcessAdminPhasePage', () => {
-  it('shows the phase named in the URL with its dates', () => {
-    query.phases = [{ ...review, slug: 'other', name: 'Submit' }, review];
+  it('shows the phase named in the URL with its kind and dates', () => {
+    query.phases = [
+      {
+        ...review,
+        slug: 'other',
+        name: 'Submit',
+        rules: { proposals: { submit: true } },
+        endDate: '2026-02-27T12:00:00.000Z',
+      },
+      review,
+    ];
     renderPage('a1b2c3d4');
 
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Review',
     );
+    expect(screen.getByText('Review phase')).toBeTruthy();
+    expect(screen.getByText('Review period')).toBeTruthy();
     expect(screen.getByText(/^Mar \d+ - Mar \d+$/)).toBeTruthy();
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.tagName === 'SPAN' &&
+          element.textContent === '“Submit” ends Feb 27.',
+      ),
+    ).toBeTruthy();
   });
 
   it('leaves the dates out when the phase has none', () => {
