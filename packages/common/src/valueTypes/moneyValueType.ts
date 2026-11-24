@@ -8,11 +8,7 @@ const moneyValueSchema = moneyAmountSchema.strict();
 
 export const moneyValueType = {
   parse(value) {
-    const result = moneyValueSchema.safeParse(value);
-    // zod rejects NaN but lets Infinity through
-    return result.success && Number.isFinite(result.data.amount)
-      ? result.data
-      : undefined;
+    return moneyValueSchema.validate(value) ? value : undefined;
   },
   add(a, b) {
     if (a.currency !== b.currency) {
