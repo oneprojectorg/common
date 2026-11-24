@@ -524,7 +524,7 @@
     "formShowOnEntryOption": "عندما يفتح المشارك المرحلة",
     "formShowOnHint": "النموذج الذي يُفتح عند الدخول لا يُفتح مرة أخرى بعد أن يرسله المشارك. إذا أغلقه، يُفتح مرة أخرى بعد 7 أيام.",
     "formCapabilitiesLabel": "من يرى هذا النموذج",
-    "formCapabilitiesHint": "يرى هذا النموذج ويجيب عنه فقط المشاركون الذين لديهم كل الأذونات المحددة. لا تحدد أي إذن لإظهاره لكل من في المرحلة.",
+    "formCapabilitiesHint": "يرى هذا النموذج ويجيب عنه المشاركون الذين لديهم أي إذن من الأذونات المحددة. لا تحدد أي إذن لإظهاره لكل من في المرحلة.",
     "formCapabilityReviewOption": "مراجعة",
     "formCapabilityVoteOption": "تصويت",
     "formCapabilitySubmitProposalsOption": "تقديم المقترحات",

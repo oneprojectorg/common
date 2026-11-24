@@ -440,7 +440,7 @@ describe.concurrent('customForm.submit', () => {
     ).rejects.toMatchObject({
       cause: {
         name: 'UnauthorizedError',
-        message: expect.stringMatching(/capabilities this form requires/i),
+        message: expect.stringMatching(/capability this form requires/i),
       },
     });
 

@@ -26,8 +26,9 @@ export interface CustomFormDefinitionSchema extends JSONSchema7 {
    */
   'x-show-on'?: CustomFormShowOn;
   /**
-   * Decision capabilities a participant needs, all of them, to see and answer
-   * the form. Absent or empty means anyone who can read the process.
+   * Decision capabilities that let a participant see and answer the form; any
+   * one of them is enough. Absent or empty means anyone who can read the
+   * process.
    */
   'x-required-capabilities'?: CustomFormCapability[];
 }

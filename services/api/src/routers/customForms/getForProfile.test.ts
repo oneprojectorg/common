@@ -182,13 +182,16 @@ describe.concurrent('customForm.getForProfile', () => {
     expect(forReviewer?.id).toBe(form.id);
   });
 
-  it('hides a form from a caller who holds only some of its required capabilities, and shows it to an admin', async ({
+  it('shows a form to a caller who holds any one of its capabilities, and to an admin', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
-    const reviewer = await testData.createInstanceReviewerWithRole(context);
+    const [member, reviewer] = await Promise.all([
+      testData.createInstanceMember(context),
+      testData.createInstanceReviewerWithRole(context),
+    ]);
     const form = await attachForm(
       context.instance.profileId,
       onTestFinished,
@@ -196,7 +199,8 @@ describe.concurrent('customForm.getForProfile', () => {
       'entry',
       ['review', 'developProposals'],
     );
-    const [reviewerCaller, adminCaller] = await Promise.all([
+    const [memberCaller, reviewerCaller, adminCaller] = await Promise.all([
+      createAuthenticatedCaller(member.email),
       createAuthenticatedCaller(reviewer.email),
       createAuthenticatedCaller(context.defaultReviewer.email),
     ]);
@@ -205,12 +209,14 @@ describe.concurrent('customForm.getForProfile', () => {
       showOn: 'entry' as const,
     };
 
-    const [forReviewer, forAdmin] = await Promise.all([
+    const [forMember, forReviewer, forAdmin] = await Promise.all([
+      memberCaller.customForm.getForProfile(input),
       reviewerCaller.customForm.getForProfile(input),
       adminCaller.customForm.getForProfile(input),
     ]);
 
-    expect(forReviewer).toBeNull();
+    expect(forMember).toBeNull();
+    expect(forReviewer?.id).toBe(form.id);
     expect(forAdmin?.id).toBe(form.id);
   });
 

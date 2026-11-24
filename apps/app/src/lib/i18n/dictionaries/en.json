@@ -524,7 +524,7 @@
     "formShowOnEntryOption": "When the participant opens the phase",
     "formShowOnHint": "A form that opens on entry does not open again after the participant submits it. If they close it, it opens again after 7 days.",
     "formCapabilitiesLabel": "Who sees this form",
-    "formCapabilitiesHint": "Only participants with every selected permission see and answer this form. Select none to show it to everyone in the phase.",
+    "formCapabilitiesHint": "Participants with any selected permission see and answer this form. Select none to show it to everyone in the phase.",
     "formCapabilityReviewOption": "Review",
     "formCapabilityVoteOption": "Vote",
     "formCapabilitySubmitProposalsOption": "Submit proposals",

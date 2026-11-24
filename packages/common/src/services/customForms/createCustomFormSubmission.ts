@@ -74,7 +74,7 @@ export const createCustomFormSubmission = async ({
 
   if (!(await hasFormCapabilities({ user: { id: authUserId }, form }))) {
     throw new UnauthorizedError(
-      'You do not have the capabilities this form requires',
+      'You do not have a capability this form requires',
     );
   }
 

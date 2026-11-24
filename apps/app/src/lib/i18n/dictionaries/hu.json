@@ -524,7 +524,7 @@
     "formShowOnEntryOption": "Amikor a résztvevő megnyitja a szakaszt",
     "formShowOnHint": "A belépéskor megnyíló űrlap nem nyílik meg újra, miután a résztvevő elküldte. Ha bezárja, 7 nap múlva újra megnyílik.",
     "formCapabilitiesLabel": "Ki látja ezt az űrlapot",
-    "formCapabilitiesHint": "Csak azok a résztvevők látják és töltik ki az űrlapot, akiknek minden kiválasztott jogosultságuk megvan. Ha egyiket sem választja ki, a szakaszban mindenki látja.",
+    "formCapabilitiesHint": "Azok a résztvevők látják és töltik ki az űrlapot, akiknek legalább egy kiválasztott jogosultságuk van. Ha egyiket sem választja ki, a szakaszban mindenki látja.",
     "formCapabilityReviewOption": "Értékelés",
     "formCapabilityVoteOption": "Szavazás",
     "formCapabilitySubmitProposalsOption": "Javaslatok benyújtása",

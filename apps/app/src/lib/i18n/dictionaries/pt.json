@@ -524,7 +524,7 @@
     "formShowOnEntryOption": "Quando o participante abrir a fase",
     "formShowOnHint": "Um formulário que abre na entrada não abre novamente depois que o participante o envia. Se ele o fechar, o formulário abre novamente após 7 dias.",
     "formCapabilitiesLabel": "Quem vê este formulário",
-    "formCapabilitiesHint": "Somente participantes com todas as permissões selecionadas veem e respondem este formulário. Não selecione nenhuma para mostrá-lo a todos na fase.",
+    "formCapabilitiesHint": "Participantes com qualquer uma das permissões selecionadas veem e respondem este formulário. Não selecione nenhuma para mostrá-lo a todos na fase.",
     "formCapabilityReviewOption": "Revisar",
     "formCapabilityVoteOption": "Votar",
     "formCapabilitySubmitProposalsOption": "Enviar propostas",

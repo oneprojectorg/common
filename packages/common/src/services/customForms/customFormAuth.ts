@@ -104,7 +104,7 @@ export const readInstancePhaseSet = async ({
   return { initialPhaseId: phaseIds[0] ?? null, phaseIds };
 };
 
-/** True when the user holds every decision capability the form requires. */
+/** True when the user holds any of the decision capabilities the form lists. */
 export const hasFormCapabilities = async ({
   user,
   form,
@@ -157,5 +157,5 @@ export const hasFormCapabilities = async ({
     profileRoles,
   });
 
-  return capabilities.every((capability) => access[capability]);
+  return capabilities.some((capability) => access[capability]);
 };

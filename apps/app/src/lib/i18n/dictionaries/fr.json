@@ -524,7 +524,7 @@
     "formShowOnEntryOption": "Quand la personne participante ouvre la phase",
     "formShowOnHint": "Un formulaire qui s’ouvre à l’entrée ne s’ouvre plus après l’envoi par la personne participante. Si elle le ferme, il s’ouvre de nouveau après 7 jours.",
     "formCapabilitiesLabel": "Qui voit ce formulaire",
-    "formCapabilitiesHint": "Seules les personnes participantes qui ont toutes les autorisations sélectionnées voient ce formulaire et y répondent. Ne sélectionnez rien pour l’afficher à toutes les personnes de la phase.",
+    "formCapabilitiesHint": "Les personnes participantes qui ont au moins une des autorisations sélectionnées voient ce formulaire et y répondent. Ne sélectionnez rien pour l’afficher à toutes les personnes de la phase.",
     "formCapabilityReviewOption": "Réviser",
     "formCapabilityVoteOption": "Voter",
     "formCapabilitySubmitProposalsOption": "Soumettre des propositions",
