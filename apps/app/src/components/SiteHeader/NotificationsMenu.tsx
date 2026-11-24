@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import type { NotificationEncoded } from '@op/api/encoders';
 import { useRelativeTime } from '@op/hooks';
@@ -25,6 +26,11 @@ const proposalCommentSnapshotSchema = z.object({
 export const NotificationsMenu = () => {
   const t = useTranslations('notifications');
   const [isOpen, setIsOpen] = useState(false);
+  const isEnabled = useFeatureFlag('in_app_notifications');
+
+  if (!isEnabled) {
+    return null;
+  }
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -149,8 +155,13 @@ const NotificationRow = ({
     return null;
   }
 
-  const { commenterName, proposalTitle, commentExcerpt, decisionSlug, proposalProfileId } =
-    snapshot.data;
+  const {
+    commenterName,
+    proposalTitle,
+    commentExcerpt,
+    decisionSlug,
+    proposalProfileId,
+  } = snapshot.data;
 
   const content = (
     <>
