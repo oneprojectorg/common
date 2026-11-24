@@ -1,9 +1,10 @@
+import { assertNever } from '@op/core/utils';
 import { logger } from '@op/logging';
 import safeRegex from 'safe-regex2';
 
-import type {
-  ValueType,
-  ValueTypeOperator,
+import {
+  type ValueType,
+  isValueTypeOperator,
 } from '../../../valueTypes/valueType';
 import type {
   ArithmeticExpression,
@@ -193,7 +194,7 @@ function evaluateOperation(
   );
   const valueTypes = valueTypesByContext.get(context);
   return valueTypes && !operands.every((operand) => typeof operand === 'number')
-    ? evaluateTypedValues({ operator: expr.operator, operands, valueTypes })
+    ? evaluateTypedArithmetic({ operator: expr.operator, operands, valueTypes })
     : evaluateArithmetic({
         operator: expr.operator,
         values: operands.map((operand) =>
@@ -230,7 +231,7 @@ function evaluateArithmetic({
   }
 }
 
-function evaluateTypedValues({
+function evaluateTypedArithmetic({
   operator,
   operands,
   valueTypes,
@@ -239,6 +240,9 @@ function evaluateTypedValues({
   operands: unknown[];
   valueTypes: readonly ValueType<unknown>[];
 }): unknown {
+  if (!isValueTypeOperator(operator)) {
+    return null;
+  }
   const match = findValueType({ operands, valueTypes });
   if (!match) {
     return null;
@@ -250,9 +254,7 @@ function evaluateTypedValues({
         ? foldValues({ values, combine: (a, b) => type.add?.(a, b) })
         : null;
     default:
-      // Fails to compile when `valueTypeOperators` gains a name with no case.
-      operator satisfies Exclude<typeof operator, ValueTypeOperator>;
-      return null;
+      return assertNever(operator);
   }
 }
 
