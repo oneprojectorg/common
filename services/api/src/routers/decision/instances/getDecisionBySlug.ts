@@ -29,15 +29,7 @@ export const getDecisionBySlugRouter = router({
         user,
       });
 
-      const parsed = decisionProfileWithPhasesEncoder.parse({
-        ...result,
-        processInstance: {
-          ...result.processInstance,
-          phases: result.processInstance.phasesWithIds,
-        },
-      });
-
-      const { profileId } = parsed.processInstance;
+      const { profileId, id, phasesWithIds } = result.processInstance;
       if (!profileId) {
         throw new Error('Decision profile ID is missing');
       }
@@ -49,14 +41,13 @@ export const getDecisionBySlugRouter = router({
 
       const decisionsBitField = collapseRoles(roles)['decisions'] ?? 0;
 
-      ctx.registerQueryChannels([
-        Channels.decisionInstance(parsed.processInstance.id),
-      ]);
+      ctx.registerQueryChannels([Channels.decisionInstance(id)]);
 
       return decisionProfileWithPhasesEncoder.parse({
-        ...parsed,
+        ...result,
         processInstance: {
-          ...parsed.processInstance,
+          ...result.processInstance,
+          phases: phasesWithIds,
           access: fromDecisionBitField(decisionsBitField),
         },
       });
