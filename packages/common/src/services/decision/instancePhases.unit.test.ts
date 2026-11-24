@@ -9,8 +9,7 @@ vi.mock('@op/db/client', () => ({
   inArray: () => undefined,
 }));
 
-const { attachPhaseRows, toPhases, toPhaseInstanceData } =
-  await import('./instancePhases');
+const { attachPhaseRows, toPhases } = await import('./instancePhases');
 
 const blobPhases = [
   { phaseId: 'submission', name: 'Blob submission', startDate: '2026-01-01' },
@@ -74,19 +73,6 @@ describe('toPhases', () => {
         storedPhases: [],
       }),
     ).toEqual([]);
-  });
-});
-
-describe('toPhaseInstanceData', () => {
-  it('drops only the id and slug', () => {
-    expect(
-      toPhaseInstanceData({
-        id: 'phase-1',
-        slug: 'a1b2c3d4',
-        phaseId: 'submission',
-        name: 'Submission',
-      }),
-    ).toEqual({ phaseId: 'submission', name: 'Submission' });
   });
 });
 
