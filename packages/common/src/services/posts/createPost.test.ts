@@ -13,6 +13,17 @@ const outboxRowsForPost = async (postId: string) =>
     .from(eventOutbox)
     .where(sql`${eventOutbox.payload}->>'postId' = ${postId}`);
 
+const cleanOutboxRowsForPost = (
+  postId: string,
+  onFinished: (fn: () => void | Promise<void>) => void,
+) => {
+  onFinished(async () => {
+    await db
+      .delete(eventOutbox)
+      .where(sql`${eventOutbox.payload}->>'postId' = ${postId}`);
+  });
+};
+
 describe('createPost outbox write', () => {
   it('writes a proposalComment/posted outbox row with the post', async ({
     task,
@@ -35,6 +46,7 @@ describe('createPost outbox write', () => {
       proposalId: proposal.id,
       authUserId: setup.user.id,
     });
+    cleanOutboxRowsForPost(post.id, onTestFinished);
 
     const rows = await outboxRowsForPost(post.id);
 
