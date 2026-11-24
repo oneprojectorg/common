@@ -1,6 +1,6 @@
 import {
   type CustomFormCapability,
-  type CustomFormShowOn,
+  type CustomFormTrigger,
   customFormRequiredCapabilitiesSchema,
 } from './schemas/customForm';
 
@@ -21,10 +21,10 @@ export const getEffectiveFormPhase = ({
   return typeof xPhase === 'string' ? xPhase : (initialPhaseId ?? null);
 };
 
-/** A form with no `x-show-on` opens after the participant's action. */
-export const getFormShowOn = (
+/** A form with no `x-trigger` opens after the participant's action. */
+export const getFormTrigger = (
   schema: Record<string, unknown>,
-): CustomFormShowOn => (schema['x-show-on'] === 'entry' ? 'entry' : 'action');
+): CustomFormTrigger => (schema['x-trigger'] === 'entry' ? 'entry' : 'action');
 
 /**
  * The capabilities that let a participant see and answer the form; any one is

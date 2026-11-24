@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { getFormRequiredCapabilities, getFormShowOn } from './utils';
+import { getFormRequiredCapabilities, getFormTrigger } from './utils';
 
-describe('getFormShowOn', () => {
+describe('getFormTrigger', () => {
   it('opens on entry only for an explicit entry value', () => {
-    expect(getFormShowOn({ 'x-show-on': 'entry' })).toBe('entry');
-    expect(getFormShowOn({ 'x-show-on': 'action' })).toBe('action');
-    expect(getFormShowOn({ 'x-show-on': 'later' })).toBe('action');
-    expect(getFormShowOn({})).toBe('action');
+    expect(getFormTrigger({ 'x-trigger': 'entry' })).toBe('entry');
+    expect(getFormTrigger({ 'x-trigger': 'action' })).toBe('action');
+    expect(getFormTrigger({ 'x-trigger': 'later' })).toBe('action');
+    expect(getFormTrigger({})).toBe('action');
   });
 });
 

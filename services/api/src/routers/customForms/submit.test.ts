@@ -1,4 +1,7 @@
-import type { CustomFormCapability, CustomFormShowOn } from '@op/common/client';
+import type {
+  CustomFormCapability,
+  CustomFormTrigger,
+} from '@op/common/client';
 import {
   TestDecisionsDataManager,
   TestReviewsDataManager,
@@ -57,7 +60,7 @@ async function createCustomForm(
   profileId: string,
   onTestFinished: (fn: () => Promise<void>) => void,
   phaseId?: string,
-  showOn?: CustomFormShowOn,
+  trigger?: CustomFormTrigger,
   requiredCapabilities?: CustomFormCapability[],
 ) {
   const [form] = await db
@@ -68,7 +71,7 @@ async function createCustomForm(
       schema: {
         ...TEST_FORM_SCHEMA,
         ...(phaseId ? { 'x-phase': phaseId } : {}),
-        ...(showOn ? { 'x-show-on': showOn } : {}),
+        ...(trigger ? { 'x-trigger': trigger } : {}),
         ...(requiredCapabilities
           ? { 'x-required-capabilities': requiredCapabilities }
           : {}),

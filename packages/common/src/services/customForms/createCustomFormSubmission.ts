@@ -17,7 +17,7 @@ import type {
   CreateCustomFormSubmissionInput,
   CustomFormDefinitionSchema,
 } from './schemas/customForm';
-import { getEffectiveFormPhase, getFormShowOn } from './utils';
+import { getEffectiveFormPhase, getFormTrigger } from './utils';
 
 /**
  * Records a submission against a custom form, attached to the target
@@ -81,7 +81,7 @@ export const createCustomFormSubmission = async ({
   // The target profile must belong to the process that owns the form
   // (`form.profileId` is the process instance's profile). This stops a caller
   // from attaching their own entity to an unrelated form.
-  if (getFormShowOn(form.schema) === 'entry') {
+  if (getFormTrigger(form.schema) === 'entry') {
     await assertEntryFormParticipantInPhase({
       participantProfileId: input.profileId,
       form,

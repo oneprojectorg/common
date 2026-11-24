@@ -2,14 +2,14 @@ import type {
   CustomFormDefinitionInput,
   CustomFormCapability,
   CustomFormField,
-  CustomFormShowOn,
+  CustomFormTrigger,
   XFormatPropertySchema,
 } from '@op/common/client';
 import {
   CUSTOM_FORM_MAX_FIELDS,
   customFormDefinitionInputSchema,
   getFormRequiredCapabilities,
-  getFormShowOn,
+  getFormTrigger,
 } from '@op/common/client';
 
 /**
@@ -79,7 +79,7 @@ export type BuilderForm = {
   title: string;
   description: string;
   phaseId: string;
-  showOn: CustomFormShowOn;
+  trigger: CustomFormTrigger;
   requiredCapabilities: CustomFormCapability[];
   fields: BuilderField[];
 };
@@ -89,7 +89,7 @@ const createEmptyForm = (phaseId: string): BuilderForm => ({
   title: '',
   description: '',
   phaseId,
-  showOn: 'action',
+  trigger: 'action',
   requiredCapabilities: [],
   fields: [],
 });
@@ -122,7 +122,7 @@ export const buildDefinition = (
       ? { description: form.description.trim() }
       : {}),
     'x-phase': form.phaseId,
-    'x-show-on': form.showOn,
+    'x-trigger': form.trigger,
     ...(form.requiredCapabilities.length > 0
       ? { 'x-required-capabilities': form.requiredCapabilities }
       : {}),
@@ -168,7 +168,7 @@ const ROUND_TRIPPED_DEFINITION_KEYS = new Set([
   'title',
   'description',
   'x-phase',
-  'x-show-on',
+  'x-trigger',
   'x-required-capabilities',
   'required',
   'properties',
@@ -229,7 +229,7 @@ export const parseDefinition = ({
       description:
         typeof schema.description === 'string' ? schema.description : '',
       phaseId,
-      showOn: getFormShowOn(schema),
+      trigger: getFormTrigger(schema),
       requiredCapabilities: requiredCapabilities ?? [],
       fields,
     },

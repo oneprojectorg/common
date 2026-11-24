@@ -24,7 +24,7 @@ export interface CustomFormDefinitionSchema extends JSONSchema7 {
    * When the form opens in its phase: on `entry` to the phase, or after the
    * participant's `action` there (submit, vote, review). Absent means `action`.
    */
-  'x-show-on'?: CustomFormShowOn;
+  'x-trigger'?: CustomFormTrigger;
   /**
    * Decision capabilities that let a participant see and answer the form; any
    * one of them is enough. Absent or empty means anyone who can read the
@@ -33,9 +33,9 @@ export interface CustomFormDefinitionSchema extends JSONSchema7 {
   'x-required-capabilities'?: CustomFormCapability[];
 }
 
-export const customFormShowOnSchema = z.enum(['entry', 'action']);
+export const customFormTriggerSchema = z.enum(['entry', 'action']);
 
-export type CustomFormShowOn = z.infer<typeof customFormShowOnSchema>;
+export type CustomFormTrigger = z.infer<typeof customFormTriggerSchema>;
 
 export const customFormCapabilitySchema = z.enum([
   'review',
@@ -194,7 +194,7 @@ export const customFormDefinitionInputSchema = z
     title: z.string().min(1).max(200),
     description: z.string().max(2000).optional(),
     'x-phase': z.string().min(1).max(256),
-    'x-show-on': customFormShowOnSchema.optional(),
+    'x-trigger': customFormTriggerSchema.optional(),
     'x-required-capabilities': customFormRequiredCapabilitiesSchema.optional(),
     required: z.array(customFormFieldKeySchema),
     properties: z.record(customFormFieldKeySchema, customFormFieldSchema),
@@ -346,7 +346,7 @@ export const getCustomFormForProfileInputSchema = z.object({
   initialPhaseId: z.string().optional(),
   // The moment the caller asks at. A form set to open at another moment is
   // not returned. Omitted means `action`, so entry forms never come back.
-  showOn: customFormShowOnSchema.default('action'),
+  trigger: customFormTriggerSchema.default('action'),
 });
 
 export type GetCustomFormForProfileInput = z.infer<

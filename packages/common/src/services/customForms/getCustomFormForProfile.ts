@@ -13,8 +13,8 @@ import { customFormSubmissions, proposals } from '@op/db/schema';
 import { assertUserByAuthId } from '../assert';
 import { assertDecisionProfileReadAccess } from '../decision/assertDecisionProfileReadAccess';
 import { hasFormCapabilities } from './customFormAuth';
-import type { CustomFormShowOn } from './schemas/customForm';
-import { getEffectiveFormPhase, getFormShowOn } from './utils';
+import type { CustomFormTrigger } from './schemas/customForm';
+import { getEffectiveFormPhase, getFormTrigger } from './utils';
 
 /**
  * Returns the custom form attached to `profileId` that the caller still owes an
@@ -27,7 +27,7 @@ import { getEffectiveFormPhase, getFormShowOn } from './utils';
  *
  * A form is asked once per person per phase, so a caller who already submitted
  * the matched form gets null. A form set to open at a moment other than
- * `showOn`, or one whose listed capabilities the caller holds none of, also gets null.
+ * `trigger`, or one whose listed capabilities the caller holds none of, also gets null.
  *
  * When `phaseId` is omitted, the first form attached to the profile is returned
  * (legacy, phase-agnostic behavior) for callers with no phase context.
@@ -36,13 +36,13 @@ export const getCustomFormForProfile = async ({
   profileId,
   phaseId,
   initialPhaseId,
-  showOn = 'action',
+  trigger = 'action',
   authUserId,
 }: {
   profileId: string;
   phaseId?: string;
   initialPhaseId?: string;
-  showOn?: CustomFormShowOn;
+  trigger?: CustomFormTrigger;
   authUserId: string;
 }): Promise<CustomForm | null> => {
   const [, form] = await Promise.all([
@@ -50,7 +50,7 @@ export const getCustomFormForProfile = async ({
       user: { id: authUserId },
       profileId,
     }),
-    getFormForPhase({ profileId, phaseId, initialPhaseId, showOn }),
+    getFormForPhase({ profileId, phaseId, initialPhaseId, trigger }),
   ]);
 
   if (
@@ -69,12 +69,12 @@ const getFormForPhase = async ({
   profileId,
   phaseId,
   initialPhaseId,
-  showOn,
+  trigger,
 }: {
   profileId: string;
   phaseId?: string;
   initialPhaseId?: string;
-  showOn: CustomFormShowOn;
+  trigger: CustomFormTrigger;
 }): Promise<CustomForm | null> => {
   const forms = await db.query.customForms.findMany({
     where: {
@@ -85,7 +85,7 @@ const getFormForPhase = async ({
 
   const match = forms.find(
     (form) =>
-      getFormShowOn(form.schema) === showOn &&
+      getFormTrigger(form.schema) === trigger &&
       (!phaseId ||
         getEffectiveFormPhase({ schema: form.schema, initialPhaseId }) ===
           phaseId),

@@ -116,7 +116,7 @@ describe('getCustomFormForProfile', () => {
 
   it('falls back to the first action form when no phaseId is given', async () => {
     findMany.mockResolvedValue([
-      form({ 'x-phase': 'submission', 'x-show-on': 'entry' }, 'entry-form'),
+      form({ 'x-phase': 'submission', 'x-trigger': 'entry' }, 'entry-form'),
       form({ 'x-phase': 'review' }, 'action-form'),
     ]);
 
@@ -169,7 +169,7 @@ describe('getCustomFormForProfile', () => {
 
   it('defaults to action timing and returns an entry form only when asked at entry', async () => {
     findMany.mockResolvedValue([
-      form({ 'x-phase': 'review', 'x-show-on': 'entry' }, 'entry-form'),
+      form({ 'x-phase': 'review', 'x-trigger': 'entry' }, 'entry-form'),
     ]);
     const input = {
       profileId: 'p1',
@@ -180,7 +180,7 @@ describe('getCustomFormForProfile', () => {
 
     const [atAction, atEntry] = await Promise.all([
       getCustomFormForProfile(input),
-      getCustomFormForProfile({ ...input, showOn: 'entry' }),
+      getCustomFormForProfile({ ...input, trigger: 'entry' }),
     ]);
 
     expect(atAction).toBeNull();
@@ -194,7 +194,7 @@ describe('getCustomFormForProfile', () => {
       profileId: 'p1',
       phaseId: 'review',
       initialPhaseId: 'submission',
-      showOn: 'entry',
+      trigger: 'entry',
       authUserId: 'auth-user',
     });
 

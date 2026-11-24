@@ -43,7 +43,7 @@ export const PhaseEntryCustomForm = ({
       profileId: decisionProfileId ?? '',
       phaseId: currentPhaseId ?? undefined,
       initialPhaseId: instance?.instanceData?.phases?.[0]?.phaseId,
-      showOn: 'entry',
+      trigger: 'entry',
     },
     {
       enabled:

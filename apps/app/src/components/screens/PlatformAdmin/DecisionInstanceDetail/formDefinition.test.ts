@@ -61,7 +61,7 @@ const form = (fields: BuilderField[]): BuilderForm => ({
   title: 'Your voice shapes Common.',
   description: 'Take our 1-minute survey.',
   phaseId: 'voting',
-  showOn: 'action',
+  trigger: 'action',
   requiredCapabilities: [],
   fields,
 });
@@ -95,14 +95,14 @@ describe('buildDefinition', () => {
     const { form: parsed, unsupportedKeys } = parseDefinition({
       schema: buildDefinition({
         ...form([field({ key: 'answer' })]),
-        showOn: 'entry',
+        trigger: 'entry',
       }),
       phaseId: 'voting',
       name: 'Exit survey',
     });
 
     expect(unsupportedKeys).toEqual([]);
-    expect(parsed.showOn).toBe('entry');
+    expect(parsed.trigger).toBe('entry');
   });
 
   it('leaves out required capabilities when none are selected', () => {
@@ -139,14 +139,14 @@ describe('buildDefinition', () => {
     expect(unsupportedKeys).toEqual(['x-required-capabilities']);
   });
 
-  it('opens a stored form with no x-show-on after the action', () => {
+  it('opens a stored form with no x-trigger after the action', () => {
     const { form: parsed } = parseDefinition({
       schema: { type: 'object', properties: {} },
       phaseId: 'voting',
       name: 'Exit survey',
     });
 
-    expect(parsed.showOn).toBe('action');
+    expect(parsed.trigger).toBe('action');
   });
 
   it('orders fields as the editor lists them', () => {

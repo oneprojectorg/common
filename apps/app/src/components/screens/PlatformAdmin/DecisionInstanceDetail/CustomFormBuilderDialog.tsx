@@ -5,12 +5,12 @@ import type {
   AdminDecisionPhase,
   CustomFormCapability,
   CustomFormDefinitionInput,
-  CustomFormShowOn,
+  CustomFormTrigger,
   CustomFormWithPhaseDTO,
 } from '@op/common/client';
 import {
   customFormCapabilitySchema,
-  customFormShowOnSchema,
+  customFormTriggerSchema,
 } from '@op/common/client';
 import { Button } from '@op/sense/Button';
 import { Checkbox } from '@op/sense/Checkbox';
@@ -259,10 +259,10 @@ const FormDetailsFields = ({
         onChange={(phaseId) => onChange({ ...draft, phaseId })}
       />
 
-      <ShowOnField
-        id={`${fieldId}-show-on`}
-        showOn={draft.showOn}
-        onChange={(showOn) => onChange({ ...draft, showOn })}
+      <TriggerField
+        id={`${fieldId}-trigger`}
+        trigger={draft.trigger}
+        onChange={(trigger) => onChange({ ...draft, trigger })}
       />
 
       <RequiredCapabilitiesField
@@ -354,26 +354,26 @@ const PhaseField = ({
   );
 };
 
-const ShowOnField = ({
+const TriggerField = ({
   id,
-  showOn,
+  trigger,
   onChange,
 }: {
   id: string;
-  showOn: CustomFormShowOn;
-  onChange: (showOn: CustomFormShowOn) => void;
+  trigger: CustomFormTrigger;
+  onChange: (trigger: CustomFormTrigger) => void;
 }) => {
   const t = useTranslations();
-  const labels: Record<CustomFormShowOn, string> = {
-    action: t('admin.formShowOnActionOption'),
-    entry: t('admin.formShowOnEntryOption'),
+  const labels: Record<CustomFormTrigger, string> = {
+    action: t('admin.formTriggerActionOption'),
+    entry: t('admin.formTriggerEntryOption'),
   };
 
   return (
     <Field>
-      <FieldLabel htmlFor={id}>{t('admin.formShowOnLabel')}</FieldLabel>
+      <FieldLabel htmlFor={id}>{t('admin.formTriggerLabel')}</FieldLabel>
       <Select
-        value={showOn}
+        value={trigger}
         items={labels}
         onValueChange={(next) =>
           onChange(next === 'entry' ? 'entry' : 'action')
@@ -384,7 +384,7 @@ const ShowOnField = ({
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
-            {customFormShowOnSchema.options.map((option) => (
+            {customFormTriggerSchema.options.map((option) => (
               <SelectItem key={option} value={option}>
                 {labels[option]}
               </SelectItem>
@@ -392,7 +392,7 @@ const ShowOnField = ({
           </SelectGroup>
         </SelectContent>
       </Select>
-      <FieldDescription>{t('admin.formShowOnHint')}</FieldDescription>
+      <FieldDescription>{t('admin.formTriggerHint')}</FieldDescription>
     </Field>
   );
 };

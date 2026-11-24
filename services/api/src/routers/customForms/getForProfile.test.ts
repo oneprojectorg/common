@@ -1,4 +1,4 @@
-import type { CustomFormShowOn } from '@op/common/client';
+import type { CustomFormTrigger } from '@op/common/client';
 import {
   TestDecisionsDataManager,
   TestReviewsDataManager,
@@ -31,7 +31,7 @@ async function attachForm(
   profileId: string,
   onTestFinished: (fn: () => Promise<void>) => void,
   phaseId?: string,
-  showOn?: CustomFormShowOn,
+  trigger?: CustomFormTrigger,
   requiredCapabilities?: unknown,
 ) {
   const [form] = await db
@@ -43,7 +43,7 @@ async function attachForm(
         type: 'object',
         properties: {},
         ...(phaseId ? { 'x-phase': phaseId } : {}),
-        ...(showOn ? { 'x-show-on': showOn } : {}),
+        ...(trigger ? { 'x-trigger': trigger } : {}),
         ...(requiredCapabilities
           ? { 'x-required-capabilities': requiredCapabilities }
           : {}),
@@ -139,7 +139,7 @@ describe.concurrent('customForm.getForProfile', () => {
       caller.customForm.getForProfile({ profileId: setup.instance.profileId }),
       caller.customForm.getForProfile({
         profileId: setup.instance.profileId,
-        showOn: 'entry',
+        trigger: 'entry',
       }),
     ]);
 
@@ -170,7 +170,7 @@ describe.concurrent('customForm.getForProfile', () => {
     ]);
     const input = {
       profileId: context.instance.profileId,
-      showOn: 'entry' as const,
+      trigger: 'entry' as const,
     };
 
     const [forMember, forReviewer] = await Promise.all([
@@ -206,7 +206,7 @@ describe.concurrent('customForm.getForProfile', () => {
     ]);
     const input = {
       profileId: context.instance.profileId,
-      showOn: 'entry' as const,
+      trigger: 'entry' as const,
     };
 
     const [forMember, forReviewer, forAdmin] = await Promise.all([
@@ -238,7 +238,7 @@ describe.concurrent('customForm.getForProfile', () => {
 
     const result = await caller.customForm.getForProfile({
       profileId: context.instance.profileId,
-      showOn: 'entry',
+      trigger: 'entry',
     });
 
     expect(result).toBeNull();

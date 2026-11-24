@@ -28,12 +28,12 @@ describe('SchemaValidator.validateJsonSchema', () => {
     expect(() => schemaValidator.validateJsonSchema(template)).not.toThrow();
   });
 
-  it('accepts a custom form carrying the x-show-on vendor extension', () => {
+  it('accepts a custom form carrying the x-trigger vendor extension', () => {
     const customForm = {
       type: 'object',
       title: 'Enter phase survey',
       'x-phase': 'review',
-      'x-show-on': 'entry',
+      'x-trigger': 'entry',
       properties: {
         conflicts: {
           type: 'string',

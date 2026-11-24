@@ -271,7 +271,7 @@ export {
 export {
   customFormSchema,
   customFormWithPhaseSchema,
-  customFormShowOnSchema,
+  customFormTriggerSchema,
   customFormCapabilitySchema,
   customFormSubmissionSchema,
   customFormFieldSchema,
@@ -297,13 +297,13 @@ export {
   type GetCustomFormForProfileInput,
   type ListCustomFormsInput,
   type UpdateCustomFormInput,
-  type CustomFormShowOn,
+  type CustomFormTrigger,
   type CustomFormCapability,
   isCustomFormDefinition,
 } from './services/customForms/schemas/customForm';
 export {
   getFormRequiredCapabilities,
-  getFormShowOn,
+  getFormTrigger,
 } from './services/customForms/utils';
 export { serverExtensions } from './services/decision/tiptapExtensions';
 export { tiptapDocToPlainText } from './services/decision/tiptapDocToPlainText';

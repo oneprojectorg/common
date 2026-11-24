@@ -82,7 +82,7 @@ const entryForm = {
   id: 'form-1',
   profileId: 'decision-profile',
   name: 'Check-in',
-  schema: { type: 'object', 'x-show-on': 'entry' },
+  schema: { type: 'object', 'x-trigger': 'entry' },
 };
 
 const renderForm = () =>
@@ -116,7 +116,7 @@ describe('PhaseEntryCustomForm', () => {
         profileId: 'decision-profile',
         phaseId: 'review',
         initialPhaseId: 'submission',
-        showOn: 'entry',
+        trigger: 'entry',
       },
       { enabled: true },
     );
