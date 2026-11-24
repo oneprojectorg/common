@@ -225,7 +225,7 @@ export const readPhaseSettings = (data: unknown): PhaseSettingsFields => {
   };
 };
 
-const assertPhaseEndsOnOrAfterStart = ({
+export const assertPhaseEndsOnOrAfterStart = ({
   data,
   phaseLabel,
 }: {
