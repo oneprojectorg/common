@@ -103,6 +103,15 @@
   "somethingWentWrong": "حدث خطأ من جانبنا. يرجى المحاولة مرة أخرى",
   "startTypingPlaceholder": "ابدأ الكتابة...",
   "removingProgress": "جارٍ الإزالة...",
+  "notifications": {
+    "emptyState": "لا توجد إشعارات جديدة",
+    "loadError": "تعذر تحميل الإشعارات",
+    "markAllReadAction": "وضع علامة مقروء على الكل",
+    "openLabel": "فتح الإشعارات",
+    "panelTitle": "الإشعارات",
+    "proposalCommentSummary": "<name>{commenterName}</name> علّق على <title>{proposalTitle}</title>",
+    "unreadCountLabel": "{count} غير مقروءة"
+  },
   "onboarding": {
     "personalDetailsTitle": "أضف بياناتك الشخصية",
     "personalDetailsSubtitle": "أخبرنا عن نفسك حتى يتمكن الآخرون من العثور عليك.",

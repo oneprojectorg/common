@@ -103,6 +103,15 @@
   "somethingWentWrong": "Hiba történt nálunk. Kérjük, próbálja újra",
   "startTypingPlaceholder": "Kezdjen el gépelni...",
   "removingProgress": "Eltávolítás...",
+  "notifications": {
+    "emptyState": "Nincs új értesítés",
+    "loadError": "Az értesítések nem tölthetők be",
+    "markAllReadAction": "Összes megjelölése olvasottként",
+    "openLabel": "Értesítések megnyitása",
+    "panelTitle": "Értesítések",
+    "proposalCommentSummary": "<name>{commenterName}</name> hozzászólt ehhez: <title>{proposalTitle}</title>",
+    "unreadCountLabel": "{count} olvasatlan"
+  },
   "onboarding": {
     "personalDetailsTitle": "Adja meg személyes adatait",
     "personalDetailsSubtitle": "Meséljen magáról, hogy mások is rátalálhassanak.",

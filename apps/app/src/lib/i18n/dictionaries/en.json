@@ -103,6 +103,15 @@
   "somethingWentWrong": "Something went wrong on our end. Please try again",
   "startTypingPlaceholder": "Start typing...",
   "removingProgress": "Removing...",
+  "notifications": {
+    "emptyState": "You're all caught up",
+    "loadError": "Notifications could not load",
+    "markAllReadAction": "Mark all as read",
+    "openLabel": "Open notifications",
+    "panelTitle": "Notifications",
+    "proposalCommentSummary": "<name>{commenterName}</name> commented on <title>{proposalTitle}</title>",
+    "unreadCountLabel": "{count} unread"
+  },
   "onboarding": {
     "personalDetailsTitle": "Add your personal details",
     "personalDetailsSubtitle": "Tell us about yourself so others can find you.",

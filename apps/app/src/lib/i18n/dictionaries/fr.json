@@ -103,6 +103,15 @@
   "somethingWentWrong": "Une erreur s'est produite de notre côté. Veuillez réessayer.",
   "startTypingPlaceholder": "Commencez à taper...",
   "removingProgress": "Suppression...",
+  "notifications": {
+    "emptyState": "Vous êtes à jour",
+    "loadError": "Impossible de charger les notifications",
+    "markAllReadAction": "Tout marquer comme lu",
+    "openLabel": "Ouvrir les notifications",
+    "panelTitle": "Notifications",
+    "proposalCommentSummary": "<name>{commenterName}</name> a commenté <title>{proposalTitle}</title>",
+    "unreadCountLabel": "{count} non lues"
+  },
   "onboarding": {
     "personalDetailsTitle": "Ajoutez vos informations personnelles",
     "personalDetailsSubtitle": "Parlez-nous de vous pour que d'autres puissent vous trouver.",

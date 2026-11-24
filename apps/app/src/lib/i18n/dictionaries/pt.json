@@ -103,6 +103,15 @@
   "somethingWentWrong": "Algo deu errado do nosso lado. Por favor, tente novamente",
   "startTypingPlaceholder": "Comece a digitar...",
   "removingProgress": "Excluindo...",
+  "notifications": {
+    "emptyState": "Está tudo em dia",
+    "loadError": "Não foi possível carregar as notificações",
+    "markAllReadAction": "Marcar tudo como lido",
+    "openLabel": "Abrir notificações",
+    "panelTitle": "Notificações",
+    "proposalCommentSummary": "<name>{commenterName}</name> comentou em <title>{proposalTitle}</title>",
+    "unreadCountLabel": "{count} não lidas"
+  },
   "onboarding": {
     "personalDetailsTitle": "Adicione seus dados pessoais",
     "personalDetailsSubtitle": "Conte-nos sobre você para que outros possam encontrá-lo.",

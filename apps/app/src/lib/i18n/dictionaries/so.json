@@ -103,6 +103,15 @@
   "somethingWentWrong": "Wax baa khaldamay dhinaceenna. Fadlan mar kale isku day",
   "startTypingPlaceholder": "Bilow qorista...",
   "removingProgress": "Waa la saarayaa...",
+  "notifications": {
+    "emptyState": "Wax ogeysiis cusub ma jiraan",
+    "loadError": "Ogeysiisyada lama soo rari karin",
+    "markAllReadAction": "Dhammaan calaamadee la akhriyey",
+    "openLabel": "Fur ogeysiisyada",
+    "panelTitle": "Ogeysiisyo",
+    "proposalCommentSummary": "<name>{commenterName}</name> ayaa faallo ka bixiyay <title>{proposalTitle}</title>",
+    "unreadCountLabel": "{count} aan la akhrin"
+  },
   "onboarding": {
     "personalDetailsTitle": "Ku dar xogta shakhsigaaga",
     "personalDetailsSubtitle": "Noo sheeg wax ku saabsan adiga si dadka kale ay kuu helaan.",
