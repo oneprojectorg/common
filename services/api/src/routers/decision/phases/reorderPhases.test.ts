@@ -87,6 +87,32 @@ describe.concurrent('reorderPhases', () => {
     expect(result.items[1]?.data).toEqual({});
   });
 
+  it('accepts a phase that starts and ends on the same day', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phases, instanceId, adminCaller } = await setupPhases(
+      task,
+      onTestFinished,
+    );
+    const [review, vote, results] = phases;
+    const sameDay = {
+      startDate: '2026-10-01T00:00:00.000Z',
+      endDate: '2026-10-01T00:00:00.000Z',
+    };
+
+    const result = await adminCaller.decision.reorderPhases({
+      instanceId,
+      phases: [
+        { phaseId: vote.id, ...sameDay },
+        { phaseId: review.id },
+        { phaseId: results.id },
+      ],
+    });
+
+    expect(result.items[0]).toMatchObject({ id: vote.id, data: sameDay });
+  });
+
   it('refuses dates that end a phase before it starts and keeps the order', async ({
     task,
     onTestFinished,

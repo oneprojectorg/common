@@ -361,6 +361,34 @@ describe.concurrent('createPhase', () => {
     await expectNoProfileNamed(name);
   });
 
+  it('accepts a phase that starts and ends on the same day', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, instanceId, adminCaller } = await setupDecision(
+      task,
+      onTestFinished,
+    );
+
+    const sameDay = {
+      startDate: '2026-12-01T00:00:00.000Z',
+      endDate: '2026-12-01T00:00:00.000Z',
+    };
+    const result = await adminCaller.decision.createPhase({
+      instanceId,
+      name: 'One-day vote',
+      sortOrder: 0,
+      data: sameDay,
+    });
+    testData.trackProfileForCleanup(result.profileId);
+
+    const phase = await db.query.processPhases.findFirst({
+      where: { id: result.id },
+      columns: { data: true },
+    });
+    expect(phase?.data).toEqual(sameDay);
+  });
+
   it('accepts a settings schema, settings and a pipeline from the client', async ({
     task,
     onTestFinished,

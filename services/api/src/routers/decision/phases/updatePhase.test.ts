@@ -138,7 +138,7 @@ describe.concurrent('updatePhase', () => {
         phaseId: phase.id,
         data: { startDate: DAY_2, endDate: DAY_1 },
       }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    ).rejects.toMatchObject(ENDS_BEFORE_START);
     await expectPhase(phase, UNCHANGED);
   });
 
@@ -157,7 +157,7 @@ describe.concurrent('updatePhase', () => {
         phaseId: phase.id,
         data: { endDate: DAY_1 },
       }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    ).rejects.toMatchObject(ENDS_BEFORE_START);
     await expectPhase(phase, { name: PHASE_NAME, data: { startDate: DAY_2 } });
   });
 
@@ -193,7 +193,7 @@ describe.concurrent('updatePhase', () => {
         phaseId: phase.id,
         data: { startDate: DAY_2 },
       }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    ).rejects.toMatchObject(ENDS_BEFORE_START);
     await expectPhase(phase, { name: PHASE_NAME, data: { endDate: DAY_1 } });
   });
 
@@ -209,7 +209,7 @@ describe.concurrent('updatePhase', () => {
         name: 'Final Review',
         data: { startDate: DAY_2, endDate: DAY_1 },
       }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    ).rejects.toMatchObject(ENDS_BEFORE_START);
     await expectPhase(phase, UNCHANGED);
   });
 
@@ -244,6 +244,50 @@ describe.concurrent('updatePhase', () => {
     });
 
     expect(resent.data).toMatchObject({ description: 'Unchanged dates' });
+  });
+
+  it('still edits a reversed phase when its dates are resent in another format', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+    await db
+      .update(processPhases)
+      .set({ data: { startDate: DAY_2, endDate: DAY_1 } })
+      .where(eq(processPhases.id, phase.id));
+
+    const result = await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: {
+        startDate: '2026-12-02T00:00:00Z',
+        endDate: '2026-12-01T00:00:00+00:00',
+        description: 'Same instants',
+      },
+    });
+
+    expect(result.data).toMatchObject({ description: 'Same instants' });
+  });
+
+  it('rejects moving one date of a reversed phase when it stays reversed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+    await db
+      .update(processPhases)
+      .set({ data: { startDate: DAY_2, endDate: DAY_1 } })
+      .where(eq(processPhases.id, phase.id));
+
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: phase.id,
+        data: { endDate: DAY_0 },
+      }),
+    ).rejects.toMatchObject(ENDS_BEFORE_START);
+    await expectPhase(phase, {
+      name: PHASE_NAME,
+      data: { startDate: DAY_2, endDate: DAY_1 },
+    });
   });
 
   it('keeps every field when updates to different fields run at once', async ({
@@ -794,8 +838,15 @@ describe.concurrent('updatePhase', () => {
 
 const UNCHANGED = { name: PHASE_NAME, data: {} };
 
+const DAY_0 = '2026-11-30T00:00:00.000Z';
 const DAY_1 = '2026-12-01T00:00:00.000Z';
 const DAY_2 = '2026-12-02T00:00:00.000Z';
+const ENDS_BEFORE_START = {
+  cause: {
+    name: 'ValidationError',
+    message: expect.stringContaining('cannot end before it starts'),
+  },
+};
 
 const BUDGET_SCHEMA = {
   type: 'object' as const,
