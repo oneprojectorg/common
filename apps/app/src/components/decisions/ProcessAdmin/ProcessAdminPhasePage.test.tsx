@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import type { DecisionPhase } from '@op/api/encoders';
 import { cleanup, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -6,7 +7,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import en from '../../../lib/i18n/dictionaries/en.json';
 import { ProcessAdminPhasePage } from './ProcessAdminPhasePage';
 
-const query = vi.hoisted(() => ({ phases: [] as object[] }));
+const query: { phases: DecisionPhase[] } = vi.hoisted(() => ({
+  phases: [],
+}));
 
 vi.mock('@op/api/client', () => ({
   trpc: {

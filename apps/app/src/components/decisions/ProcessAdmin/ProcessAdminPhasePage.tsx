@@ -17,7 +17,6 @@ import { ButtonLink } from '@/components/ButtonLink';
 
 import { ProcessAdminLoadError } from './ProcessAdminLoadError';
 
-/** One phase of a process, at /decisions/[slug]/manage/phase/[phaseId], where the phase's settings are edited. */
 export function ProcessAdminPhasePage({
   slug,
   phaseSlug,
