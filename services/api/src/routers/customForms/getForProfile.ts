@@ -18,6 +18,7 @@ export const getForProfile = router({
         profileId: input.profileId,
         phaseId: input.phaseId,
         initialPhaseId: input.initialPhaseId,
+        trigger: input.trigger,
         authUserId: ctx.user.id,
       });
 

@@ -5,6 +5,7 @@ import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 import { DecisionViewToggle } from '@/components/decisions/DecisionViewToggle';
 import { JoinAccountModal } from '@/components/decisions/JoinAccountModal';
+import { PhaseEntryCustomForm } from '@/components/decisions/PhaseEntryCustomForm';
 import { PromoteAccountModal } from '@/components/decisions/PromoteAccountModal';
 import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 import { getDecisionDetectionText } from '@/components/decisions/translationDetectionText';
@@ -92,6 +93,10 @@ const DecisionViewLayout = async ({
        */}
       <Suspense fallback={null}>
         <PromoteAccountModal />
+      </Suspense>
+      {/* Reads `?resultsLive=` via nuqs, hence the Suspense. */}
+      <Suspense fallback={null}>
+        <PhaseEntryCustomForm instanceId={instanceId} />
       </Suspense>
       {/*
        * Header "Join" modal (account claim on public processes). Mounted in the

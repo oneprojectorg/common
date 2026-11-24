@@ -1,13 +1,17 @@
 import { type DbClient, db } from '@op/db/client';
+import type { CustomForm } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
+import { type NormalizedRole, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import {
+  type AccessUser,
   assertInstanceProfileAccess,
   isUserEmailPlatformAdmin,
 } from '../access';
 import { getPhases } from '../decision/instancePhases';
+import { resolveInstanceAccess } from '../decision/resolveInstanceAccess';
+import { getFormRequiredCapabilities } from './utils';
 
 export type CustomFormProcessContext = {
   profileId: string;
@@ -98,4 +102,60 @@ export const readInstancePhaseSet = async ({
   );
 
   return { initialPhaseId: phaseIds[0] ?? null, phaseIds };
+};
+
+/** True when the user holds any of the decision capabilities the form lists. */
+export const hasFormCapabilities = async ({
+  user,
+  form,
+}: {
+  user: AccessUser;
+  form: Pick<CustomForm, 'profileId' | 'schema'>;
+}): Promise<boolean> => {
+  const capabilities = getFormRequiredCapabilities(form.schema);
+
+  if (!capabilities) {
+    return false;
+  }
+
+  if (capabilities.length === 0) {
+    return true;
+  }
+
+  const instance = await db.query.processInstances.findFirst({
+    where: { profileId: form.profileId },
+    columns: { profileId: true, ownerProfileId: true },
+  });
+
+  if (!instance?.profileId) {
+    return false;
+  }
+
+  let profileRoles: NormalizedRole[];
+  try {
+    profileRoles = await assertInstanceProfileAccess({
+      user,
+      instance,
+      profilePermissions: { decisions: permission.READ },
+      orgFallbackPermissions: { decisions: permission.READ },
+    });
+  } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return false;
+    }
+    throw error;
+  }
+
+  // The same rule getInstance gives the UI: admins hold every capability, and
+  // org roles count only for a user with no role on the decision.
+  const access = await resolveInstanceAccess({
+    user,
+    instance: {
+      profileId: instance.profileId,
+      ownerProfileId: instance.ownerProfileId,
+    },
+    profileRoles,
+  });
+
+  return capabilities.some((capability) => access[capability]);
 };

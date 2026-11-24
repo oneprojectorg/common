@@ -61,6 +61,8 @@ const form = (fields: BuilderField[]): BuilderForm => ({
   title: 'Your voice shapes Common.',
   description: 'Take our 1-minute survey.',
   phaseId: 'voting',
+  trigger: 'action',
+  requiredCapabilities: [],
   fields,
 });
 
@@ -87,6 +89,64 @@ describe('buildDefinition', () => {
     const definition = buildDefinition(form([field({ key: 'answer' })]));
 
     expect(definition['x-phase']).toBe('voting');
+  });
+
+  it('round-trips when the form opens', () => {
+    const { form: parsed, unsupportedKeys } = parseDefinition({
+      schema: buildDefinition({
+        ...form([field({ key: 'answer' })]),
+        trigger: 'entry',
+      }),
+      phaseId: 'voting',
+      name: 'Exit survey',
+    });
+
+    expect(unsupportedKeys).toEqual([]);
+    expect(parsed.trigger).toBe('entry');
+  });
+
+  it('leaves out required capabilities when none are selected', () => {
+    expect(
+      buildDefinition(form([field({ key: 'answer' })])),
+    ).not.toHaveProperty('x-required-capabilities');
+  });
+
+  it('round-trips the required capabilities', () => {
+    const { form: parsed, unsupportedKeys } = parseDefinition({
+      schema: buildDefinition({
+        ...form([field({ key: 'answer' })]),
+        requiredCapabilities: ['review'],
+      }),
+      phaseId: 'voting',
+      name: 'Exit survey',
+    });
+
+    expect(unsupportedKeys).toEqual([]);
+    expect(parsed.requiredCapabilities).toEqual(['review']);
+  });
+
+  it('refuses to edit a form whose required capabilities it cannot read', () => {
+    const { unsupportedKeys } = parseDefinition({
+      schema: {
+        type: 'object',
+        properties: {},
+        'x-required-capabilities': ['admin'],
+      },
+      phaseId: 'voting',
+      name: 'Exit survey',
+    });
+
+    expect(unsupportedKeys).toEqual(['x-required-capabilities']);
+  });
+
+  it('opens a stored form with no x-trigger after the action', () => {
+    const { form: parsed } = parseDefinition({
+      schema: { type: 'object', properties: {} },
+      phaseId: 'voting',
+      name: 'Exit survey',
+    });
+
+    expect(parsed.trigger).toBe('action');
   });
 
   it('orders fields as the editor lists them', () => {

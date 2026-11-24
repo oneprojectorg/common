@@ -27,6 +27,26 @@ describe('SchemaValidator.validateJsonSchema', () => {
 
     expect(() => schemaValidator.validateJsonSchema(template)).not.toThrow();
   });
+
+  it('accepts a custom form carrying the x-trigger vendor extension', () => {
+    const customForm = {
+      type: 'object',
+      title: 'Enter phase survey',
+      'x-phase': 'review',
+      'x-trigger': 'entry',
+      properties: {
+        conflicts: {
+          type: 'string',
+          title: 'Do you have conflicts?',
+          'x-format': 'long-text',
+        },
+      },
+      'x-field-order': ['conflicts'],
+      required: ['conflicts'],
+    };
+
+    expect(() => schemaValidator.validateJsonSchema(customForm)).not.toThrow();
+  });
 });
 
 describe('SchemaValidator.validate', () => {

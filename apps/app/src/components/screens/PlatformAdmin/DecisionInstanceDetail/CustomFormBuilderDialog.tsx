@@ -3,10 +3,17 @@
 import { trpc } from '@op/api/client';
 import type {
   AdminDecisionPhase,
+  CustomFormCapability,
   CustomFormDefinitionInput,
+  CustomFormTrigger,
   CustomFormWithPhaseDTO,
 } from '@op/common/client';
+import {
+  customFormCapabilitySchema,
+  customFormTriggerSchema,
+} from '@op/common/client';
 import { Button } from '@op/sense/Button';
+import { Checkbox } from '@op/sense/Checkbox';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +22,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
-import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from '@op/sense/Field';
 import {
   Select,
   SelectContent,
@@ -246,6 +259,20 @@ const FormDetailsFields = ({
         onChange={(phaseId) => onChange({ ...draft, phaseId })}
       />
 
+      <TriggerField
+        id={`${fieldId}-trigger`}
+        trigger={draft.trigger}
+        onChange={(trigger) => onChange({ ...draft, trigger })}
+      />
+
+      <RequiredCapabilitiesField
+        id={`${fieldId}-capability`}
+        requiredCapabilities={draft.requiredCapabilities}
+        onChange={(requiredCapabilities) =>
+          onChange({ ...draft, requiredCapabilities })
+        }
+      />
+
       <CountedInputField
         id={`${fieldId}-title`}
         label={t('admin.formHeadingLabel')}
@@ -324,6 +351,96 @@ const PhaseField = ({
       <FieldDescription>{t('admin.formPhaseHint')}</FieldDescription>
       <ProblemMessages problems={problems} />
     </Field>
+  );
+};
+
+const TriggerField = ({
+  id,
+  trigger,
+  onChange,
+}: {
+  id: string;
+  trigger: CustomFormTrigger;
+  onChange: (trigger: CustomFormTrigger) => void;
+}) => {
+  const t = useTranslations();
+  const labels: Record<CustomFormTrigger, string> = {
+    action: t('admin.formTriggerActionOption'),
+    entry: t('admin.formTriggerEntryOption'),
+  };
+
+  return (
+    <Field>
+      <FieldLabel htmlFor={id}>{t('admin.formTriggerLabel')}</FieldLabel>
+      <Select
+        value={trigger}
+        items={labels}
+        onValueChange={(next) =>
+          onChange(next === 'entry' ? 'entry' : 'action')
+        }
+      >
+        <SelectTrigger id={id} className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {customFormTriggerSchema.options.map((option) => (
+              <SelectItem key={option} value={option}>
+                {labels[option]}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <FieldDescription>{t('admin.formTriggerHint')}</FieldDescription>
+    </Field>
+  );
+};
+
+const RequiredCapabilitiesField = ({
+  id,
+  requiredCapabilities,
+  onChange,
+}: {
+  id: string;
+  requiredCapabilities: CustomFormCapability[];
+  onChange: (requiredCapabilities: CustomFormCapability[]) => void;
+}) => {
+  const t = useTranslations();
+  const labels: Record<CustomFormCapability, string> = {
+    review: t('admin.formCapabilityReviewOption'),
+    vote: t('admin.formCapabilityVoteOption'),
+    submitProposals: t('admin.formCapabilitySubmitProposalsOption'),
+    developProposals: t('admin.formCapabilityDevelopProposalsOption'),
+  };
+
+  return (
+    <FieldSet aria-describedby={`${id}-hint`}>
+      <FieldLegend variant="label">
+        {t('admin.formCapabilitiesLabel')}
+      </FieldLegend>
+      <FieldDescription id={`${id}-hint`}>
+        {t('admin.formCapabilitiesHint')}
+      </FieldDescription>
+      {customFormCapabilitySchema.options.map((capability) => (
+        <Field key={capability} orientation="horizontal">
+          <Checkbox
+            id={`${id}-${capability}`}
+            checked={requiredCapabilities.includes(capability)}
+            onCheckedChange={(checked) =>
+              onChange(
+                checked
+                  ? [...requiredCapabilities, capability]
+                  : requiredCapabilities.filter((item) => item !== capability),
+              )
+            }
+          />
+          <FieldLabel htmlFor={`${id}-${capability}`}>
+            {labels[capability]}
+          </FieldLabel>
+        </Field>
+      ))}
+    </FieldSet>
   );
 };
 

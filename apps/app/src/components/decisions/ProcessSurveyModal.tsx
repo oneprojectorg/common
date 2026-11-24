@@ -38,6 +38,8 @@ import { useMemo, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { hasSkipCookie, setSkipCookie } from './skipCookie';
+
 const OTHER_OPTION_ID = 'other';
 
 const PROMOTER_OPTION_IDS = [
@@ -77,22 +79,14 @@ function shuffle<T>(items: readonly T[]): T[] {
 
 const NPS_SCORES = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 
-const SKIP_COOKIE_PREFIX = 'survey-skipped-';
-const SKIP_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
-
 const getSurveySkipCookieName = (instanceId: string) =>
-  `${SKIP_COOKIE_PREFIX}${instanceId}`;
+  `survey-skipped-${instanceId}`;
 
-export const hasSurveySkipCookie = (instanceId: string): boolean => {
-  if (typeof document === 'undefined') {
-    return false;
-  }
-  const name = `${getSurveySkipCookieName(instanceId)}=`;
-  return document.cookie.split('; ').some((c) => c.startsWith(name));
-};
+export const hasSurveySkipCookie = (instanceId: string): boolean =>
+  hasSkipCookie(getSurveySkipCookieName(instanceId));
 
 export const setSurveySkipCookie = (instanceId: string) => {
-  document.cookie = `${getSurveySkipCookieName(instanceId)}=1; path=/; max-age=${SKIP_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax`;
+  setSkipCookie(getSurveySkipCookieName(instanceId));
 };
 
 export const ProcessSurveyModal = ({

@@ -1,11 +1,15 @@
 import type {
   CustomFormDefinitionInput,
+  CustomFormCapability,
   CustomFormField,
+  CustomFormTrigger,
   XFormatPropertySchema,
 } from '@op/common/client';
 import {
   CUSTOM_FORM_MAX_FIELDS,
   customFormDefinitionInputSchema,
+  getFormRequiredCapabilities,
+  getFormTrigger,
 } from '@op/common/client';
 
 /**
@@ -75,6 +79,8 @@ export type BuilderForm = {
   title: string;
   description: string;
   phaseId: string;
+  trigger: CustomFormTrigger;
+  requiredCapabilities: CustomFormCapability[];
   fields: BuilderField[];
 };
 
@@ -83,6 +89,8 @@ const createEmptyForm = (phaseId: string): BuilderForm => ({
   title: '',
   description: '',
   phaseId,
+  trigger: 'action',
+  requiredCapabilities: [],
   fields: [],
 });
 
@@ -114,6 +122,10 @@ export const buildDefinition = (
       ? { description: form.description.trim() }
       : {}),
     'x-phase': form.phaseId,
+    'x-trigger': form.trigger,
+    ...(form.requiredCapabilities.length > 0
+      ? { 'x-required-capabilities': form.requiredCapabilities }
+      : {}),
     required: form.fields
       .filter((field) => field.isRequired)
       .map((field) => field.key),
@@ -156,6 +168,8 @@ const ROUND_TRIPPED_DEFINITION_KEYS = new Set([
   'title',
   'description',
   'x-phase',
+  'x-trigger',
+  'x-required-capabilities',
   'required',
   'properties',
   'x-field-order',
@@ -203,6 +217,10 @@ export const parseDefinition = ({
   const unsupportedRoot = Object.keys(schema).filter(
     (key) => !ROUND_TRIPPED_DEFINITION_KEYS.has(key),
   );
+  const requiredCapabilities = getFormRequiredCapabilities(schema);
+  if (!requiredCapabilities) {
+    unsupportedRoot.push('x-required-capabilities');
+  }
 
   return {
     form: {
@@ -211,6 +229,8 @@ export const parseDefinition = ({
       description:
         typeof schema.description === 'string' ? schema.description : '',
       phaseId,
+      trigger: getFormTrigger(schema),
+      requiredCapabilities: requiredCapabilities ?? [],
       fields,
     },
     unsupportedKeys: [...unsupportedKeys, ...unsupportedRoot],

@@ -37,6 +37,22 @@ describe('customFormDefinitionInputSchema', () => {
     expect(parse(withoutPhase).success).toBe(false);
   });
 
+  it('accepts each x-trigger timing and rejects an unknown one', () => {
+    expect(parse(definition({ 'x-trigger': 'entry' })).success).toBe(true);
+    expect(parse(definition({ 'x-trigger': 'action' })).success).toBe(true);
+    expect(parse(definition({ 'x-trigger': 'later' })).success).toBe(false);
+  });
+
+  it('accepts known required capabilities and rejects an unknown one', () => {
+    expect(
+      parse(definition({ 'x-required-capabilities': ['review', 'vote'] }))
+        .success,
+    ).toBe(true);
+    expect(
+      parse(definition({ 'x-required-capabilities': ['admin'] })).success,
+    ).toBe(false);
+  });
+
   it('rejects a form with no fields', () => {
     expect(
       parse(definition({ properties: {}, 'x-field-order': [] })).success,

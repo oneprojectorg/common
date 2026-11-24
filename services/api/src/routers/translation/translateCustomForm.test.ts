@@ -1,4 +1,7 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  TestReviewsDataManager,
+} from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { contentTranslations, customForms } from '@op/db/schema';
 import { like } from 'drizzle-orm';
@@ -199,6 +202,59 @@ describe('translation.translateCustomForm', () => {
         targetLocale: 'es',
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('translates a form that requires review only for a caller who can review', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    const [member, reviewer] = await Promise.all([
+      testData.createInstanceMember(context),
+      testData.createInstanceReviewerWithRole(context),
+    ]);
+    const [form] = await db
+      .insert(customForms)
+      .values({
+        profileId: context.instance.profileId,
+        name: 'Reviewer check-in',
+        schema: {
+          type: 'object',
+          title: 'Conflicts',
+          properties: {},
+          'x-required-capabilities': ['review'],
+        },
+      })
+      .returning();
+    if (!form) {
+      throw new Error('Test setup: failed to create custom form');
+    }
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `custom_form:${form.id}:%`),
+        );
+      await db.delete(customForms).where(eq(customForms.id, form.id));
+    });
+    const [memberCaller, reviewerCaller] = await Promise.all([
+      createAuthenticatedCaller(member.email),
+      createAuthenticatedCaller(reviewer.email),
+    ]);
+    const input = { customFormId: form.id, targetLocale: 'es' as const };
+
+    await expect(
+      memberCaller.translation.translateCustomForm(input),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'UnauthorizedError',
+        message: expect.stringMatching(/capability this form requires/i),
+      },
+    });
+    await expect(
+      reviewerCaller.translation.translateCustomForm(input),
+    ).resolves.toMatchObject({ targetLocale: 'es' });
   });
 
   it('rejects a deleted form', async ({ task, onTestFinished }) => {

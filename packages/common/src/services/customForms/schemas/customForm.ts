@@ -20,7 +20,35 @@ export interface CustomFormDefinitionSchema extends JSONSchema7 {
    * initial (submission) phase. Used to decide which phase surfaces the form.
    */
   'x-phase'?: string;
+  /**
+   * When the form opens in its phase: on `entry` to the phase, or after the
+   * participant's `action` there (submit, vote, review). Absent means `action`.
+   */
+  'x-trigger'?: CustomFormTrigger;
+  /**
+   * Decision capabilities that let a participant see and answer the form; any
+   * one of them is enough. Absent or empty means anyone who can read the
+   * process.
+   */
+  'x-required-capabilities'?: CustomFormCapability[];
 }
+
+export const customFormTriggerSchema = z.enum(['entry', 'action']);
+
+export type CustomFormTrigger = z.infer<typeof customFormTriggerSchema>;
+
+export const customFormCapabilitySchema = z.enum([
+  'review',
+  'vote',
+  'submitProposals',
+  'developProposals',
+]);
+
+export type CustomFormCapability = z.infer<typeof customFormCapabilitySchema>;
+
+export const customFormRequiredCapabilitiesSchema = z.array(
+  customFormCapabilitySchema,
+);
 
 /** True for a stored form definition with an object root and `properties`. */
 export function isCustomFormDefinition(
@@ -166,6 +194,8 @@ export const customFormDefinitionInputSchema = z
     title: z.string().min(1).max(200),
     description: z.string().max(2000).optional(),
     'x-phase': z.string().min(1).max(256),
+    'x-trigger': customFormTriggerSchema.optional(),
+    'x-required-capabilities': customFormRequiredCapabilitiesSchema.optional(),
     required: z.array(customFormFieldKeySchema),
     properties: z.record(customFormFieldKeySchema, customFormFieldSchema),
     'x-field-order': z.array(customFormFieldKeySchema),
@@ -314,6 +344,9 @@ export const getCustomFormForProfileInputSchema = z.object({
   // The process's initial phase id. A form with no `x-phase` is treated as
   // belonging to this phase, so legacy forms keep gating submission.
   initialPhaseId: z.string().optional(),
+  // The moment the caller asks at. A form set to open at another moment is
+  // not returned. Omitted means `action`, so entry forms never come back.
+  trigger: customFormTriggerSchema.default('action'),
 });
 
 export type GetCustomFormForProfileInput = z.infer<

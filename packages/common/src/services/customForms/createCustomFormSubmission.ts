@@ -3,15 +3,21 @@ import type { CustomForm, CustomFormSubmission } from '@op/db/schema';
 import { customFormSubmissions } from '@op/db/schema';
 import { permission } from 'access-zones';
 
-import { CommonError, NotFoundError, ValidationError } from '../../utils';
-import { assertProfileAccess } from '../assert';
+import {
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../utils';
+import { assertProfileAccess, assertUserByAuthId } from '../assert';
+import { assertDecisionProfileReadAccess } from '../decision/assertDecisionProfileReadAccess';
 import { schemaValidator } from '../decision/schemaValidator';
-import { readInstancePhaseSet } from './customFormAuth';
+import { hasFormCapabilities, readInstancePhaseSet } from './customFormAuth';
 import type {
   CreateCustomFormSubmissionInput,
   CustomFormDefinitionSchema,
 } from './schemas/customForm';
-import { getEffectiveFormPhase } from './utils';
+import { getEffectiveFormPhase, getFormTrigger } from './utils';
 
 /**
  * Records a submission against a custom form, attached to the target
@@ -21,7 +27,10 @@ import { getEffectiveFormPhase } from './utils';
  * (for a proposal attachment, the proposal's own profile — its creator and
  * collaborators). The target must also belong to the form's owning process,
  * via one of these attachment sites:
- *   - a proposal whose decision process owns the form (submission/edit forms),
+ *   - for a form that opens on phase entry, the caller's own profile, when
+ *     they can read the process;
+ *   - otherwise, a proposal whose decision process owns the form
+ *     (submission/edit forms),
  *   - a participant's own profile that has voted in the process (post-vote
  *     forms), or
  *   - a reviewer's own profile with a review assignment in the form's phase
@@ -63,28 +72,26 @@ export const createCustomFormSubmission = async ({
     throw new NotFoundError('Custom form', input.customFormId);
   }
 
+  if (!(await hasFormCapabilities({ user: { id: authUserId }, form }))) {
+    throw new UnauthorizedError(
+      'You do not have a capability this form requires',
+    );
+  }
+
   // The target profile must belong to the process that owns the form
   // (`form.profileId` is the process instance's profile). This stops a caller
   // from attaching their own entity to an unrelated form.
-  const proposal = await db.query.proposals.findFirst({
-    where: { profileId: input.profileId },
-    with: { processInstance: true },
-  });
-
-  const belongsViaProposal =
-    !!proposal && proposal.processInstance.profileId === form.profileId;
-
-  const belongsToForm =
-    belongsViaProposal ||
-    (await isParticipantInFormProcess({
+  if (getFormTrigger(form.schema) === 'entry') {
+    await assertEntryFormParticipantInPhase({
       participantProfileId: input.profileId,
       form,
-    }));
-
-  if (!belongsToForm) {
-    throw new ValidationError(
-      'The submission target does not belong to this form',
-    );
+      authUserId,
+    });
+  } else {
+    await assertActionFormTargetInProcess({
+      targetProfileId: input.profileId,
+      form,
+    });
   }
 
   // Single cast point at the DB boundary — the jsonb column holds the same
@@ -135,6 +142,74 @@ export const createCustomFormSubmission = async ({
   return submission;
 };
 
+/**
+ * Anyone who can read the process answers an entry form, on their own profile,
+ * while the form's phase is current.
+ */
+const assertEntryFormParticipantInPhase = async ({
+  participantProfileId,
+  form,
+  authUserId,
+}: {
+  participantProfileId: string;
+  form: CustomForm;
+  authUserId: string;
+}): Promise<void> => {
+  const user = await assertUserByAuthId(authUserId);
+
+  if (user.profileId !== participantProfileId) {
+    throw new ValidationError(
+      'The submission target does not belong to this form',
+    );
+  }
+
+  await assertDecisionProfileReadAccess({
+    user: { id: authUserId },
+    profileId: form.profileId,
+  });
+
+  const formInstancePhase = await getFormInstancePhase(form);
+
+  if (!formInstancePhase) {
+    throw new NotFoundError('Decision process', form.profileId);
+  }
+
+  const { instance, formPhaseId } = formInstancePhase;
+
+  if (!instance.currentStateId || formPhaseId !== instance.currentStateId) {
+    throw new ValidationError('This form is not open in the current phase');
+  }
+};
+
+const assertActionFormTargetInProcess = async ({
+  targetProfileId,
+  form,
+}: {
+  targetProfileId: string;
+  form: CustomForm;
+}): Promise<void> => {
+  const proposal = await db.query.proposals.findFirst({
+    where: { profileId: targetProfileId },
+    with: { processInstance: true },
+  });
+
+  const belongsViaProposal =
+    !!proposal && proposal.processInstance.profileId === form.profileId;
+
+  const belongsToForm =
+    belongsViaProposal ||
+    (await isParticipantInFormProcess({
+      participantProfileId: targetProfileId,
+      form,
+    }));
+
+  if (!belongsToForm) {
+    throw new ValidationError(
+      'The submission target does not belong to this form',
+    );
+  }
+};
+
 const isParticipantInFormProcess = async ({
   participantProfileId,
   form,
@@ -142,19 +217,14 @@ const isParticipantInFormProcess = async ({
   participantProfileId: string;
   form: CustomForm;
 }): Promise<boolean> => {
-  const instance = await db.query.processInstances.findFirst({
-    where: { profileId: form.profileId },
-    columns: { id: true, instanceData: true },
-  });
+  const formInstancePhase = await getFormInstancePhase(form);
 
-  if (!instance) {
+  if (!formInstancePhase) {
     return false;
   }
 
   // A reviewer answers only the form of a phase they review in.
-  const formPhaseId =
-    getEffectiveFormPhase({ schema: form.schema }) ??
-    (await readInstancePhaseSet({ instance })).initialPhaseId;
+  const { instance, formPhaseId } = formInstancePhase;
 
   const [vote, reviewAssignment] = await Promise.all([
     db.query.decisionsVoteSubmissions.findFirst({
@@ -177,4 +247,22 @@ const isParticipantInFormProcess = async ({
   ]);
 
   return !!vote || !!reviewAssignment;
+};
+
+/** The form's process instance and the phase the form belongs to in it. */
+const getFormInstancePhase = async (form: CustomForm) => {
+  const instance = await db.query.processInstances.findFirst({
+    where: { profileId: form.profileId },
+    columns: { id: true, instanceData: true, currentStateId: true },
+  });
+
+  if (!instance) {
+    return null;
+  }
+
+  const formPhaseId =
+    getEffectiveFormPhase({ schema: form.schema }) ??
+    (await readInstancePhaseSet({ instance })).initialPhaseId;
+
+  return { instance, formPhaseId };
 };
