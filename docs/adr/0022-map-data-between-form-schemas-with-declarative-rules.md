@@ -165,8 +165,9 @@ value expressions of the selection pipeline are the planned next step.
     schema. When no single type accepts them, or `add` gives no value, the
     result is `null`. A missing operand is skipped.
   - With all operands numbers, or with no registry, `add` is unchanged, so
-    the selection pipeline does not change. An `add` result that is a plain
-    number does not fill the budget, because it has no currency.
+    the selection pipeline does not change. An expression rule fills a field
+    only with a value that a value type produced. A plain-number result fills
+    nothing for now and leaves the field empty, as mixed currencies do.
   - The engine reads each operand as the copy rule reads a field, and
     evaluates the expression one time for each input. An input with none of
     the operands gives no value. An input with operands but no result, for

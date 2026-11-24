@@ -124,13 +124,7 @@ export async function getDevelopedEntryPrefill({
   }
 
   return {
-    proposalData: toSystemFields(
-      withoutNumberSums({
-        data,
-        mappings,
-        developPhaseId: developPhase.phaseId,
-      }),
-    ),
+    proposalData: toSystemFields(data),
     documentUpdate,
   };
 }
@@ -201,37 +195,6 @@ function toSystemFields(data: Record<string, unknown>): ProposalDataInput {
     ...(budget ? { budget } : {}),
     ...(location ? { location } : {}),
   };
-}
-
-/**
- * Drops the result of an `add` rule over plain numbers: it has no currency,
- * and `normalizeBudget` would read the bare number as USD.
- */
-function withoutNumberSums({
-  data,
-  mappings,
-  developPhaseId,
-}: {
-  data: Record<string, unknown>;
-  mappings: SchemaMapping[];
-  developPhaseId: string;
-}): Record<string, unknown> {
-  const sumTargets = new Set(
-    mappings
-      .filter(
-        (mapping) =>
-          mapping.to.type === 'proposal' &&
-          mapping.to.phaseId === developPhaseId,
-      )
-      .flatMap((mapping) => mapping.fields)
-      .flatMap(({ from, to }) => (typeof from === 'string' ? [] : [to])),
-  );
-
-  return Object.fromEntries(
-    Object.entries(data).filter(
-      ([key, value]) => !(sumTargets.has(key) && typeof value === 'number'),
-    ),
-  );
 }
 
 /** Creates the entry's document unless it exists. Never throws. */

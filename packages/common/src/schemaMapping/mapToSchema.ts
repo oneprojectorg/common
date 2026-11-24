@@ -105,7 +105,10 @@ const evaluateRule = ({
     { operator: from.operator, operands: values },
     { record: data, variables: {}, outputs: {}, valueTypes },
   );
-  return value == null ? { status: 'blocked' } : { status: 'filled', value };
+  // A plain-number result has no type, so a sum of numbers has no currency.
+  return valueTypes.some((type) => type.parse(value) !== undefined)
+    ? { status: 'filled', value }
+    : { status: 'blocked' };
 };
 
 const isSameSchemaRef = ({

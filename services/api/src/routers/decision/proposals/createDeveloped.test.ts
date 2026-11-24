@@ -1307,5 +1307,61 @@ describe.concurrent('createDevelopedProposal', () => {
         budget: usd(0),
       });
     });
+
+    it('fills the budget from a copy rule that copies a plain number when the add rule for the budget gives no value', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instanceId, source } = await createDevelopPhaseSetup({
+        testData,
+        sourceCount: 1,
+      });
+      const entryRow = await insertFormSchema({
+        processInstanceId: instanceId,
+        name: 'Ballot entry',
+        schema: prefillEntrySchema,
+      });
+      await configureDevelopPhase(instanceId, {
+        formSchemaId: entryRow.id,
+        developPrefillMappings: [
+          {
+            from: { type: 'review', phaseId: 'initial' },
+            to: { type: 'proposal', phaseId: 'final' },
+            fields: [
+              {
+                from: {
+                  operator: 'add',
+                  operands: [
+                    { field: 'answers.cost_design' },
+                    { field: 'answers.cost_construction' },
+                  ],
+                },
+                to: 'budget',
+              },
+              { from: 'answers.cost_estimate', to: 'budget' },
+            ],
+          },
+        ],
+      });
+      await createCostReview({
+        instanceId,
+        proposalId: source.id,
+        reviewerProfileId: setup.organization.profileId,
+        answers: { cost_estimate: 500 },
+      });
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      const draft = await caller.decision.createDevelopedProposal({
+        processInstanceId: instanceId,
+        sourceProposalIds: [source.id],
+        proposalData: {},
+      });
+      testData.trackProfileForCleanup(draft.profileId);
+
+      await expect(readProposalData(draft.id)).resolves.toMatchObject({
+        budget: usd(500),
+      });
+    });
   });
 });

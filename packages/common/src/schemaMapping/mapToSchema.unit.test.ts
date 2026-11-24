@@ -409,6 +409,49 @@ describe('mapToSchema with an add rule', () => {
     expect(result).toEqual({ data: {} });
   });
 
+  it('leaves the field empty for a sum of plain numbers', () => {
+    const result = mapCosts([
+      review(costs({ design: 100, construction: 200 })),
+    ]);
+
+    expect(result).toEqual({ data: {} });
+  });
+
+  it('leaves the field empty when a copy rule copies a number and the add rule gives a plain number', () => {
+    const result = mapCosts(
+      [
+        proposal({ budget: 300 }),
+        review(costs({ design: 100, construction: 200 })),
+      ],
+      [
+        costTotal,
+        {
+          from: proposalRef,
+          to: targetRef,
+          fields: [{ from: 'budget', to: 'budget' }],
+        },
+      ],
+    );
+
+    expect(result).toEqual({ data: {} });
+  });
+
+  it('fills the field from a copy rule that copies a plain number when the add rule has no operand', () => {
+    const result = mapCosts(
+      [proposal({ budget: 500 }), review(costs({}))],
+      [
+        costTotal,
+        {
+          from: proposalRef,
+          to: targetRef,
+          fields: [{ from: 'budget', to: 'budget' }],
+        },
+      ],
+    );
+
+    expect(result.data).toEqual({ budget: 500 });
+  });
+
   it('does not read an inherited property', () => {
     const result = mapCosts([
       review({ answers: Object.create({ cost_design: usd(9) }) }),

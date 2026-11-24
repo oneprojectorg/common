@@ -948,6 +948,40 @@ describe.concurrent('getDevelopPrefill', () => {
       });
     });
 
+    it('given a feasibility review whose costs are plain numbers, when the prefill is built, then the budget stays empty', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instanceId, createSubmittedProposal, createReview } =
+        await seedDevelopDecision(testData);
+      const garden = await createSubmittedProposal({ title: 'Garden' });
+      const review = await createReview({
+        proposalId: garden.id,
+        phaseId: FEASIBILITY,
+        reviewData: {
+          answers: {
+            cost_design: 100,
+            cost_construction: 200,
+            __overall_recommendation: 'feasible',
+          },
+        },
+      });
+
+      const result = await getDevelopPrefill({
+        instanceId,
+        inputs: [
+          { type: 'proposal', phaseId: SUBMISSION, id: garden.id },
+          { type: 'review', id: review.id },
+        ],
+        target: { type: 'proposal', phaseId: BALLOT },
+        mappings: costTotalMappings,
+        user: setup.user,
+      });
+
+      expect(result).toEqual({ data: { title: 'Garden' } });
+    });
+
     it('given two proposals whose reviews give the same total, when the prefill is built, then the budget stays empty and the copy rules still apply', async ({
       task,
       onTestFinished,
