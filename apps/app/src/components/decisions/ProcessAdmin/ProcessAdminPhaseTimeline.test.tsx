@@ -95,6 +95,12 @@ describe('ProcessAdminPhaseTimeline', () => {
     expect(links.map((link) => link.getAttribute('href'))).toEqual(['#', '#']);
   });
 
+  it('names each editor link from the phase it shows', () => {
+    renderTimeline({ currentStateId: 'vote', isEditing: true });
+
+    expect(screen.getByRole('link', { name: /^Submit.+ - .+/ })).toBeTruthy();
+  });
+
   it('renders phases that have no row id yet', () => {
     renderTimeline({
       phases: [submit, vote].map((phase) => ({ ...phase, id: null })),
