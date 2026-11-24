@@ -36,11 +36,6 @@ const STAMPS = [
   '2026-01-01T12:00:00.000Z',
 ] as const;
 
-/**
- * Three proposal comments driven through the real pipeline: outbox row →
- * activity → fan-out to the setup user, stamped so the expected list order
- * is comment 3, comment 2, comment 1.
- */
 async function seedNotifications(
   task: { id: string },
   onFinished: (fn: () => void | Promise<void>) => void,
@@ -149,7 +144,6 @@ describe('notifications read state', () => {
       count: 3,
     });
 
-    // Another account cannot mark this caller's notifications read.
     const otherData = new TestDecisionsDataManager(
       `${task.id}-other`,
       onTestFinished,
