@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 
 import { createTipTapClient } from './client';
-import { encodeFragmentCopies } from './fragmentCopy';
+import { encodeFragmentCopies, encodeFragments } from './fragmentCopy';
+import { readFragmentText } from './fragmentText';
 
 function buildUpdate(
   fragments: Record<string, (fragment: Y.XmlFragment) => void>,
@@ -176,6 +177,66 @@ describe('encodeFragmentCopies', () => {
         ]),
       ),
     ).toEqual(['title']);
+  });
+});
+
+describe('encodeFragments', () => {
+  function readText(update: Uint8Array | null, name: string): string {
+    if (!update) {
+      throw new Error('Expected an update');
+    }
+    const ydoc = new Y.Doc();
+    Y.applyUpdate(ydoc, update);
+    return readFragmentText(ydoc.getXmlFragment(name));
+  }
+
+  it('writes a text fragment that reads back as the same text', () => {
+    const text = JSON.stringify({ amount: 5000, currency: 'USD' });
+
+    const update = encodeFragments({
+      copies: [],
+      texts: [{ to: 'budget', text }],
+    });
+
+    expect(readText(update, 'budget')).toBe(text);
+    expect(readFragment(update, 'budget')).toBe(
+      `<paragraph>${text}</paragraph>`,
+    );
+  });
+
+  it('keeps the copy when a text targets the same fragment', () => {
+    const sourceUpdate = buildUpdate({
+      budget: (fragment) =>
+        fragment.insert(0, [paragraph('{"amount":10,"currency":"EUR"}')]),
+    });
+
+    const update = encodeFragments({
+      copies: [{ sourceUpdate, from: 'budget', to: 'budget' }],
+      texts: [{ to: 'budget', text: '{"amount":99,"currency":"USD"}' }],
+    });
+
+    expect(readText(update, 'budget')).toBe('{"amount":10,"currency":"EUR"}');
+  });
+
+  it('holds copies and texts for different targets in one update', () => {
+    const sourceUpdate = buildUpdate({
+      title: (fragment) => fragment.insert(0, [paragraph('Title')]),
+    });
+
+    const update = encodeFragments({
+      copies: [{ sourceUpdate, from: 'title', to: 'title' }],
+      texts: [{ to: 'location', text: '{"lat":1,"lng":2}' }],
+    });
+
+    expect(readFragmentNames(update)).toEqual(['location', 'title']);
+    expect(readText(update, 'title')).toBe('Title');
+    expect(readText(update, 'location')).toBe('{"lat":1,"lng":2}');
+  });
+
+  it('gives null when there is only an empty text', () => {
+    expect(
+      encodeFragments({ copies: [], texts: [{ to: 'budget', text: '' }] }),
+    ).toBeNull();
   });
 });
 

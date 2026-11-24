@@ -37,7 +37,12 @@ export type {
 } from '../src/client.js';
 
 // Pure, so the real copy runs against the mock's documents.
-export { type FragmentCopy, encodeFragmentCopies } from '../src/fragmentCopy';
+export {
+  type FragmentCopy,
+  type FragmentTextWrite,
+  encodeFragmentCopies,
+  encodeFragments,
+} from '../src/fragmentCopy';
 
 // ---------------------------------------------------------------------------
 // Helpers

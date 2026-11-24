@@ -25,6 +25,7 @@
     "@op/analytics": "workspace:^",
     "@op/api": "workspace:*",
     "@op/cache": "workspace:*",
+    "@op/collab": "workspace:*",
     "@op/common": "workspace:*",
     "@op/core": "workspace:*",
     "@op/hooks": "workspace:*",

@@ -1,26 +1,8 @@
 'use client';
 
+import { readFragmentText, writeFragmentText } from '@op/collab/fragmentText';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import * as Y from 'yjs';
 import type { Doc } from 'yjs';
-
-/**
- * Extracts the plain-text content from a Y.XmlFragment containing a
- * paragraph-wrapped `Y.XmlElement` node (as written by `setFragmentValue`).
- */
-function getFragmentText(fragment: Y.XmlFragment): string {
-  const parts: string[] = [];
-  fragment.forEach((node) => {
-    if (node instanceof Y.XmlElement) {
-      node.forEach((child) => {
-        if (child instanceof Y.XmlText) {
-          parts.push(child.toJSON());
-        }
-      });
-    }
-  });
-  return parts.join('');
-}
 
 /**
  * Syncs a plain-text value with a Y.XmlFragment.
@@ -48,7 +30,7 @@ export function useCollaborativeFragment(
     const fragment = ydoc.getXmlFragment(fragmentName);
 
     // Read existing value
-    const existing = getFragmentText(fragment);
+    const existing = readFragmentText(fragment);
     if (existing) {
       setValue(existing);
     }
@@ -59,7 +41,7 @@ export function useCollaborativeFragment(
         isLocalUpdateRef.current = false;
         return;
       }
-      setValue(getFragmentText(fragment));
+      setValue(readFragmentText(fragment));
     };
 
     fragment.observeDeep(observer);
@@ -77,12 +59,7 @@ export function useCollaborativeFragment(
       isLocalUpdateRef.current = true;
 
       ydoc.transact(() => {
-        fragment.delete(0, fragment.length);
-        if (newValue) {
-          const paragraph = new Y.XmlElement('paragraph');
-          paragraph.insert(0, [new Y.XmlText(newValue)]);
-          fragment.insert(0, [paragraph]);
-        }
+        writeFragmentText({ fragment, text: newValue });
       });
     },
     [ydoc, fragmentName],

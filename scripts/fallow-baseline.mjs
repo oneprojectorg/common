@@ -7,7 +7,7 @@
  *
  * Two artefacts, because fallow keeps two kinds of baseline:
  *
- *   health-baseline.json  complexity findings, consumed by `--baseline` so
+ *   health-baseline.json  complexity and CRAP findings, consumed by `--baseline` so
  *                         `pnpm health` reports only functions that got worse
  *   health-snapshot.json  vital signs — including the CRAP columns — consumed
  *                         by `--trend`
@@ -123,10 +123,16 @@ mkdirSync(dirname(BASELINE), { recursive: true });
 // fallow exits 1 whenever findings exist, which is the normal state here — the
 // baseline is the record of them. Only the write matters, so its status is not
 // forwarded: a run that recorded the baseline succeeded.
+//
+// `identity` matches each finding by file, category and function name, so a
+// new hotspot that replaces a fixed one in the same file is still reported.
+// The default `count` mode matches by file and category only.
 fallow([
   'health',
   '--coverage',
   COVERAGE,
+  '--baseline-mode',
+  'identity',
   '--save-baseline',
   BASELINE,
   '--save-snapshot',
