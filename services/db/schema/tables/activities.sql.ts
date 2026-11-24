@@ -47,23 +47,23 @@ export const activities = pgTable(
     // Feed sort per scope: WHERE <scope> = ? ORDER BY created_at DESC, id DESC.
     index('activities_organization_id_created_at_id_idx').on(
       table.organizationId,
-      table.createdAt.desc(),
-      table.id.desc(),
+      table.createdAt.desc().nullsFirst(),
+      table.id.desc().nullsFirst(),
     ),
     index('activities_process_instance_id_created_at_id_idx').on(
       table.processInstanceId,
-      table.createdAt.desc(),
-      table.id.desc(),
+      table.createdAt.desc().nullsFirst(),
+      table.id.desc().nullsFirst(),
     ),
     index('activities_proposal_id_created_at_id_idx').on(
       table.proposalId,
-      table.createdAt.desc(),
-      table.id.desc(),
+      table.createdAt.desc().nullsFirst(),
+      table.id.desc().nullsFirst(),
     ),
     index('activities_post_id_created_at_id_idx').on(
       table.postId,
-      table.createdAt.desc(),
-      table.id.desc(),
+      table.createdAt.desc().nullsFirst(),
+      table.id.desc().nullsFirst(),
     ),
     index('activities_actor_profile_id_idx').on(table.actorProfileId),
   ],

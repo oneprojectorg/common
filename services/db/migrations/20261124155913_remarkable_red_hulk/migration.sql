@@ -53,16 +53,16 @@ CREATE TABLE "notifications" (
 --> statement-breakpoint
 ALTER TABLE "notifications" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE UNIQUE INDEX "activities_outbox_id_idx" ON "activities" ("outbox_id");--> statement-breakpoint
-CREATE INDEX "activities_organization_id_created_at_id_idx" ON "activities" ("organization_id","created_at" DESC NULLS LAST,"id" DESC NULLS LAST);--> statement-breakpoint
-CREATE INDEX "activities_process_instance_id_created_at_id_idx" ON "activities" ("process_instance_id","created_at" DESC NULLS LAST,"id" DESC NULLS LAST);--> statement-breakpoint
-CREATE INDEX "activities_proposal_id_created_at_id_idx" ON "activities" ("proposal_id","created_at" DESC NULLS LAST,"id" DESC NULLS LAST);--> statement-breakpoint
-CREATE INDEX "activities_post_id_created_at_id_idx" ON "activities" ("post_id","created_at" DESC NULLS LAST,"id" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX "activities_organization_id_created_at_id_idx" ON "activities" ("organization_id","created_at" DESC,"id" DESC);--> statement-breakpoint
+CREATE INDEX "activities_process_instance_id_created_at_id_idx" ON "activities" ("process_instance_id","created_at" DESC,"id" DESC);--> statement-breakpoint
+CREATE INDEX "activities_proposal_id_created_at_id_idx" ON "activities" ("proposal_id","created_at" DESC,"id" DESC);--> statement-breakpoint
+CREATE INDEX "activities_post_id_created_at_id_idx" ON "activities" ("post_id","created_at" DESC,"id" DESC);--> statement-breakpoint
 CREATE INDEX "activities_actor_profile_id_idx" ON "activities" ("actor_profile_id");--> statement-breakpoint
 CREATE INDEX "event_outbox_unsent_created_at_idx" ON "event_outbox" ("created_at") WHERE sent_at IS NULL;--> statement-breakpoint
 CREATE INDEX "notification_deliveries_notification_id_idx" ON "notification_deliveries" ("notification_id");--> statement-breakpoint
 CREATE INDEX "notification_deliveries_provider_message_id_idx" ON "notification_deliveries" ("provider_message_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "notifications_activity_id_user_id_idx" ON "notifications" ("activity_id","user_id");--> statement-breakpoint
-CREATE INDEX "notifications_user_id_created_at_id_idx" ON "notifications" ("user_id","created_at" DESC NULLS LAST,"id" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX "notifications_user_id_created_at_id_idx" ON "notifications" ("user_id","created_at" DESC,"id" DESC);--> statement-breakpoint
 CREATE INDEX "notifications_user_id_unread_idx" ON "notifications" ("user_id") WHERE read_at IS NULL;--> statement-breakpoint
 CREATE INDEX "notifications_user_id_needs_action_idx" ON "notifications" ("user_id") WHERE action_required AND read_at IS NULL;--> statement-breakpoint
 ALTER TABLE "activities" ADD CONSTRAINT "activities_actor_profile_id_profiles_id_fkey" FOREIGN KEY ("actor_profile_id") REFERENCES "profiles"("id") ON DELETE SET NULL;--> statement-breakpoint

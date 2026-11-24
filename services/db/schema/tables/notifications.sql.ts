@@ -43,8 +43,8 @@ export const notifications = pgTable(
     // List: WHERE user_id = ? ORDER BY created_at DESC, id DESC.
     index('notifications_user_id_created_at_id_idx').on(
       table.userId,
-      table.createdAt.desc(),
-      table.id.desc(),
+      table.createdAt.desc().nullsFirst(),
+      table.id.desc().nullsFirst(),
     ),
     // Unread badge.
     index('notifications_user_id_unread_idx')

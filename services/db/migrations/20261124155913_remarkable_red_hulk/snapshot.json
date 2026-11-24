@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "7a877d38-de14-4fda-98d4-a5e648f920bf",
+  "id": "ced04326-e8c7-4b93-b3ec-057b153bb8a7",
   "prevIds": [
     "147d002c-4aec-4154-ae1c-4ef509578617"
   ],
@@ -8958,14 +8958,14 @@
           "value": "created_at",
           "isExpression": false,
           "asc": false,
-          "nullsFirst": false,
+          "nullsFirst": true,
           "opclass": null
         },
         {
           "value": "id",
           "isExpression": false,
           "asc": false,
-          "nullsFirst": false,
+          "nullsFirst": true,
           "opclass": null
         }
       ],
@@ -8993,14 +8993,14 @@
           "value": "created_at",
           "isExpression": false,
           "asc": false,
-          "nullsFirst": false,
+          "nullsFirst": true,
           "opclass": null
         },
         {
           "value": "id",
           "isExpression": false,
           "asc": false,
-          "nullsFirst": false,
+          "nullsFirst": true,
           "opclass": null
         }
       ],
@@ -9028,14 +9028,14 @@
           "value": "created_at",
           "isExpression": false,
           "asc": false,
-          "nullsFirst": false,
+          "nullsFirst": true,
           "opclass": null
         },
         {
           "value": "id",
           "isExpression": false,
           "asc": false,
-          "nullsFirst": false,
+          "nullsFirst": true,
           "opclass": null
         }
       ],
@@ -9063,14 +9063,14 @@
           "value": "created_at",
           "isExpression": false,
           "asc": false,
-          "nullsFirst": false,
+          "nullsFirst": true,
           "opclass": null
         },
         {
           "value": "id",
           "isExpression": false,
           "asc": false,
-          "nullsFirst": false,
+          "nullsFirst": true,
           "opclass": null
         }
       ],
@@ -11023,14 +11023,14 @@
           "value": "created_at",
           "isExpression": false,
           "asc": false,
-          "nullsFirst": false,
+          "nullsFirst": true,
           "opclass": null
         },
         {
           "value": "id",
           "isExpression": false,
           "asc": false,
-          "nullsFirst": false,
+          "nullsFirst": true,
           "opclass": null
         }
       ],
