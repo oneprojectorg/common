@@ -27,8 +27,8 @@ export const getFormShowOn = (
 ): CustomFormShowOn => (schema['x-show-on'] === 'entry' ? 'entry' : 'action');
 
 /**
- * The capabilities a participant needs to see and answer the form. Null when
- * the stored value cannot be read, so callers fail closed.
+ * The capabilities that let a participant see and answer the form; any one is
+ * enough. Null when the stored value cannot be read, so callers fail closed.
  */
 export const getFormRequiredCapabilities = (
   schema: Record<string, unknown>,

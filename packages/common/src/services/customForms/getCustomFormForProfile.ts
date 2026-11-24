@@ -27,7 +27,7 @@ import { getEffectiveFormPhase, getFormShowOn } from './utils';
  *
  * A form is asked once per person per phase, so a caller who already submitted
  * the matched form gets null. A form set to open at a moment other than
- * `showOn`, or one that requires a capability the caller lacks, also gets null.
+ * `showOn`, or one whose listed capabilities the caller holds none of, also gets null.
  *
  * When `phaseId` is omitted, the first form attached to the profile is returned
  * (legacy, phase-agnostic behavior) for callers with no phase context.
