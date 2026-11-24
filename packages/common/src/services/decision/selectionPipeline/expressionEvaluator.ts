@@ -18,24 +18,14 @@ import type {
   VariableExpression,
 } from './types';
 
-// Keyed by the context object, as every nested evaluation gets that object, so
-// no caller of `evaluateExpression` can pass value types in.
-const valueTypesByContext = new WeakMap<
-  ExpressionContext,
-  readonly ValueType<unknown>[]
->();
-
 /**
  * An `evaluateExpression` whose operations also combine values of the given
  * types when their operands are not all numbers.
  */
 export const createExpressionEvaluator =
   ({ valueTypes }: { valueTypes: readonly ValueType<unknown>[] }) =>
-  (expr: Expression, context: ExpressionContext): unknown => {
-    const typedContext = { ...context };
-    valueTypesByContext.set(typedContext, valueTypes);
-    return evaluateExpression(expr, typedContext);
-  };
+  (expr: Expression, context: ExpressionContext): unknown =>
+    evaluateExpression(expr, { ...context, valueTypes });
 
 /**
  * Evaluates an expression in the given context
@@ -192,7 +182,7 @@ function evaluateOperation(
   const operands: unknown[] = expr.operands.map((op) =>
     evaluateExpression(op, context),
   );
-  const valueTypes = valueTypesByContext.get(context);
+  const { valueTypes } = context;
   return valueTypes && !operands.every((operand) => typeof operand === 'number')
     ? evaluateTypedArithmetic({ operator: expr.operator, operands, valueTypes })
     : evaluateNumberArithmetic({
