@@ -1,8 +1,11 @@
 import { logger } from '@op/logging';
 import { isDeepStrictEqual } from 'node:util';
 
-import { evaluateExpression } from '../services/decision/selectionPipeline/expressionEvaluator';
-import { valueTypes } from '../valueTypes/valueTypes';
+import {
+  createExpressionEvaluator,
+  evaluateExpression,
+} from '../services/decision/selectionPipeline/expressionEvaluator';
+import { moneyValueType } from '../valueTypes/moneyValueType';
 import { readOwnField } from './fieldPath';
 import type {
   FieldMapping,
@@ -11,6 +14,9 @@ import type {
   SchemaMapping,
   SchemaRef,
 } from './schema';
+
+const valueTypes = [moneyValueType];
+const evaluateTypedExpression = createExpressionEvaluator({ valueTypes });
 
 type InputValue =
   | { status: 'filled'; value: unknown }
@@ -101,9 +107,9 @@ const evaluateRule = ({
   if (values.length === 0) {
     return { status: 'empty' };
   }
-  const value: unknown = evaluateExpression(
+  const value = evaluateTypedExpression(
     { operator: from.operator, operands: values },
-    { record: data, variables: {}, outputs: {}, valueTypes },
+    { record: data, variables: {}, outputs: {} },
   );
   // A plain-number result has no type, so a sum of numbers has no currency.
   return valueTypes.some((type) => type.parse(value) !== undefined)

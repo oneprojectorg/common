@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { valueTypeOperators } from '../valueTypes/valueType';
 import { schemaMappingSchema } from './schema';
 
 const mappingWith = (field: { from: unknown; to: string }) => ({
@@ -46,6 +47,27 @@ describe('schemaMappingSchema', () => {
     });
 
     expect(schemaMappingSchema.safeParse(mapping).success).toBe(true);
+  });
+
+  it.each(valueTypeOperators)(
+    'accepts the value type operator %j',
+    (operator) => {
+      const mapping = mappingWith({
+        from: { operator, operands: [{ field: 'answers.cost_design' }] },
+        to: 'budget',
+      });
+
+      expect(schemaMappingSchema.safeParse(mapping).success).toBe(true);
+    },
+  );
+
+  it('rejects an operator that no value type implements', () => {
+    const mapping = mappingWith({
+      from: { operator: 'multiply', operands: [{ field: 'a' }] },
+      to: 'budget',
+    });
+
+    expect(schemaMappingSchema.safeParse(mapping).success).toBe(false);
   });
 
   it.each([
