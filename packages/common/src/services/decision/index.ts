@@ -213,6 +213,7 @@ export * from './utils/phaseSettings';
 export * from './utils/phaseOrder';
 
 // Phase-scoped template resolution
+export * from './utils/phaseReadiness';
 export * from './utils/phaseTemplates';
 
 // Voting management

@@ -1,13 +1,13 @@
 'use client';
 
-import type { DecisionPhase } from '@op/api/encoders';
+import type { DecisionPhase, InstanceData } from '@op/api/encoders';
 import { isPhaseReady } from '@op/common/client';
 import { PhaseCard, type PhaseCardState } from '@op/sense/PhaseCard';
 import { useLocale } from 'next-intl';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
-import { type PhaseTemplates, getSetupBlurbKey } from './phaseSetup';
+import { getSetupBlurbKey } from './phaseSetup';
 
 export function ProcessAdminPhaseTimeline({
   slug,
@@ -19,7 +19,7 @@ export function ProcessAdminPhaseTimeline({
 }: {
   slug: string;
   phases: DecisionPhase[];
-  templates: PhaseTemplates;
+  templates: Pick<InstanceData, 'proposalTemplate' | 'rubricTemplate'>;
   currentStateId: string | null | undefined;
   /** Before the first phase starts, every phase shows as upcoming. */
   hasStarted: boolean;

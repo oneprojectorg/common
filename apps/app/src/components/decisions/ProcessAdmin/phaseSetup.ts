@@ -1,15 +1,10 @@
-import type { DecisionPhase, InstanceData } from '@op/api/encoders';
+import type { DecisionPhase } from '@op/api/encoders';
 import {
   isDevelopPhase,
   isReviewPhase,
   isSubmitPhase,
   isVotingPhase,
 } from '@op/common/client';
-
-export type PhaseTemplates = Pick<
-  InstanceData,
-  'proposalTemplate' | 'rubricTemplate'
->;
 
 type SetupBlurbKey =
   | 'setupBlurbCollect'
