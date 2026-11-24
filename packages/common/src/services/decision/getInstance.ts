@@ -40,14 +40,14 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
     if (!instance.profileId) {
       throw new NotFoundError('Process instance', instanceId);
     }
-    const access = await resolveInstanceAccess(
+    const access = await resolveInstanceAccess({
       user,
-      {
+      instance: {
         profileId: instance.profileId,
         ownerProfileId: instance.ownerProfileId,
       },
       profileRoles,
-    );
+    });
 
     // Filter budget from phase settings if hideBudget is true
     const instanceData = instance.instanceData as DecisionInstanceData;

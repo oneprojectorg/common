@@ -1,4 +1,4 @@
-import type { CustomFormCapability, CustomFormShowOn } from '@op/common/client';
+import type { CustomFormShowOn } from '@op/common/client';
 import {
   TestDecisionsDataManager,
   TestReviewsDataManager,
@@ -32,7 +32,7 @@ async function attachForm(
   onTestFinished: (fn: () => Promise<void>) => void,
   phaseId?: string,
   showOn?: CustomFormShowOn,
-  requiredCapabilities?: CustomFormCapability[] | unknown,
+  requiredCapabilities?: unknown,
 ) {
   const [form] = await db
     .insert(customForms)

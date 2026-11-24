@@ -148,11 +148,14 @@ export const hasFormCapabilities = async ({
 
   // The same rule getInstance gives the UI: admins hold every capability, and
   // org roles count only for a user with no role on the decision.
-  const access = await resolveInstanceAccess(
+  const access = await resolveInstanceAccess({
     user,
-    { profileId: instance.profileId, ownerProfileId: instance.ownerProfileId },
+    instance: {
+      profileId: instance.profileId,
+      ownerProfileId: instance.ownerProfileId,
+    },
     profileRoles,
-  );
+  });
 
   return capabilities.every((capability) => access[capability]);
 };

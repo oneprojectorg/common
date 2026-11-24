@@ -28,11 +28,15 @@ const getRolesDecisionBits = (roles: NormalizedRole[]): number =>
  * The user's decision capabilities on an instance, given the profile roles
  * `assertInstanceProfileAccess` returned for it.
  */
-export const resolveInstanceAccess = async (
-  user: AccessUser | undefined,
-  instance: { profileId: string; ownerProfileId: string | null },
-  profileRoles: NormalizedRole[],
-): Promise<DecisionRolePermissions> => {
+export const resolveInstanceAccess = async ({
+  user,
+  instance,
+  profileRoles,
+}: {
+  user: AccessUser | undefined;
+  instance: { profileId: string; ownerProfileId: string | null };
+  profileRoles: NormalizedRole[];
+}): Promise<DecisionRolePermissions> => {
   if (profileRoles.length > 0) {
     // Profile admins bypass decision-zone role checks — they have full access
     if (checkPermission({ profile: permission.ADMIN }, profileRoles)) {

@@ -437,7 +437,12 @@ describe.concurrent('customForm.submit', () => {
         profileId: member.profileId,
         data: { neighborhood: 'Downtown' },
       }),
-    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'UnauthorizedError',
+        message: expect.stringMatching(/capabilities this form requires/i),
+      },
+    });
 
     const submission = await reviewerCaller.customForm.submit({
       customFormId: form.id,
