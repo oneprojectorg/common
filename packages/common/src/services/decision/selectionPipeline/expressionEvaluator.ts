@@ -183,14 +183,29 @@ function evaluateOperation(
     evaluateExpression(op, context),
   );
   const { valueTypes } = context;
-  return valueTypes && !operands.every((operand) => typeof operand === 'number')
-    ? evaluateTypedArithmetic({ operator: expr.operator, operands, valueTypes })
-    : evaluateNumberArithmetic({
+  if (!valueTypes || operands.every((operand) => typeof operand === 'number')) {
+    return evaluateNumberArithmetic({
+      operator: expr.operator,
+      values: operands.map((operand) =>
+        typeof operand === 'number' ? operand : 0,
+      ),
+    });
+  }
+  // A failed nested operation gives null too; it must not be skipped as a missing field.
+  const hasFailedOperation = expr.operands.some(
+    (operand, index) => isOperation(operand) && operands[index] == null,
+  );
+  return hasFailedOperation
+    ? null
+    : evaluateTypedArithmetic({
         operator: expr.operator,
-        values: operands.map((operand) =>
-          typeof operand === 'number' ? operand : 0,
-        ),
+        operands,
+        valueTypes,
       });
+}
+
+function isOperation(expr: Expression): expr is ArithmeticExpression {
+  return 'operator' in expr && 'operands' in expr;
 }
 
 /** Arithmetic on numbers. A step that divides by 0, or takes modulo 0, gives 0. */

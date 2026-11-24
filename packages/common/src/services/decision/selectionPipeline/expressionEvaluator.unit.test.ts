@@ -38,6 +38,11 @@ const add = (...values: unknown[]): Expression => ({
 });
 
 const usd = (amount: number) => ({ amount, currency: 'USD' });
+const eur = (amount: number) => ({ amount, currency: 'EUR' });
+
+const evaluateWithMoney = createExpressionEvaluator({
+  valueTypes: [moneyValueType],
+});
 
 const context = (): ExpressionContext => ({
   record: {},
@@ -56,6 +61,15 @@ describe('evaluateExpression add', () => {
 
   it('reads a money operand as 0, as it knows no value types', () => {
     expect(evaluateExpression(add(usd(5), usd(2)), context())).toBe(0);
+  });
+
+  it('reads a nested add of mixed currencies as 0', () => {
+    const result = evaluateExpression(
+      { operator: 'add', operands: [add(usd(5), eur(2)), { value: 3 }] },
+      context(),
+    );
+
+    expect(result).toBe(3);
   });
 });
 
@@ -92,6 +106,36 @@ describe('createExpressionEvaluator add', () => {
     );
 
     expect(result).toEqual({ meters: 5 });
+  });
+
+  it('skips a missing field next to a money value', () => {
+    const result = evaluateWithMoney(
+      {
+        operator: 'add',
+        operands: [{ field: 'budget' }, { value: usd(3) }],
+      },
+      context(),
+    );
+
+    expect(result).toEqual(usd(3));
+  });
+
+  it('adds the total of a nested money add', () => {
+    const result = evaluateWithMoney(
+      { operator: 'add', operands: [{ value: usd(3) }, add(usd(5), usd(2))] },
+      context(),
+    );
+
+    expect(result).toEqual(usd(10));
+  });
+
+  it('gives null when a nested add fails, not a partial total', () => {
+    const result = evaluateWithMoney(
+      { operator: 'add', operands: [{ value: usd(3) }, add(usd(5), eur(2))] },
+      context(),
+    );
+
+    expect(result).toBeNull();
   });
 
   it('does not change the context object of the caller', () => {
