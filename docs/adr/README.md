@@ -87,4 +87,4 @@ what it decided.
 - [0020. Decide phase transitions with a selection pipeline over aggregated facts](./0020-decide-phase-transitions-with-a-selection-pipeline-over-aggregated-facts.md)
 - [0021. Give every decision and proposal its own profile and grant roles on it](./0021-give-every-decision-and-proposal-its-own-profile-and-grant-roles-on-it.md)
 - [0022. Map data between form schemas with declarative rules](./0022-map-data-between-form-schemas-with-declarative-rules.md)
-- [0020. Store notifications as outbox, activity, and per-recipient rows](./0020-store-notifications-behind-a-transactional-outbox.md)
+- [0023. Store notifications as outbox, activity, and per-recipient rows](./0023-store-notifications-behind-a-transactional-outbox.md)

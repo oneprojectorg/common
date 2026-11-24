@@ -1,4 +1,4 @@
-# 0020. Store notifications as outbox, activity, and per-recipient rows
+# 0023. Store notifications as outbox, activity, and per-recipient rows
 
 Date: 2026-11-12
 
