@@ -1,6 +1,11 @@
+import { assertNever } from '@op/core/utils';
 import { logger } from '@op/logging';
 import safeRegex from 'safe-regex2';
 
+import {
+  type ValueType,
+  isValueTypeOperator,
+} from '../../../valueTypes/valueType';
 import type {
   ArithmeticExpression,
   ComparisonExpression,
@@ -12,6 +17,15 @@ import type {
   LogicalExpression,
   VariableExpression,
 } from './types';
+
+/**
+ * An `evaluateExpression` whose operations also combine values of the given
+ * types when their operands are not all numbers.
+ */
+export const createExpressionEvaluator =
+  ({ valueTypes }: { valueTypes: readonly ValueType<unknown>[] }) =>
+  (expr: Expression, context: ExpressionContext): unknown =>
+    evaluateExpression(expr, { ...context, valueTypes });
 
 /**
  * Evaluates an expression in the given context
@@ -37,7 +51,7 @@ export function evaluateExpression(
 
   // Arithmetic
   if ('operator' in expr && 'operands' in expr) {
-    return evaluateArithmetic(expr as ArithmeticExpression, context);
+    return evaluateOperation(expr as ArithmeticExpression, context);
   }
 
   // Function call
@@ -161,19 +175,48 @@ function evaluateLogical(
   throw new Error('Invalid logical expression');
 }
 
-/**
- * Evaluate arithmetic expressions
- */
-function evaluateArithmetic(
+function evaluateOperation(
   expr: ArithmeticExpression,
   context: ExpressionContext,
-): number {
-  const values = expr.operands.map((op) => {
-    const val = evaluateExpression(op, context);
-    return typeof val === 'number' ? val : 0;
-  });
+): unknown {
+  const operands: unknown[] = expr.operands.map((op) =>
+    evaluateExpression(op, context),
+  );
+  const { valueTypes } = context;
+  if (!valueTypes || operands.every((operand) => typeof operand === 'number')) {
+    return evaluateNumberArithmetic({
+      operator: expr.operator,
+      values: operands.map((operand) =>
+        typeof operand === 'number' ? operand : 0,
+      ),
+    });
+  }
+  // A failed nested operation gives null too; it must not be skipped as a missing field.
+  const hasFailedOperation = expr.operands.some(
+    (operand, index) => isOperation(operand) && operands[index] == null,
+  );
+  return hasFailedOperation
+    ? null
+    : evaluateTypedArithmetic({
+        operator: expr.operator,
+        operands,
+        valueTypes,
+      });
+}
 
-  switch (expr.operator) {
+function isOperation(expr: Expression): expr is ArithmeticExpression {
+  return 'operator' in expr && 'operands' in expr;
+}
+
+/** Arithmetic on numbers. A step that divides by 0, or takes modulo 0, gives 0. */
+function evaluateNumberArithmetic({
+  operator,
+  values,
+}: {
+  operator: ArithmeticExpression['operator'];
+  values: number[];
+}): number {
+  switch (operator) {
     case 'add':
       return values.reduce((a, b) => a + b, 0);
     case 'subtract':
@@ -187,8 +230,81 @@ function evaluateArithmetic(
     case 'power':
       return values.reduce((a, b) => Math.pow(a, b));
     default:
-      throw new Error(`Unknown arithmetic operator: ${expr.operator}`);
+      throw new Error(`Unknown arithmetic operator: ${operator}`);
   }
+}
+
+/**
+ * Arithmetic on values of the one value type that accepts every present operand.
+ * Null when no single type fits, or the type lacks the operation or refuses a step.
+ */
+function evaluateTypedArithmetic({
+  operator,
+  operands,
+  valueTypes,
+}: {
+  operator: ArithmeticExpression['operator'];
+  operands: unknown[];
+  valueTypes: readonly ValueType<unknown>[];
+}): unknown {
+  if (!isValueTypeOperator(operator)) {
+    return null;
+  }
+  const match = findValueType({ operands, valueTypes });
+  if (!match) {
+    return null;
+  }
+  const { type, values } = match;
+  switch (operator) {
+    case 'add':
+      return type.add
+        ? foldValues({ values, combine: (a, b) => type.add?.(a, b) })
+        : null;
+    default:
+      return assertNever(operator);
+  }
+}
+
+function findValueType({
+  operands,
+  valueTypes,
+}: {
+  operands: unknown[];
+  valueTypes: readonly ValueType<unknown>[];
+}): { type: ValueType<unknown>; values: unknown[] } | undefined {
+  const present = operands.filter((operand) => operand != null);
+  if (present.length === 0) {
+    return undefined;
+  }
+  const matches = valueTypes.flatMap((type) => {
+    const values = present.map((operand) => type.parse(operand));
+    return values.every((value) => value !== undefined)
+      ? [{ type, values }]
+      : [];
+  });
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
+function foldValues<T>({
+  values,
+  combine,
+}: {
+  values: T[];
+  combine: (a: T, b: T) => T | undefined;
+}): T | null {
+  const [first, ...rest] = values;
+  if (first === undefined) {
+    return null;
+  }
+  let result = first;
+  for (const value of rest) {
+    const next = combine(result, value);
+    if (next === undefined) {
+      return null;
+    }
+    result = next;
+  }
+  return result;
 }
 
 /**
