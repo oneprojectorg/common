@@ -219,6 +219,63 @@ describe.concurrent('getInstance', () => {
     expect(result.instanceData.phases?.[0]).not.toHaveProperty('id');
   });
 
+  it("returns each phase's whole selection pipeline and proposal template", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const [storedPhase] = await db.query.processPhases.findMany({
+      where: { processInstanceId: instanceId },
+      columns: { id: true, data: true },
+      orderBy: { sortOrder: 'asc' },
+    });
+    if (
+      !storedPhase ||
+      typeof storedPhase.data !== 'object' ||
+      storedPhase.data === null
+    ) {
+      throw new Error('Expected a stored phase with data');
+    }
+    const selectionPipeline = {
+      version: '1.0.0',
+      blocks: [
+        {
+          id: 'shortlisted',
+          type: 'filter',
+          condition: {
+            operator: 'equals',
+            left: { field: 'status' },
+            right: { value: 'approved' },
+          },
+        },
+      ],
+    };
+    const proposalTemplate = {
+      type: 'object',
+      properties: { title: { type: 'string' } },
+    };
+    await db
+      .update(processPhases)
+      .set({
+        data: { ...storedPhase.data, selectionPipeline, proposalTemplate },
+      })
+      .where(eq(processPhases.id, storedPhase.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getInstance({ instanceId });
+
+    expect(result.phases[0]).toMatchObject({
+      id: storedPhase.id,
+      selectionPipeline,
+      proposalTemplate,
+    });
+  });
+
   it('returns a null id for phases a decision has not stored yet', async ({
     task,
     onTestFinished,

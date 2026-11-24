@@ -392,18 +392,6 @@ export const processInstanceWithSchemaEncoder = z.preprocess(
   processInstanceWithSchemaEncoderBase,
 );
 
-/** A phase with the id the phase endpoints take; `null` while the decision still reads instanceData.phases. */
-const phaseEncoder = instancePhaseDataEncoder.extend({
-  id: z.uuid().nullable(),
-});
-
-export const processInstanceWithPhasesEncoder = z.preprocess(
-  withPhasesInInstanceData,
-  processInstanceWithSchemaEncoderBase.extend({
-    phases: z.array(phaseEncoder),
-  }),
-);
-
 /** Decision profile encoder  */
 export const decisionProfileWithSchemaEncoder = baseProfileEncoder.extend({
   processInstance: processInstanceWithSchemaEncoder,
@@ -618,6 +606,20 @@ export const phaseDataEncoder = instancePhaseDataEncoder
     selectionPipeline: z.custom<SelectionPipeline>(isJsonObject).optional(),
     proposalTemplate: z.custom<ProposalTemplateSchema>(isJsonObject).optional(),
   });
+
+/** A phase with the id the phase endpoints take; `null` while the decision still reads instanceData.phases. */
+const phaseEncoder = instancePhaseDataEncoder.extend({
+  ...phaseDataEncoder.pick({ selectionPipeline: true, proposalTemplate: true })
+    .shape,
+  id: z.uuid().nullable(),
+});
+
+export const processInstanceWithPhasesEncoder = z.preprocess(
+  withPhasesInInstanceData,
+  processInstanceWithSchemaEncoderBase.extend({
+    phases: z.array(phaseEncoder),
+  }),
+);
 
 // name lives on the phase's profile; the service validates both schemas.
 export const phaseDataInputEncoder = instancePhaseDataInputEncoder
