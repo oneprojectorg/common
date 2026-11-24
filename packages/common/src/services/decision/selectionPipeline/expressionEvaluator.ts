@@ -195,7 +195,7 @@ function evaluateOperation(
   const valueTypes = valueTypesByContext.get(context);
   return valueTypes && !operands.every((operand) => typeof operand === 'number')
     ? evaluateTypedArithmetic({ operator: expr.operator, operands, valueTypes })
-    : evaluateArithmetic({
+    : evaluateNumberArithmetic({
         operator: expr.operator,
         values: operands.map((operand) =>
           typeof operand === 'number' ? operand : 0,
@@ -204,9 +204,9 @@ function evaluateOperation(
 }
 
 /**
- * Evaluate arithmetic expressions
+ * Evaluate arithmetic expressions on numbers
  */
-function evaluateArithmetic({
+function evaluateNumberArithmetic({
   operator,
   values,
 }: {
