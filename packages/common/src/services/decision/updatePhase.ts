@@ -10,11 +10,9 @@ import type { User } from '@op/supabase/lib';
 import { NotFoundError, ValidationError } from '../../utils';
 import {
   type PhaseData,
-  assertPhaseEndsOnOrAfterStart,
   assertPhaseSchemasCompile,
   assertPhaseSettings,
   getPhaseAsDecisionAdmin,
-  hasPhaseDatesChanged,
   readPhaseSettings,
 } from './phaseHelpers';
 import { writePhasesWithLock } from './phaseWrites';
@@ -58,9 +56,7 @@ export const updatePhase = async ({
 
   const { result } = await writePhasesWithLock({
     processInstanceId,
-    write: async (tx, { phases: stored }) => {
-      const storedPhase = stored.find((row) => row.id === phaseId);
-
+    write: async (tx) => {
       const [profile] =
         name === undefined
           ? await tx.select().from(profiles).where(eq(profiles.id, profileId))
@@ -95,14 +91,6 @@ export const updatePhase = async ({
       if (touchesSettings) {
         assertPhaseSettings({
           data: readPhaseSettings(phase.data),
-          phaseLabel: profile.name,
-        });
-      }
-      if (
-        hasPhaseDatesChanged({ stored: storedPhase?.data, merged: phase.data })
-      ) {
-        assertPhaseEndsOnOrAfterStart({
-          data: phase.data,
           phaseLabel: profile.name,
         });
       }

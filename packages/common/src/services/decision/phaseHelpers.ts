@@ -117,6 +117,26 @@ export const assertPhaseRowInvariants = ({
   }
 };
 
+export const assertPhaseRowDates = ({
+  rows,
+  previousRows,
+}: {
+  rows: ProcessPhaseWithProfile[];
+  previousRows: ProcessPhaseWithProfile[];
+}): void => {
+  const previousById = new Map(previousRows.map((row) => [row.id, row]));
+  for (const row of rows) {
+    if (
+      hasPhaseDatesChanged({
+        stored: previousById.get(row.id)?.data,
+        merged: row.data,
+      })
+    ) {
+      assertPhaseEndsOnOrAfterStart({ data: row.data, phaseLabel: row.name });
+    }
+  }
+};
+
 export const toInstanceDataPhase = (
   phase: ProcessPhaseWithProfile,
 ): PhaseInstanceData => ({
@@ -227,7 +247,7 @@ export const assertPhaseEndsOnOrAfterStart = ({
   }
 };
 
-export const hasPhaseDatesChanged = ({
+const hasPhaseDatesChanged = ({
   stored,
   merged,
 }: {

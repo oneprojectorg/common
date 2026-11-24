@@ -6,8 +6,6 @@ import { NotFoundError, ValidationError } from '../../utils';
 import {
   type ProcessPhaseWithProfile,
   assertDecisionAdmin,
-  assertPhaseEndsOnOrAfterStart,
-  hasPhaseDatesChanged,
 } from './phaseHelpers';
 import { writePhasesWithLock } from './phaseWrites';
 
@@ -66,27 +64,13 @@ export const reorderPhases = async ({
           ...(startDate !== undefined && { startDate }),
           ...(endDate !== undefined && { endDate }),
         };
-        const [updated] = await tx
+        await tx
           .update(processPhases)
           .set({
             sortOrder,
             data: sql`${processPhases.data} || ${JSON.stringify(dates)}::jsonb`,
           })
-          .where(eq(processPhases.id, phaseId))
-          .returning({ data: processPhases.data });
-        const storedPhase = stored.find((row) => row.id === phaseId);
-        if (
-          storedPhase &&
-          hasPhaseDatesChanged({
-            stored: storedPhase.data,
-            merged: updated?.data,
-          })
-        ) {
-          assertPhaseEndsOnOrAfterStart({
-            data: updated?.data,
-            phaseLabel: storedPhase.name,
-          });
-        }
+          .where(eq(processPhases.id, phaseId));
       }
     },
   });
