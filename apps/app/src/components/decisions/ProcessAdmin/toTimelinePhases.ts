@@ -1,10 +1,7 @@
-import type { RouterOutput } from '@op/api/client';
-import type { ProcessPhase } from '@op/api/encoders';
+import type { DecisionPhase, ProcessPhase } from '@op/api/encoders';
 
-type DecisionPhase =
-  RouterOutput['decision']['getDecisionBySlug']['processInstance']['phases'][number];
+import { toProcessPhase } from '../toProcessPhases';
 
-/** The rail renders the public timeline's shape; this adapts the decision's phases to it. */
 export function toTimelinePhases({
   phases,
   currentStateId,
@@ -15,14 +12,9 @@ export function toTimelinePhases({
   phases: ProcessPhase[];
   currentPhaseId: string;
 } {
-  const timelinePhases = phases.map((phase, index) => ({
-    id: phase.id ?? `unstored-${index}`,
-    name: phase.name ?? '',
-    description: phase.description,
-    phase: { startDate: phase.startDate, endDate: phase.endDate },
-    advancementMethod: phase.rules?.advancement?.method,
-    config: { allowProposals: phase.rules?.proposals?.submit },
-  }));
+  const timelinePhases = phases.map((phase, index) =>
+    toProcessPhase(phase, phase.id ?? `unstored-${index}`),
+  );
   const currentIndex = phases.findIndex(
     (phase) => phase.phaseId === currentStateId,
   );

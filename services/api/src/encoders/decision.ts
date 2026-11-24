@@ -905,6 +905,7 @@ export type DecisionProfileList = z.infer<
 export type PhaseRules = z.infer<typeof phaseRulesEncoder>;
 export type PhaseDefinition = z.infer<typeof phaseDefinitionEncoder>;
 export type InstancePhaseData = z.infer<typeof instancePhaseDataEncoder>;
+export type DecisionPhase = z.infer<typeof phaseEncoder>;
 export type InstanceData = z.infer<typeof instanceDataWithSchemaEncoder>;
 
 // Re-export shared types from @op/common so consumers can import from either package
