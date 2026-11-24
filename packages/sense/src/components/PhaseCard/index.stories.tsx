@@ -116,8 +116,8 @@ export const Advanceable: Story = {
   ),
 };
 
-// Editing rail: each ready card opens its phase editor; unfinished ones ask
-// for setup, the first of them with the primary button.
+// Editing rail: each ready card links to its phase editor; unfinished ones
+// ask for setup, the first of them with the primary link.
 export const Editing: Story = {
   render: () => (
     <ol className="flex w-96 flex-col gap-2">
@@ -127,7 +127,7 @@ export const Editing: Story = {
           name="Submissions"
           startDate="2026-06-01"
           endDate="2026-06-14"
-          onOpen={() => {}}
+          editLink={<a href="#" />}
           openLabel="Set up Submissions"
         />
       </li>
@@ -138,7 +138,7 @@ export const Editing: Story = {
           startDate="2026-06-15"
           endDate="2026-06-28"
           isNowOpen
-          onOpen={() => {}}
+          editLink={<a href="#" />}
           openLabel="Set up Review"
         />
       </li>
@@ -149,7 +149,7 @@ export const Editing: Story = {
           needsSetup
           isLead
           blurb="Members vote on the shortlisted proposals."
-          onOpen={() => {}}
+          editLink={<a href="#" />}
           openLabel="Set up Voting"
         />
       </li>
@@ -159,7 +159,7 @@ export const Editing: Story = {
           name="Results"
           needsSetup
           blurb="Share the outcome with everyone."
-          onOpen={() => {}}
+          editLink={<a href="#" />}
           openLabel="Set up Results"
         />
       </li>
@@ -177,7 +177,7 @@ export const Setup: Story = {
         needsSetup
         isLead
         blurb="Members vote on the shortlisted proposals."
-        onOpen={() => {}}
+        editLink={<a href="#" />}
         openLabel="Set up Voting"
       />
     </Row>

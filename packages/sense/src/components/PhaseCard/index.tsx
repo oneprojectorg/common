@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactElement } from 'react';
 import { LuArrowRight, LuCheck, LuPlay } from 'react-icons/lu';
 
 import { formatDateRange } from '../../lib/formatting';
@@ -26,18 +27,20 @@ interface PhaseCardProps {
   /** Destination for the current card — the whole row links here. */
   href?: string;
   /**
-   * Opens this phase's editor. When set, the card takes the editing treatment:
-   * the whole card is a button, or it carries a Setup button when `needsSetup`.
+   * The link to this phase's editor, as the element to render, e.g. the app's
+   * `<Link href={editorHref} />`. When set, the card takes the editing
+   * treatment: the whole card is that link, or it carries a Setup link when
+   * `needsSetup`.
    */
-  onOpen?: () => void;
-  /** Accessible name of the open control, e.g. "Set up Review". */
+  editLink?: ReactElement;
+  /** Accessible name of the editor link, e.g. "Set up Review". */
   openLabel?: string;
-  /** The phase is missing what it needs to run. With `onOpen`, the card shows `blurb` and a Setup button. */
+  /** The phase is missing what it needs to run. With `editLink`, the card shows `blurb` and a Setup link. */
   needsSetup?: boolean;
   setupLabel?: string;
   /** Shown in place of the dates on a card that needs setup. */
   blurb?: string;
-  /** The first phase that needs setup: its Setup button takes the primary style. */
+  /** The first phase that needs setup: its Setup link takes the primary style. */
   isLead?: boolean;
 }
 
@@ -48,14 +51,14 @@ interface PhaseCardProps {
  *
  * Two treatments share one set of props. The resting treatment (the decision
  * Overview and the process admin rail) follows `state`. The editing treatment,
- * chosen by passing `onOpen`, opens the phase's editor.
+ * chosen by passing `editLink`, links to the phase's editor.
  */
 function PhaseCard(props: PhaseCardProps) {
-  if (props.onOpen) {
+  if (props.editLink) {
     return props.needsSetup && props.state !== 'current' ? (
-      <SetupPhaseCard {...props} onOpen={props.onOpen} />
+      <SetupPhaseCard {...props} editLink={props.editLink} />
     ) : (
-      <EditablePhaseCard {...props} onOpen={props.onOpen} />
+      <EditablePhaseCard {...props} editLink={props.editLink} />
     );
   }
 
@@ -227,9 +230,9 @@ type EditingPhaseCardProps = PhaseContentProps &
     | 'setupLabel'
     | 'blurb'
     | 'isLead'
-  > & { onOpen: () => void };
+  > & { editLink: ReactElement };
 
-/** Editing, ready: the whole card opens the phase's editor. */
+/** Editing, ready: the whole card links to the phase's editor. */
 function EditablePhaseCard({
   name,
   startDate,
@@ -239,12 +242,14 @@ function EditablePhaseCard({
   isNowOpen,
   nowOpenLabel = 'Now open!',
   openLabel,
-  onOpen,
+  editLink,
 }: EditingPhaseCardProps) {
   return (
     <Button
       variant="bare"
-      onClick={() => onOpen()}
+      nativeButton={false}
+      role={undefined}
+      render={editLink}
       aria-label={openLabel}
       data-slot="phase-card-editable"
       className={cn(
@@ -271,12 +276,12 @@ function EditablePhaseCard({
   );
 }
 
-/** Editing, not ready: name over a blurb, with a Setup button. */
+/** Editing, not ready: name over a blurb, with a Setup link to the phase's editor. */
 function SetupPhaseCard({
   name,
   className,
   openLabel,
-  onOpen,
+  editLink,
   setupLabel = 'Setup',
   blurb,
   isLead,
@@ -296,7 +301,9 @@ function SetupPhaseCard({
       <Button
         size="sm"
         variant={isLead ? 'default' : 'outline'}
-        onClick={() => onOpen()}
+        nativeButton={false}
+        role={undefined}
+        render={editLink}
         aria-label={openLabel}
         className="shrink-0"
       >
