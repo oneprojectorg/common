@@ -386,7 +386,12 @@ async function saveInstanceData({
       });
 
       if (merged.phases) {
-        assertChangedPhaseDates({ existingPhases, phases: merged.phases });
+        for (const phase of getPhasesWithChangedDates({
+          existingPhases,
+          phases: merged.phases,
+        })) {
+          assertPhaseEndsOnOrAfterStart(phase);
+        }
         await reconcilePhases({
           tx,
           processInstanceId: instanceId,
@@ -414,25 +419,23 @@ async function saveInstanceData({
   };
 }
 
-function assertChangedPhaseDates({
+function getPhasesWithChangedDates({
   existingPhases,
   phases,
 }: {
   existingPhases: PhaseInstanceData[];
   phases: PhaseInstanceData[];
-}) {
+}): PhaseInstanceData[] {
   const existingById = new Map(
     existingPhases.map((phase) => [phase.phaseId, phase]),
   );
-  for (const phase of phases) {
+  return phases.filter((phase) => {
     const existing = existingById.get(phase.phaseId);
-    if (
+    return (
       existing?.startDate !== phase.startDate ||
       existing?.endDate !== phase.endDate
-    ) {
-      assertPhaseEndsOnOrAfterStart(phase);
-    }
-  }
+    );
+  });
 }
 
 async function sendQueuedInvites({
