@@ -6,12 +6,7 @@ import { permission } from 'access-zones';
 import { UnauthorizedError } from '../../utils';
 import type { AccessUser } from '../access/cacheKeys';
 import { assertProfileAccess } from '../assert';
-import {
-  type InstanceWithPhases,
-  type Phase,
-  toPhaseInstanceData,
-  toPhases,
-} from './instancePhases';
+import { type Phase, toPhases } from './instancePhases';
 import { listPhases } from './phaseHelpers';
 
 const decisionProfileQueryConfig = {
@@ -37,11 +32,8 @@ type LoadedDecisionProfile = NonNullable<
 >;
 
 type DecisionProfileItem = Omit<LoadedDecisionProfile, 'processInstance'> & {
-  processInstance: InstanceWithPhases<
-    NonNullable<LoadedDecisionProfile['processInstance']>
-  > & {
-    // Not on `phases`: a builder save persists every PhaseInstanceData key.
-    phasesWithIds: Phase[];
+  processInstance: NonNullable<LoadedDecisionProfile['processInstance']> & {
+    readonly phases: Phase[];
   };
 };
 
@@ -113,14 +105,11 @@ export const getDecisionBySlug = async ({
       notMemberMessage: 'User does not have access to this process',
     }),
   ]);
-  const phasesWithIds = toPhases({ instance, storedPhases });
-
   return {
     ...profile,
     processInstance: {
       ...instance,
-      phases: phasesWithIds.map(toPhaseInstanceData),
-      phasesWithIds,
+      phases: toPhases({ instance, storedPhases }),
     },
   };
 };

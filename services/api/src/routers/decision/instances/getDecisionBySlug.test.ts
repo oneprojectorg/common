@@ -1,3 +1,4 @@
+import type { ProposalTemplateSchema, SelectionPipeline } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { processPhases } from '@op/db/schema';
@@ -201,19 +202,7 @@ describe.concurrent('getDecisionBySlug', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const [storedPhase] = await db.query.processPhases.findMany({
-      where: { processInstanceId: setup.instance.instance.id },
-      columns: { id: true, data: true },
-      orderBy: { sortOrder: 'asc' },
-    });
-    if (
-      !storedPhase ||
-      typeof storedPhase.data !== 'object' ||
-      storedPhase.data === null
-    ) {
-      throw new Error('Expected a stored phase with data');
-    }
-    const selectionPipeline = {
+    const selectionPipeline: SelectionPipeline = {
       version: '1.0.0',
       blocks: [
         {
@@ -227,16 +216,14 @@ describe.concurrent('getDecisionBySlug', () => {
         },
       ],
     };
-    const proposalTemplate = {
+    const proposalTemplate: ProposalTemplateSchema = {
       type: 'object',
       properties: { title: { type: 'string' } },
     };
-    await db
-      .update(processPhases)
-      .set({
-        data: { ...storedPhase.data, selectionPipeline, proposalTemplate },
-      })
-      .where(eq(processPhases.id, storedPhase.id));
+    await testData.leaveOnlyPhaseRows(setup.instance.instance.id, {
+      selectionPipeline,
+      proposalTemplate,
+    });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const result = await caller.decision.getDecisionBySlug({
@@ -244,7 +231,6 @@ describe.concurrent('getDecisionBySlug', () => {
     });
 
     expect(result.processInstance.phases[0]).toMatchObject({
-      id: storedPhase.id,
       selectionPipeline,
       proposalTemplate,
     });

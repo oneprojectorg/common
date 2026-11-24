@@ -29,7 +29,7 @@ export const getDecisionBySlugRouter = router({
         user,
       });
 
-      const { profileId, id, phasesWithIds } = result.processInstance;
+      const { profileId, id } = result.processInstance;
       if (!profileId) {
         throw new Error('Decision profile ID is missing');
       }
@@ -47,7 +47,6 @@ export const getDecisionBySlugRouter = router({
         ...result,
         processInstance: {
           ...result.processInstance,
-          phases: phasesWithIds,
           access: fromDecisionBitField(decisionsBitField),
         },
       });
