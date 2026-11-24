@@ -28,6 +28,19 @@ interface VotingPhase {
   rules?: Pick<PhaseRules, 'voting'>;
 }
 
+interface AdvancementPhase {
+  rules?: Pick<PhaseRules, 'advancement'>;
+}
+
+/**
+ * An admin confirms the selection pipeline's outcome before it attaches.
+ * Absent means yes: a phase advances its pipeline's selection on its own only
+ * when it says so.
+ */
+export function needsSelectionApproval(phase: AdvancementPhase): boolean {
+  return phase.rules?.advancement?.needsApproval !== false;
+}
+
 /** Reviewing happens in this phase (`reviews.submit`, legacy `proposals.review`). */
 export function isReviewPhase(phase: { rules?: ReviewPhaseRules }): boolean {
   return (

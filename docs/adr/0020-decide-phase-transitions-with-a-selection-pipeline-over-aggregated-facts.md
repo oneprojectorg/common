@@ -47,9 +47,12 @@ The service stores each proposal's outcome per transition: selected or
 skipped, position, scores, cost and remaining budget. An admin can still
 advance a skipped proposal by hand.
 
-A phase with `selectionNeedsApproval` runs its pipeline and stores the
-outcomes, but advances nothing. The selection screen shows the outcomes
-preselected. The admin's confirmation advances the proposals and marks the
+A phase whose advancement rule needs approval runs its pipeline and stores
+the outcomes, but advances nothing. The flag is `needsApproval` under
+`rules.advancement`, next to the advancement method, since it governs how the
+phase advances rather than what the pipeline computes. A phase that does not
+set it needs approval; only `needsApproval: false` lets a pipeline's selection
+attach on its own. The selection screen shows the outcomes preselected. The admin's confirmation advances the proposals and marks the
 transition as approved, so the screen does not show again.
 
 ## Consequences
@@ -58,7 +61,7 @@ transition as approved, so the screen does not show again.
   aggregator.
 - Results show the stored outcome, so later vote changes do not alter it.
 - A phase that must advance proposals without an admin needs a pipeline.
-- Until an admin approves, a phase with `selectionNeedsApproval` has no
+- Until an admin approves, a phase whose advancement needs approval has no
   proposals, and its review assignments and results wait for approval.
 - Schema validation checks a pipeline's shape, not its meaning. A wrong
   formula selects the wrong set without an error.
