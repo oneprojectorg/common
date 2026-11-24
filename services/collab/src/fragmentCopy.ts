@@ -1,10 +1,18 @@
 import * as Y from 'yjs';
 
+import { writeFragmentText } from './fragmentText';
+
 /** Copies fragment `from` of the source document into fragment `to`. */
 export type FragmentCopy = {
   sourceUpdate: Uint8Array;
   from: string;
   to: string;
+};
+
+/** Writes `text` into fragment `to` as one paragraph. */
+export type FragmentTextWrite = {
+  to: string;
+  text: string;
 };
 
 /**
@@ -14,6 +22,20 @@ export type FragmentCopy = {
 export function encodeFragmentCopies(
   copies: FragmentCopy[],
 ): Uint8Array<ArrayBuffer> | null {
+  return encodeFragments({ copies, texts: [] });
+}
+
+/**
+ * One Yjs update of cloned fragments and written texts. A target takes its
+ * first non-empty copy, else its first non-empty text; null when nothing is filled.
+ */
+export function encodeFragments({
+  copies,
+  texts,
+}: {
+  copies: FragmentCopy[];
+  texts: FragmentTextWrite[];
+}): Uint8Array<ArrayBuffer> | null {
   const sourceDocs = new Map<Uint8Array, Y.Doc>();
   const filledTargets = new Set<string>();
   const target = new Y.Doc();
@@ -43,6 +65,14 @@ export function encodeFragmentCopies(
     }
 
     target.getXmlFragment(to).insert(0, nodes);
+    filledTargets.add(to);
+  }
+
+  for (const { to, text } of texts) {
+    if (filledTargets.has(to) || !text) {
+      continue;
+    }
+    writeFragmentText({ fragment: target.getXmlFragment(to), text });
     filledTargets.add(to);
   }
 
