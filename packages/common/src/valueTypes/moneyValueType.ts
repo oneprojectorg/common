@@ -1,5 +1,5 @@
 import { type MoneyAmount, moneyAmountSchema } from '../money';
-import { sumAmounts } from '../services/decision/fieldUnit';
+import { isSameUnit, sumAmounts } from '../services/decision/fieldUnit';
 import type { ValueType } from './valueType';
 
 // Strict, so an object that only has an amount and a currency among other
@@ -11,7 +11,12 @@ export const moneyValueType = {
     return moneyValueSchema.validate(value) ? value : undefined;
   },
   add(a, b) {
-    if (a.currency !== b.currency) {
+    if (
+      !isSameUnit(
+        { kind: 'currency', code: a.currency },
+        { kind: 'currency', code: b.currency },
+      )
+    ) {
       return undefined;
     }
     return { amount: sumAmounts([a.amount, b.amount]), currency: a.currency };
