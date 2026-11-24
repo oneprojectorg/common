@@ -41,19 +41,17 @@ describe('isPhaseReady', () => {
     ).toBe(false);
   });
 
-  it('counts only questions the admin wrote, not the system fields', () => {
+  it('does not count the title as a question', () => {
     const collecting = { ...dated, rules: { proposals: { submit: true } } };
 
     expect(
       isPhaseReady(collecting, {
-        proposalTemplate: {
-          properties: { title: {}, budget: {}, category: {} },
-        },
+        proposalTemplate: { properties: { title: {} } },
       }),
     ).toBe(false);
     expect(
       isPhaseReady(collecting, {
-        proposalTemplate: { properties: { title: {}, summary: {} } },
+        proposalTemplate: { properties: { title: {}, budget: {} } },
       }),
     ).toBe(true);
   });

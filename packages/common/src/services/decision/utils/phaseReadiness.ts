@@ -1,4 +1,3 @@
-import { SYSTEM_FIELD_KEYS } from '../getProposalTemplateFieldOrder';
 import type { PhaseRules } from '../schemas/types';
 import { isDevelopPhase, isReviewPhase, isSubmitPhase } from './phaseSettings';
 
@@ -46,7 +45,5 @@ function hasFields(template: FieldsTemplate): boolean {
 }
 
 function hasQuestions(template: FieldsTemplate): boolean {
-  return Object.keys(template?.properties ?? {}).some(
-    (key) => !SYSTEM_FIELD_KEYS.has(key),
-  );
+  return Object.keys(template?.properties ?? {}).some((key) => key !== 'title');
 }
