@@ -218,8 +218,8 @@ export const buildDevelopPrefill = async ({
 };
 
 /**
- * Specific to `budget` on purpose: it makes the bare number of an `add` rule
- * money. A general alternative, value types in the evaluator, is considered.
+ * Makes any number in `budget` money; specific to `budget` on purpose, as
+ * value types in the evaluator are deferred.
  */
 const withMoneyBudget = (
   data: Record<string, unknown>,

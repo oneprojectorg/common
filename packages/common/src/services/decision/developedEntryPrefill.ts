@@ -116,7 +116,7 @@ export async function getDevelopedEntryPrefill({
         developPhaseId: developPhase.phaseId,
         targetKeys: Object.keys(data),
       }),
-      texts: getFragmentTexts({ data, proposalData }),
+      texts: getFragmentTexts(data),
       sourceProposalIds,
     });
   } catch (error) {
@@ -235,32 +235,14 @@ function getFragmentRules({
 
 /**
  * A string can be rich text, which one paragraph would misrepresent, so only
- * the other values are written, in the JSON the field components store.
- * A system field writes its stored value, so the document and the data agree.
+ * the other values are written, as the JSON the field components store.
  */
-function getFragmentTexts({
-  data,
-  proposalData,
-}: {
-  data: Record<string, unknown>;
-  proposalData: ProposalDataInput;
-}): FragmentTextWrite[] {
-  const storedSystemValues = new Map<string, unknown>([
-    ['title', proposalData.title],
-    ['category', proposalData.category],
-    ['budget', proposalData.budget],
-    ['location', proposalData.location],
-  ]);
-
-  return Object.entries(data).flatMap(([to, value]) => {
-    if (value == null || typeof value === 'string') {
-      return [];
-    }
-    const written = storedSystemValues.has(to)
-      ? storedSystemValues.get(to)
-      : value;
-    return written == null ? [] : [{ to, text: JSON.stringify(written) }];
-  });
+function getFragmentTexts(data: Record<string, unknown>): FragmentTextWrite[] {
+  return Object.entries(data).flatMap(([to, value]) =>
+    value == null || typeof value === 'string'
+      ? []
+      : [{ to, text: JSON.stringify(value) }],
+  );
 }
 
 /** A target that a fragment rule copies keeps the copy over its written text. */
