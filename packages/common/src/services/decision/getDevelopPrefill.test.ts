@@ -902,7 +902,7 @@ describe.concurrent('getDevelopPrefill', () => {
       answers: costs(values),
     });
 
-    it('given one proposal whose two feasibility reviews give the same total, when the prefill is built, then the budget is that total', async ({
+    it('given one proposal with one feasibility review and an equity review, when the prefill is built, then the budget is the feasibility total', async ({
       task,
       onTestFinished,
     }) => {
@@ -916,13 +916,7 @@ describe.concurrent('getDevelopPrefill', () => {
           phaseId: FEASIBILITY,
           reviewData: answers({ design: 10, construction: 20, contingency: 5 }),
         }),
-        createReview({
-          proposalId: garden.id,
-          phaseId: FEASIBILITY,
-          reviewData: answers({ design: 0, construction: 30, contingency: 5 }),
-          reviewer: 1,
-        }),
-        // An equity review is of another source schema and is not summed.
+        // An equity review is of another source schema and is not counted.
         createReview({
           proposalId: garden.id,
           phaseId: EQUITY,
@@ -950,6 +944,45 @@ describe.concurrent('getDevelopPrefill', () => {
           budget: { amount: 35, currency: DEFAULT_MONEY_CURRENCY },
         },
       });
+    });
+
+    it('given one proposal whose two feasibility reviews give the same total, when the prefill is built, then the budget stays empty and the copy rules still apply', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instanceId, createSubmittedProposal, createReview } =
+        await seedDevelopDecision(testData);
+      const garden = await createSubmittedProposal({ title: 'Garden' });
+      const reviews = await Promise.all([
+        createReview({
+          proposalId: garden.id,
+          phaseId: FEASIBILITY,
+          reviewData: answers({ design: 10, construction: 20, contingency: 5 }),
+        }),
+        createReview({
+          proposalId: garden.id,
+          phaseId: FEASIBILITY,
+          reviewData: answers({ design: 10, construction: 20, contingency: 5 }),
+          reviewer: 1,
+        }),
+      ]);
+
+      const result = await getDevelopPrefill({
+        instanceId,
+        inputs: [
+          { type: 'proposal', phaseId: SUBMISSION, id: garden.id },
+          ...reviews.map((review) => ({
+            type: 'review' as const,
+            id: review.id,
+          })),
+        ],
+        target: { type: 'proposal', phaseId: BALLOT },
+        mappings: costTotalMappings,
+        user: setup.user,
+      });
+
+      expect(result).toStrictEqual({ data: { title: 'Garden' } });
     });
 
     it('given two proposals whose reviews give the same total, when the prefill is built, then the budget stays empty and the copy rules still apply', async ({

@@ -62,3 +62,14 @@ export function getCurrencySymbol(currency: string): string {
     .find(({ type }) => type === 'currency');
   return part?.value ?? currency;
 }
+
+/** Rounds an amount to its currency's minor unit, which drops float noise. */
+export function roundToMinorUnit({ amount, currency }: MoneyAmount): number {
+  const digits = isValidCurrencyCode(currency)
+    ? new Intl.NumberFormat('en', {
+        style: 'currency',
+        currency,
+      }).resolvedOptions().maximumFractionDigits
+    : undefined;
+  return Number(amount.toFixed(digits ?? 2));
+}

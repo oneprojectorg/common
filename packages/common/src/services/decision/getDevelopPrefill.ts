@@ -4,7 +4,7 @@ import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
-import { DEFAULT_MONEY_CURRENCY } from '../../money';
+import { DEFAULT_MONEY_CURRENCY, roundToMinorUnit } from '../../money';
 import {
   type MappingInput,
   type MappingResult,
@@ -192,14 +192,24 @@ export const buildDevelopPrefill = async ({
     readContext: getProposalReadContext({ user, decisionRoles }),
   });
 
-  // Two sources with equal totals would fill one source's total, and how the
-  // totals of several sources combine is not decided yet.
+  // An `add` rule runs only on one source proposal and one input of its source
+  // schema: how the totals of several inputs combine is not decided yet.
   const sourceCount = inputs.filter(
     (input) => input.type === 'proposal',
   ).length;
+  const countInputsOf = (schema: SchemaRef) =>
+    mappingInputs.filter(
+      (input) =>
+        input.schema.type === schema.type &&
+        input.schema.phaseId === schema.phaseId,
+    ).length;
 
   const { data } = mapToSchema({
-    mappings: sourceCount > 1 ? getCopyRules(mappings) : mappings,
+    mappings: mappings.map((mapping) =>
+      sourceCount > 1 || countInputsOf(mapping.from) > 1
+        ? getCopyRule(mapping)
+        : mapping,
+    ),
     inputs: mappingInputs,
     targetSchema,
   });
@@ -218,23 +228,19 @@ const withMoneyBudget = (
     return data;
   }
   const currency = DEFAULT_MONEY_CURRENCY;
-  // Rounds to the currency's minor unit, which drops the float noise of a sum.
-  const digits =
-    new Intl.NumberFormat('en', {
-      style: 'currency',
-      currency,
-    }).resolvedOptions().maximumFractionDigits ?? 2;
   return {
     ...data,
-    budget: { amount: Number(data.budget.toFixed(digits)), currency },
+    budget: {
+      amount: roundToMinorUnit({ amount: data.budget, currency }),
+      currency,
+    },
   };
 };
 
-const getCopyRules = (mappings: SchemaMapping[]): SchemaMapping[] =>
-  mappings.map((mapping) => ({
-    ...mapping,
-    fields: mapping.fields.filter((field) => typeof field.from === 'string'),
-  }));
+const getCopyRule = (mapping: SchemaMapping): SchemaMapping => ({
+  ...mapping,
+  fields: mapping.fields.filter((field) => typeof field.from === 'string'),
+});
 
 const assertValidRequest = (request: {
   inputs: DevelopPrefillInput[];

@@ -221,18 +221,20 @@ const createCostReview = async ({
   reviewerProfileId,
   answers,
   state = ProposalReviewState.SUBMITTED,
+  phaseId = 'initial',
 }: {
   instanceId: string;
   proposalId: string;
   reviewerProfileId: string;
   answers: Record<string, unknown>;
   state?: ProposalReviewState;
+  phaseId?: string;
 }) => {
   const assignment = await createReviewAssignment({
     processInstanceId: instanceId,
     proposalId,
     reviewerProfileId,
-    phaseId: 'initial',
+    phaseId,
   });
   return createProposalReview({
     assignmentId: assignment.id,
@@ -1139,7 +1141,7 @@ describe.concurrent('createDevelopedProposal', () => {
       };
     };
 
-    it('prefills the budget with the cost total of the submitted review of the source, rounded to the cent', async ({
+    it('prefills the budget with the cost total of the one submitted review of the source, rounded to the cent, past a draft review, a review of another phase and a review of another proposal', async ({
       task,
       onTestFinished,
     }) => {
@@ -1170,6 +1172,13 @@ describe.concurrent('createDevelopedProposal', () => {
         }),
         createCostReview({
           instanceId,
+          proposalId: source.id,
+          reviewerProfileId: reviewers[1],
+          answers: { cost_design: usd(7777) },
+          phaseId: 'final',
+        }),
+        createCostReview({
+          instanceId,
           proposalId: unrelated.id,
           reviewerProfileId: reviewers[0],
           answers: { cost_construction: usd(5000) },
@@ -1180,6 +1189,33 @@ describe.concurrent('createDevelopedProposal', () => {
         amount: 390000,
         currency: DEFAULT_MONEY_CURRENCY,
       });
+    });
+
+    it('leaves the budget empty when the source has two submitted reviews', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instanceId, sources, reviewers, createDraft } =
+        await setUpCostTotal({ testData, sourceCount: 1 });
+      const [source] = sources;
+      if (!source) {
+        throw new Error('Expected a source');
+      }
+      await Promise.all(
+        reviewers.map((reviewerProfileId) =>
+          createCostReview({
+            instanceId,
+            proposalId: source.id,
+            reviewerProfileId,
+            answers: { cost_construction: usd(5000) },
+          }),
+        ),
+      );
+
+      await expect(createDraft([source.id])).resolves.not.toHaveProperty(
+        'budget',
+      );
     });
 
     it('leaves the budget of a merged entry empty, also when its sources give the same total', async ({

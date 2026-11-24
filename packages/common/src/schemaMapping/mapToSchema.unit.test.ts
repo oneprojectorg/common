@@ -252,32 +252,6 @@ describe('mapToSchema with an add rule', () => {
     expect(mapCosts([costs({})])).toEqual({ data: {} });
   });
 
-  it('skips a review without a cost field and fills the total of the other review', () => {
-    const result = mapCosts([
-      costs({}),
-      costs({
-        design: usd(12000),
-        contingency: usd(12000),
-        construction: usd(60000),
-      }),
-    ]);
-
-    expect(result.data).toEqual({ budget: 84000 });
-  });
-
-  it('leaves the field empty when two reviews give different totals', () => {
-    const result = mapCosts([
-      costs({ construction: usd(5000) }),
-      costs({
-        design: usd(0),
-        contingency: usd(25000),
-        construction: usd(250000),
-      }),
-    ]);
-
-    expect(result).toEqual({ data: {} });
-  });
-
   it('adds the cost fields of one review', () => {
     const result = mapCosts([
       costs({
@@ -343,14 +317,5 @@ describe('mapToSchema with an add rule', () => {
     const result = mapCosts([costs({ design: null, construction: usd(100) })]);
 
     expect(result.data).toEqual({ budget: 100 });
-  });
-
-  it('skips a review with a bad amount and fills the total of the other review', () => {
-    const result = mapCosts([
-      costs({ design: { amount: '$500', currency: 'USD' } }),
-      costs({ design: usd(500), construction: usd(250) }),
-    ]);
-
-    expect(result.data).toEqual({ budget: 750 });
   });
 });

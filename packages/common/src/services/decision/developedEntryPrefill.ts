@@ -71,7 +71,6 @@ export async function getDevelopedEntryPrefill({
     const reviewInputs = await getSubmittedReviewInputs({
       instanceId: instance.id,
       mappings,
-      developPhaseId: developPhase.phaseId,
       sourceProposalIds,
     });
     ({ data } = await buildDevelopPrefill({
@@ -129,27 +128,13 @@ export async function getDevelopedEntryPrefill({
 async function getSubmittedReviewInputs({
   instanceId,
   mappings,
-  developPhaseId,
   sourceProposalIds,
 }: {
   instanceId: string;
   mappings: SchemaMapping[];
-  developPhaseId: string;
   sourceProposalIds: string[];
 }): Promise<DevelopPrefillInput[]> {
-  const reviewPhaseIds = [
-    ...new Set(
-      mappings
-        .filter(
-          (mapping) =>
-            mapping.from.type === 'review' &&
-            mapping.to.type === 'proposal' &&
-            mapping.to.phaseId === developPhaseId,
-        )
-        .map((mapping) => mapping.from.phaseId),
-    ),
-  ];
-  if (reviewPhaseIds.length === 0) {
+  if (!mappings.some((mapping) => mapping.from.type === 'review')) {
     return [];
   }
 
@@ -159,7 +144,6 @@ async function getSubmittedReviewInputs({
       assignment: {
         processInstanceId: instanceId,
         proposalId: { in: sourceProposalIds },
-        phaseId: { in: reviewPhaseIds },
       },
     },
     columns: { id: true },
