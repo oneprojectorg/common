@@ -608,9 +608,9 @@ export const phaseDataEncoder = instancePhaseDataEncoder
   });
 
 /** A phase with the id the phase endpoints take; `null` while the decision still reads instanceData.phases. */
-const phaseEncoder = instancePhaseDataEncoder.extend({
-  ...phaseDataEncoder.pick({ selectionPipeline: true, proposalTemplate: true })
-    .shape,
+const phaseEncoder = phaseDataEncoder.extend({
+  phaseId: z.string(),
+  name: z.string().optional(),
   id: z.uuid().nullable(),
 });
 
