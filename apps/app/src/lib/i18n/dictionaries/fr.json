@@ -2070,7 +2070,8 @@
       "processNameTooShort": "Le nom doit comporter au moins {min} caractères.",
       "saveError": "Votre modification n’a pas été enregistrée.",
       "addBannerAction": "Ajouter une bannière",
-      "launchAction": "Lancer le processus"
+      "launchAction": "Lancer le processus",
+      "editPhases": "Modifier les phases"
     }
   },
   "loadingProgress": "En train de charger…",

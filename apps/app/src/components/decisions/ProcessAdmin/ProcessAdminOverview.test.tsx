@@ -322,6 +322,28 @@ describe('ProcessAdminOverview', () => {
     expect(screen.queryByRole('link', { name: /Submit/ })).toBeNull();
   });
 
+  it('switches a live process rail into editing and back', async () => {
+    seed({ phases: [phase, votePhase], currentStateId: 'vote' });
+    renderOverview(true);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Edit phases' }));
+    expect(
+      screen.getByRole('link', { name: /Submit/ }).getAttribute('href'),
+    ).toBe('#');
+
+    await user.click(screen.getByRole('button', { name: 'Done' }));
+    expect(screen.queryByRole('link', { name: /Submit/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Edit phases' })).toBeTruthy();
+  });
+
+  it('gives a draft no Edit button, as its rail is always editing', () => {
+    seed({ status: ProcessStatus.DRAFT, phases: [phase] });
+    renderOverview();
+
+    expect(screen.queryByRole('button', { name: 'Edit phases' })).toBeNull();
+  });
+
   it('links to the proposals once the process is open', () => {
     seed({ phases: [phase] });
     renderOverview(true);

@@ -2070,7 +2070,8 @@
       "processNameTooShort": "নামে কমপক্ষে {min}টি অক্ষর থাকতে হবে।",
       "saveError": "আপনার পরিবর্তন সংরক্ষণ করা হয়নি।",
       "addBannerAction": "ব্যানার যোগ করুন",
-      "launchAction": "প্রক্রিয়া চালু করুন"
+      "launchAction": "প্রক্রিয়া চালু করুন",
+      "editPhases": "পর্যায়গুলি সম্পাদনা করুন"
     }
   },
   "loadingProgress": "লোড হচ্ছে...",

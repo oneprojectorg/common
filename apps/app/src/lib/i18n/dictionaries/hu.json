@@ -2070,7 +2070,8 @@
       "processNameTooShort": "A névnek legalább {min} karakterből kell állnia.",
       "saveError": "A módosítás nem lett mentve.",
       "addBannerAction": "Banner hozzáadása",
-      "launchAction": "Folyamat indítása"
+      "launchAction": "Folyamat indítása",
+      "editPhases": "Szerkesztés: fázisok"
     }
   },
   "loadingProgress": "Betöltés...",

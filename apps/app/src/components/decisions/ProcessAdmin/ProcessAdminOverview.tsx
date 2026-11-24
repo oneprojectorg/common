@@ -6,6 +6,7 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
+import { Button } from '@op/sense/Button';
 import {
   Empty,
   EmptyDescription,
@@ -21,10 +22,11 @@ import {
   Suspense,
   useEffect,
   useRef,
+  useState,
   type ComponentProps,
   type ReactNode,
 } from 'react';
-import { LuArrowLeft, LuTriangleAlert } from 'react-icons/lu';
+import { LuArrowLeft, LuPencil, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
@@ -138,7 +140,7 @@ function ProcessAdminOverviewSuspense({
               phases={instance.phases}
               currentStateId={instance.currentStateId}
               isOpen={isOpen}
-              isEditing={status === 'draft'}
+              isDraft={status === 'draft'}
             />
             {instance.profileId ? (
               <APIErrorBoundary
@@ -310,16 +312,40 @@ function ProcessAdminPhaseRail({
   phases,
   currentStateId,
   isOpen,
-  isEditing,
+  isDraft,
 }: Pick<
   ComponentProps<typeof ProcessAdminPhaseTimeline>,
-  'slug' | 'phases' | 'currentStateId' | 'isEditing'
-> & { isOpen: boolean }) {
+  'slug' | 'phases' | 'currentStateId'
+> & { isOpen: boolean; isDraft: boolean }) {
   const t = useTranslations('decisions');
+  const tShared = useTranslations();
+  const [isEditingLaunched, setIsEditingLaunched] = useState(false);
+  const isEditing = isDraft || isEditingLaunched;
 
   return (
     <section className="flex flex-col gap-4">
-      <Header2 className="text-label">{t('processOverviewHeading')}</Header2>
+      <div className="flex items-center justify-between gap-4">
+        <Header2 className="text-label">{t('processOverviewHeading')}</Header2>
+        {!isDraft && phases.length > 0 ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsEditingLaunched((editing) => !editing)}
+            aria-label={
+              isEditingLaunched ? undefined : t('processAdmin.editPhases')
+            }
+          >
+            {isEditingLaunched ? (
+              tShared('Done')
+            ) : (
+              <>
+                <LuPencil data-icon="inline-start" aria-hidden />
+                {tShared('Edit')}
+              </>
+            )}
+          </Button>
+        ) : null}
+      </div>
       {phases.length > 0 ? (
         <ProcessAdminPhaseTimeline
           slug={slug}

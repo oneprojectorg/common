@@ -2070,7 +2070,8 @@
       "processNameTooShort": "Magacu waa inuu ka koobnaado ugu yaraan {min} xaraf.",
       "saveError": "Isbeddelkaaga lama kaydin.",
       "addBannerAction": "Ku dar bandhig",
-      "launchAction": "Billow habraaca"
+      "launchAction": "Billow habraaca",
+      "editPhases": "Wax ka bedel wejiyada"
     }
   },
   "loadingProgress": "Waa la soo rarayaa...",
