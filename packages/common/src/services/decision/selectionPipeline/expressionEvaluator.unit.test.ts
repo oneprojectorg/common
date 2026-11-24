@@ -94,14 +94,26 @@ describe('createExpressionEvaluator add', () => {
     expect(result).toEqual({ meters: 5 });
   });
 
-  it('does not give its value types to a later evaluateExpression call with the same context', () => {
-    const shared = context();
+  it('does not change the context object of the caller', () => {
+    const callerContext = context();
     createExpressionEvaluator({ valueTypes: [moneyValueType] })(
       add(usd(5), usd(2)),
-      shared,
+      callerContext,
     );
 
-    expect(evaluateExpression(add(usd(5), usd(2)), shared)).toBe(0);
+    expect(callerContext).not.toHaveProperty('valueTypes');
+  });
+
+  it('keeps the value types in a copied context for a nested add', () => {
+    const result = evaluateExpression(
+      {
+        operator: 'add',
+        operands: [add(usd(5), usd(2)), { value: usd(3) }],
+      },
+      { ...context(), valueTypes: [moneyValueType] },
+    );
+
+    expect(result).toEqual(usd(10));
   });
 
   it.each([
