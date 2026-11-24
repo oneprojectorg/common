@@ -1,5 +1,6 @@
 'use client';
 
+import { useRender } from '@base-ui/react/use-render';
 import type { ReactElement } from 'react';
 import { LuArrowRight, LuCheck, LuPlay } from 'react-icons/lu';
 
@@ -58,11 +59,12 @@ interface PhaseCardProps {
  * chosen by passing `editLink`, links to the phase's editor.
  */
 function PhaseCard(props: PhaseCardProps) {
-  if (props.editLink) {
+  const { editLink } = props;
+  if (editLink) {
     return props.needsSetup && props.state !== 'current' ? (
-      <SetupPhaseCard {...props} editLink={props.editLink} />
+      <SetupPhaseCard {...props} editLink={editLink} />
     ) : (
-      <EditablePhaseCard {...props} editLink={props.editLink} />
+      <EditablePhaseCard {...props} editLink={editLink} />
     );
   }
 
@@ -225,16 +227,10 @@ function UpcomingPhaseCard({
   );
 }
 
-type EditingPhaseCardProps = PhaseContentProps &
-  Pick<
-    PhaseCardProps,
-    | 'isNowOpen'
-    | 'nowOpenLabel'
-    | 'setupLabel'
-    | 'setupAriaLabel'
-    | 'blurb'
-    | 'isLead'
-  > & { editLink: ReactElement };
+type EditingPhaseCardProps = PhaseCardProps & { editLink: ReactElement };
+
+const editingCardClassName =
+  'flex items-center justify-between gap-4 rounded-lg p-4 ring-1 ring-border ring-inset';
 
 /** Editing, ready: the whole card links to the phase's editor. */
 function EditablePhaseCard({
@@ -247,35 +243,37 @@ function EditablePhaseCard({
   nowOpenLabel = 'Now open!',
   editLink,
 }: EditingPhaseCardProps) {
-  return (
-    <Button
-      variant="bare"
-      nativeButton={false}
-      role={undefined}
-      render={editLink}
-      data-slot="phase-card-editable"
-      className={cn(
-        'flex w-full items-center justify-between gap-4 rounded-lg p-4 text-start whitespace-normal ring-1 ring-border ring-inset hover:bg-muted',
+  return useRender({
+    render: editLink,
+    defaultTagName: 'a',
+    props: {
+      'data-slot': 'phase-card-editable',
+      className: cn(
+        editingCardClassName,
+        'transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
         className,
-      )}
-    >
-      <span className="flex min-w-0 flex-col gap-2">
-        {isNowOpen ? <Badge variant="outline">{nowOpenLabel}</Badge> : null}
-        <span className="flex min-w-0 flex-col">
-          <PhaseName name={name} as="span" />
-          <span className="min-h-5 text-sm text-muted-foreground">
-            {formatDateRange(startDate, endDate, locale)}
+      ),
+      children: (
+        <>
+          <div className="flex min-w-0 flex-col gap-2">
+            {isNowOpen ? <Badge variant="outline">{nowOpenLabel}</Badge> : null}
+            <div className="flex min-w-0 flex-col">
+              <PhaseName name={name} />
+              <span className="min-h-5 text-sm text-muted-foreground">
+                {formatDateRange(startDate, endDate, locale)}
+              </span>
+            </div>
+          </div>
+          <span
+            aria-hidden
+            className="flex size-8 shrink-0 items-center justify-center"
+          >
+            <LuArrowRight className="size-4 rtl:-scale-x-100" />
           </span>
-        </span>
-      </span>
-      <span
-        aria-hidden
-        className="flex size-8 shrink-0 items-center justify-center"
-      >
-        <LuArrowRight className="size-4 rtl:-scale-x-100" />
-      </span>
-    </Button>
-  );
+        </>
+      ),
+    },
+  });
 }
 
 /** Editing, not ready: name over a blurb, with a Setup link to the phase's editor. */
@@ -291,10 +289,7 @@ function SetupPhaseCard({
   return (
     <div
       data-slot="phase-card-setup"
-      className={cn(
-        'flex items-center justify-between gap-4 rounded-lg p-4 ring-1 ring-border ring-inset',
-        className,
-      )}
+      className={cn(editingCardClassName, className)}
     >
       <div className="flex min-w-0 flex-col">
         <PhaseName name={name} />
@@ -339,17 +334,11 @@ function PhaseDates({
   );
 }
 
-function PhaseName({
-  name,
-  as: Tag = 'p',
-}: {
-  name: string;
-  as?: 'p' | 'span';
-}) {
+function PhaseName({ name }: { name: string }) {
   return (
-    <Tag className="block font-serif text-title">
+    <p className="font-serif text-title">
       <bdi>{name}</bdi>
-    </Tag>
+    </p>
   );
 }
 
