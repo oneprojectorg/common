@@ -66,8 +66,8 @@ export const postsToOrganizations = pgTable(
     // Lets the org feed read the page straight from the index without a sort.
     index('posts_to_organizations_org_id_created_at_post_id_idx').on(
       table.organizationId,
-      table.createdAt.desc(),
-      table.postId.desc(),
+      table.createdAt.desc().nullsFirst(),
+      table.postId.desc().nullsFirst(),
     ),
   ],
 );
@@ -95,8 +95,8 @@ export const postsToProfiles = pgTable(
     // Supersedes the single-column profile_id idx (same leading column).
     index('posts_to_profiles_profile_id_created_at_post_id_idx').on(
       table.profileId,
-      table.createdAt.desc(),
-      table.postId.desc(),
+      table.createdAt.desc().nullsFirst(),
+      table.postId.desc().nullsFirst(),
     ),
   ],
 );

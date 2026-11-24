@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "ced04326-e8c7-4b93-b3ec-057b153bb8a7",
+  "id": "5768cbf6-1f31-40e7-8617-a4e092ce247c",
   "prevIds": [
     "147d002c-4aec-4154-ae1c-4ef509578617"
   ],
@@ -11849,14 +11849,14 @@
           "value": "created_at",
           "isExpression": false,
           "asc": false,
-          "nullsFirst": false,
+          "nullsFirst": true,
           "opclass": null
         },
         {
           "value": "post_id",
           "isExpression": false,
           "asc": false,
-          "nullsFirst": false,
+          "nullsFirst": true,
           "opclass": null
         }
       ],
@@ -11905,14 +11905,14 @@
           "value": "created_at",
           "isExpression": false,
           "asc": false,
-          "nullsFirst": false,
+          "nullsFirst": true,
           "opclass": null
         },
         {
           "value": "post_id",
           "isExpression": false,
           "asc": false,
-          "nullsFirst": false,
+          "nullsFirst": true,
           "opclass": null
         }
       ],

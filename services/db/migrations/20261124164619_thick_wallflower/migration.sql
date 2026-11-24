@@ -52,6 +52,10 @@ CREATE TABLE "notifications" (
 );
 --> statement-breakpoint
 ALTER TABLE "notifications" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+DROP INDEX "posts_to_organizations_org_id_created_at_post_id_idx";--> statement-breakpoint
+CREATE INDEX "posts_to_organizations_org_id_created_at_post_id_idx" ON "posts_to_organizations" ("organization_id","created_at" DESC,"post_id" DESC);--> statement-breakpoint
+DROP INDEX "posts_to_profiles_profile_id_created_at_post_id_idx";--> statement-breakpoint
+CREATE INDEX "posts_to_profiles_profile_id_created_at_post_id_idx" ON "posts_to_profiles" ("profile_id","created_at" DESC,"post_id" DESC);--> statement-breakpoint
 CREATE UNIQUE INDEX "activities_outbox_id_idx" ON "activities" ("outbox_id");--> statement-breakpoint
 CREATE INDEX "activities_organization_id_created_at_id_idx" ON "activities" ("organization_id","created_at" DESC,"id" DESC);--> statement-breakpoint
 CREATE INDEX "activities_process_instance_id_created_at_id_idx" ON "activities" ("process_instance_id","created_at" DESC,"id" DESC);--> statement-breakpoint
