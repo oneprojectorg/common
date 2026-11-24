@@ -22,7 +22,6 @@ export function ProcessAdminPhaseTimeline({
 }: {
   slug: string;
   phases: DecisionPhase[];
-  /** Where a phase without its own form falls back to the decision's. */
   templates: PhaseTemplates;
   currentStateId: string | null | undefined;
   /** Before the first phase starts, every phase shows as upcoming. */

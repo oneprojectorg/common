@@ -17,7 +17,6 @@ type SetupBlurbKey =
   | 'setupBlurbVote'
   | 'setupBlurbResults';
 
-/** A phase is ready once both its dates are set and every form it collects has a field. */
 export function isPhaseReady(
   phase: DecisionPhase,
   templates: PhaseTemplates,
