@@ -38,16 +38,14 @@ describe('PhaseCard', () => {
   });
 
   it('links the whole card to the editor when the phase is ready', () => {
-    renderCard({ editLink, openLabel: 'Set up Review' });
+    renderCard({ editLink });
 
-    const card = screen.getByRole('link', { name: 'Set up Review' });
+    const card = screen.getByRole('link', { name: /Review/ });
     expect(card.getAttribute('href')).toBe(EDITOR);
-    expect(card.textContent).toContain('Review');
-    expect(card.textContent).toMatch(/Jun/);
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('tags a ready current card as open', () => {
+  it('names the ready card from its status, name and dates', () => {
     renderCard({
       state: 'current',
       editLink,
@@ -55,21 +53,21 @@ describe('PhaseCard', () => {
       nowOpenLabel: 'Open now',
     });
 
-    expect(screen.getByText('Open now')).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: /^Open now\s*Review\s*Jun 15.*Jun 28/ }),
+    ).toBeTruthy();
   });
 
   it('offers a Setup link and the blurb when the phase needs setup', () => {
     renderCard({
       editLink,
       needsSetup: true,
-      openLabel: 'Set up Review',
       setupLabel: 'Configure',
       blurb: 'Collect ideas',
     });
 
-    const setup = screen.getByRole('link', { name: 'Set up Review' });
+    const setup = screen.getByRole('link', { name: 'Configure Review' });
     expect(setup.getAttribute('href')).toBe(EDITOR);
-    expect(setup.textContent).toBe('Configure');
     expect(screen.getByText('Collect ideas')).toBeTruthy();
     expect(screen.queryByText(/Jun/)).toBeNull();
   });
@@ -77,17 +75,17 @@ describe('PhaseCard', () => {
   it('gives the lead setup card the primary link', () => {
     renderCard({ editLink, needsSetup: true, isLead: true });
 
-    expect(screen.getByRole('link', { name: 'Setup' }).className).toContain(
-      'bg-primary',
-    );
+    expect(
+      screen.getByRole('link', { name: 'Setup Review' }).className,
+    ).toContain('bg-primary');
   });
 
   it('gives the other setup cards the outline link', () => {
     renderCard({ editLink, needsSetup: true });
 
-    expect(screen.getByRole('link', { name: 'Setup' }).className).toContain(
-      'border-input',
-    );
+    expect(
+      screen.getByRole('link', { name: 'Setup Review' }).className,
+    ).toContain('border-input');
   });
 
   it('never asks the current phase for setup', () => {
@@ -95,12 +93,9 @@ describe('PhaseCard', () => {
       state: 'current',
       editLink,
       needsSetup: true,
-      openLabel: 'Set up Review',
     });
 
     expect(screen.queryByText('Setup')).toBeNull();
-    expect(
-      screen.getByRole('link', { name: 'Set up Review' }).textContent,
-    ).toMatch(/Jun/);
+    expect(screen.getByRole('link', { name: /Review.*Jun/ })).toBeTruthy();
   });
 });

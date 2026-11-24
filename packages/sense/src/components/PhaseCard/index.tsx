@@ -33,8 +33,6 @@ interface PhaseCardProps {
    * `needsSetup`.
    */
   editLink?: ReactElement;
-  /** Accessible name of the editor link, e.g. "Set up Review". */
-  openLabel?: string;
   /** The phase is missing what it needs to run. With `editLink`, the card shows `blurb` and a Setup link. */
   needsSetup?: boolean;
   setupLabel?: string;
@@ -224,12 +222,7 @@ function UpcomingPhaseCard({
 type EditingPhaseCardProps = PhaseContentProps &
   Pick<
     PhaseCardProps,
-    | 'openLabel'
-    | 'isNowOpen'
-    | 'nowOpenLabel'
-    | 'setupLabel'
-    | 'blurb'
-    | 'isLead'
+    'isNowOpen' | 'nowOpenLabel' | 'setupLabel' | 'blurb' | 'isLead'
   > & { editLink: ReactElement };
 
 /** Editing, ready: the whole card links to the phase's editor. */
@@ -241,7 +234,6 @@ function EditablePhaseCard({
   className,
   isNowOpen,
   nowOpenLabel = 'Now open!',
-  openLabel,
   editLink,
 }: EditingPhaseCardProps) {
   return (
@@ -250,7 +242,6 @@ function EditablePhaseCard({
       nativeButton={false}
       role={undefined}
       render={editLink}
-      aria-label={openLabel}
       data-slot="phase-card-editable"
       className={cn(
         'flex w-full items-center justify-between gap-4 rounded-lg p-4 text-start whitespace-normal ring-1 ring-border ring-inset hover:bg-muted',
@@ -280,7 +271,6 @@ function EditablePhaseCard({
 function SetupPhaseCard({
   name,
   className,
-  openLabel,
   editLink,
   setupLabel = 'Setup',
   blurb,
@@ -304,7 +294,7 @@ function SetupPhaseCard({
         nativeButton={false}
         role={undefined}
         render={editLink}
-        aria-label={openLabel}
+        aria-label={`${setupLabel} ${name}`}
         className="shrink-0"
       >
         {setupLabel}

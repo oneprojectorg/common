@@ -128,7 +128,6 @@ export const Editing: Story = {
           startDate="2026-06-01"
           endDate="2026-06-14"
           editLink={<a href="#" />}
-          openLabel="Set up Submissions"
         />
       </li>
       <li>
@@ -139,7 +138,6 @@ export const Editing: Story = {
           endDate="2026-06-28"
           isNowOpen
           editLink={<a href="#" />}
-          openLabel="Set up Review"
         />
       </li>
       <li>
@@ -150,7 +148,6 @@ export const Editing: Story = {
           isLead
           blurb="Members vote on the shortlisted proposals."
           editLink={<a href="#" />}
-          openLabel="Set up Voting"
         />
       </li>
       <li>
@@ -160,7 +157,6 @@ export const Editing: Story = {
           needsSetup
           blurb="Share the outcome with everyone."
           editLink={<a href="#" />}
-          openLabel="Set up Results"
         />
       </li>
     </ol>
@@ -178,7 +174,6 @@ export const Setup: Story = {
         isLead
         blurb="Members vote on the shortlisted proposals."
         editLink={<a href="#" />}
-        openLabel="Set up Voting"
       />
     </Row>
   ),
