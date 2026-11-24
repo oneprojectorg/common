@@ -1,12 +1,16 @@
 import type { DecisionPhase, InstanceData } from '@op/api/encoders';
-import { isReviewPhase } from '@op/common/client';
+import {
+  isDevelopPhase,
+  isReviewPhase,
+  isVotingPhase,
+} from '@op/common/client';
 
 export type PhaseTemplates = Pick<
   InstanceData,
   'proposalTemplate' | 'rubricTemplate'
 >;
 
-export type SetupBlurbKey =
+type SetupBlurbKey =
   | 'setupBlurbCollect'
   | 'setupBlurbReview'
   | 'setupBlurbDevelop'
@@ -26,7 +30,7 @@ export function isPhaseReady(
     return hasFields(phase.rubricTemplate ?? templates.rubricTemplate);
   }
 
-  if (phase.rules?.proposals?.submit || phase.rules?.proposals?.develop) {
+  if (isSubmitPhase(phase) || isDevelopPhase(phase)) {
     return hasFields(phase.proposalTemplate ?? templates.proposalTemplate);
   }
 
@@ -37,16 +41,20 @@ export function getSetupBlurbKey(phase: DecisionPhase): SetupBlurbKey {
   if (isReviewPhase(phase)) {
     return 'setupBlurbReview';
   }
-  if (phase.rules?.proposals?.submit) {
+  if (isSubmitPhase(phase)) {
     return 'setupBlurbCollect';
   }
-  if (phase.rules?.proposals?.develop) {
+  if (isDevelopPhase(phase)) {
     return 'setupBlurbDevelop';
   }
-  if (phase.rules?.voting?.submit) {
+  if (isVotingPhase(phase)) {
     return 'setupBlurbVote';
   }
   return 'setupBlurbResults';
+}
+
+function isSubmitPhase(phase: DecisionPhase): boolean {
+  return phase.rules?.proposals?.submit ?? false;
 }
 
 function hasFields(

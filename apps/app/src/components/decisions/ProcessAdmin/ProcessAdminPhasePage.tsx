@@ -4,22 +4,18 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { formatDateRange } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import { Card } from '@op/sense/Card';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@op/sense/Empty';
+import { Empty, EmptyHeader, EmptyTitle } from '@op/sense/Empty';
 import { Header1 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
 import { useLocale } from 'next-intl';
 import { Suspense, type ReactNode } from 'react';
-import { LuArrowLeft, LuTriangleAlert } from 'react-icons/lu';
+import { LuArrowLeft } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ButtonLink } from '@/components/ButtonLink';
+
+import { ProcessAdminLoadError } from './ProcessAdminLoadError';
 
 /** One phase of a process, at /decisions/[slug]/manage/phase/[phaseId], where the phase's settings are edited. */
 export function ProcessAdminPhasePage({
@@ -29,22 +25,12 @@ export function ProcessAdminPhasePage({
   slug: string;
   phaseSlug: string;
 }) {
-  const t = useTranslations('decisions');
-
   return (
     <APIErrorBoundary
       fallbacks={{
         default: () => (
           <PhasePageFrame slug={slug}>
-            <Empty className="border-0">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <LuTriangleAlert className="size-6" aria-hidden />
-                </EmptyMedia>
-                <EmptyTitle>{t('overviewLoadError')}</EmptyTitle>
-                <EmptyDescription>{t('refreshPageHint')}</EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <ProcessAdminLoadError />
           </PhasePageFrame>
         ),
       }}
@@ -88,30 +74,31 @@ function ProcessAdminPhasePageSuspense({
   const phase = decisionProfile.processInstance.phases.find(
     (candidate) => candidate.slug === phaseSlug,
   );
-  const dates = phase
-    ? formatDateRange(phase.startDate, phase.endDate, locale)
-    : '';
 
-  return (
-    <PhasePageFrame slug={slug}>
-      {phase ? (
-        <>
-          <PhaseTitle>
-            <Header1>{phase.name}</Header1>
-            {dates ? <p className="text-muted-foreground">{dates}</p> : null}
-          </PhaseTitle>
-          <PhaseColumns>
-            <Card className="min-w-0 flex-1 shadow-none" />
-            <PhaseSettingsColumn />
-          </PhaseColumns>
-        </>
-      ) : (
+  if (!phase) {
+    return (
+      <PhasePageFrame slug={slug}>
         <Empty className="border-0">
           <EmptyHeader>
             <EmptyTitle>{t('phaseNotFound')}</EmptyTitle>
           </EmptyHeader>
         </Empty>
-      )}
+      </PhasePageFrame>
+    );
+  }
+
+  const dates = formatDateRange(phase.startDate, phase.endDate, locale);
+
+  return (
+    <PhasePageFrame slug={slug}>
+      <PhaseTitle>
+        <Header1>{phase.name}</Header1>
+        {dates ? <p className="text-muted-foreground">{dates}</p> : null}
+      </PhaseTitle>
+      <PhaseColumns>
+        <Card className="min-w-0 flex-1 shadow-none" />
+        <PhaseSettingsColumn />
+      </PhaseColumns>
     </PhasePageFrame>
   );
 }

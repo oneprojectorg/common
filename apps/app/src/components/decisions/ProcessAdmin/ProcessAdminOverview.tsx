@@ -11,7 +11,6 @@ import {
   Empty,
   EmptyDescription,
   EmptyHeader,
-  EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Header2 } from '@op/sense/Header';
@@ -26,7 +25,7 @@ import {
   type ComponentProps,
   type ReactNode,
 } from 'react';
-import { LuArrowLeft, LuPencil, LuTriangleAlert } from 'react-icons/lu';
+import { LuArrowLeft, LuPencil } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
@@ -43,6 +42,7 @@ import {
 } from '../OverviewPinnedResources';
 import { ProcessAdminBanner } from './ProcessAdminBanner';
 import { ProcessAdminLaunchButton } from './ProcessAdminLaunchButton';
+import { ProcessAdminLoadError } from './ProcessAdminLoadError';
 import { ProcessAdminOverviewSkeleton } from './ProcessAdminOverviewSkeleton';
 import { ProcessAdminPhaseTimeline } from './ProcessAdminPhaseTimeline';
 import { ProcessAdminTitle } from './ProcessAdminTitle';
@@ -74,23 +74,13 @@ export function ProcessAdminOverview({
   isOpen,
   aboutSlot,
 }: ProcessAdminOverviewProps) {
-  const t = useTranslations('decisions');
-
   return (
     <APIErrorBoundary
       fallbacks={{
         default: () => (
           <div className="flex min-h-dvh flex-col bg-background">
             <ProcessAdminTopBar slug={slug} />
-            <Empty className="border-0">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <LuTriangleAlert className="size-6" aria-hidden />
-                </EmptyMedia>
-                <EmptyTitle>{t('overviewLoadError')}</EmptyTitle>
-                <EmptyDescription>{t('refreshPageHint')}</EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <ProcessAdminLoadError />
           </div>
         ),
       }}

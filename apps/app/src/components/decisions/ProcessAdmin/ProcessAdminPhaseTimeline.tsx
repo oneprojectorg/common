@@ -34,20 +34,21 @@ export function ProcessAdminPhaseTimeline({
   const currentIndex = phases.findIndex(
     (phase) => phase.phaseId === currentStateId,
   );
-  const needsSetup = phases.map(
-    (phase, index) =>
-      getPhaseState({ index, currentIndex, hasStarted }) !== 'current' &&
-      !isPhaseReady(phase, templates),
-  );
-  const leadIndex = needsSetup.indexOf(true);
+  const rows = phases.map((phase, index) => {
+    const state = getPhaseState({ index, currentIndex, hasStarted });
+    return {
+      phase,
+      state,
+      needsSetup: state !== 'current' && !isPhaseReady(phase, templates),
+    };
+  });
+  const leadIndex = rows.findIndex((row) => row.needsSetup);
 
   return (
     <ol className="flex flex-col gap-4">
-      {phases.map((phase, index) => {
-        const state = getPhaseState({ index, currentIndex, hasStarted });
+      {rows.map(({ phase, state, needsSetup }, index) => {
         const name = phase.name ?? '';
-        const hasEditLink =
-          phase.slug !== null && (isEditing || needsSetup[index]);
+        const hasEditLink = phase.slug !== null && (isEditing || needsSetup);
 
         return (
           <li key={phase.id ?? `unstored-${index}`}>
@@ -71,7 +72,7 @@ export function ProcessAdminPhaseTimeline({
                   />
                 ) : undefined
               }
-              needsSetup={needsSetup[index]}
+              needsSetup={needsSetup}
               isLead={index === leadIndex}
               setupLabel={t('processAdmin.setupAction')}
               setupAriaLabel={t('processAdmin.setupPhaseLabel', {
