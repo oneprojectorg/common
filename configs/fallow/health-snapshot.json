@@ -1,37 +1,213 @@
 {
-  "snapshot_schema_version": 3,
-  "version": "2.22.1",
-  "timestamp": "2026-09-09T12:26:06Z",
-  "git_sha": "5e2fc0d76",
-  "git_branch": "feat/fallow-crap-baseline",
+  "snapshot_schema_version": 10,
+  "version": "3.27.0",
+  "timestamp": "2026-11-23T19:42:42Z",
+  "git_sha": "44668cae7",
+  "git_branch": "issue-1220836004044655",
   "shallow_clone": false,
   "vital_signs": {
-    "dead_file_pct": 0.7,
-    "dead_export_pct": 11.7,
-    "avg_cyclomatic": 2.0,
+    "dead_file_pct": 0.5,
+    "dead_export_pct": 2.5,
+    "avg_cyclomatic": 1.9,
+    "critical_complexity_pct": 0.0,
     "p90_cyclomatic": 4,
+    "cyclomatic_population": {
+      "functions": {
+        "count": 20137,
+        "sum": 37607,
+        "max": 49
+      },
+      "modules": {
+        "count": 37,
+        "sum": 208,
+        "max": 45
+      },
+      "templates": {
+        "count": 0,
+        "sum": 0,
+        "max": null
+      }
+    },
+    "duplication_pct": 4.8,
     "hotspot_count": 0,
-    "maintainability_avg": 90.0,
-    "unused_dep_count": 54,
-    "circular_dep_count": 31,
+    "hotspot_top_pct_count": 28,
+    "maintainability_avg": 91.3,
+    "maintainability_low_pct": 0.2,
+    "unused_dep_count": 41,
+    "unused_deps_per_k_files": 14.8,
+    "circular_dep_count": 34,
+    "circular_deps_per_k_files": 12.2,
     "counts": {
-      "total_files": 2088,
-      "total_exports": 4149,
-      "dead_files": 14,
-      "dead_exports": 485,
-      "files_scored": 1888,
+      "total_files": 2776,
+      "total_exports": 6484,
+      "dead_files": 15,
+      "dead_exports": 164,
+      "duplicated_lines": 11719,
+      "total_lines": 405176,
+      "files_scored": 2542,
       "total_deps": 0
-    }
+    },
+    "unit_size_profile": {
+      "low_risk": 64.5,
+      "medium_risk": 16.4,
+      "high_risk": 11.4,
+      "very_high_risk": 7.7
+    },
+    "functions_over_60_loc_per_k": 77.0,
+    "unit_interfacing_profile": {
+      "low_risk": 98.7,
+      "medium_risk": 1.3,
+      "high_risk": 0.0,
+      "very_high_risk": 0.0
+    },
+    "p95_fan_in": 9,
+    "coupling_high_pct": 4.4,
+    "p95_render_fan_in": 11,
+    "render_fan_in_high_pct": 5.0,
+    "max_render_fan_in": 232,
+    "top_render_fan_in": [
+      {
+        "component": "Button",
+        "path": "packages/sense/src/components/ui/button.tsx",
+        "render_sites": 356,
+        "distinct_parents": 232
+      },
+      {
+        "component": "Skeleton",
+        "path": "packages/sense/src/components/ui/skeleton.tsx",
+        "render_sites": 423,
+        "distinct_parents": 126
+      },
+      {
+        "component": "DialogTitle",
+        "path": "packages/sense/src/components/ui/dialog.tsx",
+        "render_sites": 61,
+        "distinct_parents": 60
+      },
+      {
+        "component": "Field",
+        "path": "packages/sense/src/components/ui/field.tsx",
+        "render_sites": 91,
+        "distinct_parents": 58
+      },
+      {
+        "component": "FieldLabel",
+        "path": "packages/sense/src/components/ui/field.tsx",
+        "render_sites": 88,
+        "distinct_parents": 58
+      },
+      {
+        "component": "DialogContent",
+        "path": "packages/sense/src/components/ui/dialog.tsx",
+        "render_sites": 58,
+        "distinct_parents": 58
+      },
+      {
+        "component": "Dialog",
+        "path": "packages/sense/src/components/ui/dialog.tsx",
+        "render_sites": 58,
+        "distinct_parents": 56
+      },
+      {
+        "component": "DialogHeader",
+        "path": "packages/sense/src/components/ui/dialog.tsx",
+        "render_sites": 51,
+        "distinct_parents": 50
+      },
+      {
+        "component": "APIErrorBoundary",
+        "path": "apps/app/src/utils/APIErrorBoundary.tsx",
+        "render_sites": 60,
+        "distinct_parents": 46
+      },
+      {
+        "component": "Header3",
+        "path": "packages/sense/src/components/Header/index.tsx",
+        "render_sites": 122,
+        "distinct_parents": 45
+      },
+      {
+        "component": "FieldDescription",
+        "path": "packages/sense/src/components/ui/field.tsx",
+        "render_sites": 52,
+        "distinct_parents": 44
+      },
+      {
+        "component": "DialogFooter",
+        "path": "packages/sense/src/components/ui/dialog.tsx",
+        "render_sites": 42,
+        "distinct_parents": 42
+      },
+      {
+        "component": "Empty",
+        "path": "packages/sense/src/components/ui/empty.tsx",
+        "render_sites": 47,
+        "distinct_parents": 41
+      },
+      {
+        "component": "EmptyHeader",
+        "path": "packages/sense/src/components/ui/empty.tsx",
+        "render_sites": 47,
+        "distinct_parents": 41
+      },
+      {
+        "component": "EmptyMedia",
+        "path": "packages/sense/src/components/ui/empty.tsx",
+        "render_sites": 44,
+        "distinct_parents": 39
+      },
+      {
+        "component": "TableRow",
+        "path": "packages/sense/src/components/ui/table.tsx",
+        "render_sites": 47,
+        "distinct_parents": 35
+      },
+      {
+        "component": "Spinner",
+        "path": "packages/sense/src/components/ui/spinner.tsx",
+        "render_sites": 37,
+        "distinct_parents": 34
+      },
+      {
+        "component": "BadgeNumber",
+        "path": "packages/sense/src/components/ui/badge.tsx",
+        "render_sites": 39,
+        "distinct_parents": 33
+      },
+      {
+        "component": "EmptyDescription",
+        "path": "packages/sense/src/components/ui/empty.tsx",
+        "render_sites": 37,
+        "distinct_parents": 33
+      },
+      {
+        "component": "Header1",
+        "path": "packages/sense/src/components/Header/index.tsx",
+        "render_sites": 36,
+        "distinct_parents": 32
+      }
+    ],
+    "total_loc": 405176
   },
   "counts": {
-    "total_files": 2088,
-    "total_exports": 4149,
-    "dead_files": 14,
-    "dead_exports": 485,
-    "files_scored": 1888,
+    "total_files": 2776,
+    "total_exports": 6484,
+    "dead_files": 15,
+    "dead_exports": 164,
+    "duplicated_lines": 11719,
+    "total_lines": 405176,
+    "files_scored": 2542,
     "total_deps": 0
   },
-  "score": 75.1,
-  "grade": "B",
-  "coverage_model": "istanbul"
+  "score": 63.4,
+  "grade": "C",
+  "coverage_model": "istanbul",
+  "analysis_identity": {
+    "mode": "syntactic",
+    "semantic_schema_version": 1,
+    "capabilities": [],
+    "project_config_hash": "",
+    "backend_family": "",
+    "completeness": "complete"
+  }
 }

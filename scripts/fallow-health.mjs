@@ -354,7 +354,7 @@ const findings = run([
   '--complexity',
   '--hotspots',
   '--targets',
-  ...(full ? [] : ['--baseline', BASELINE]),
+  ...(full ? [] : ['--baseline', BASELINE, '--baseline-mode', 'identity']),
 ]);
 
 // 3. Then the score, and the CRAP verdict, last — still on screen.
