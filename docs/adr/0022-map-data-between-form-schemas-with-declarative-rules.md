@@ -154,7 +154,8 @@ value expressions of the selection pipeline are the planned next step.
   ```
 
   - `createExpressionEvaluator({ valueTypes })` makes an evaluator that
-    knows the given value types; the consumer chooses them. A value type
+    sets the consumer's value types in the optional `valueTypes` field of
+    `ExpressionContext`, on a copy of the caller's context. A value type
     must have `parse`, which accepts only a value of the type. An operation
     such as `add` is an optional method that combines two values or gives no
     value, and a type without the operation gives no value. A new operator
@@ -165,10 +166,10 @@ value expressions of the selection pipeline are the planned next step.
     accepts every operand. It does not come from `x-format` or the field
     schema. When no single type accepts them, or `add` gives no value, the
     result is `null`. A missing operand is skipped.
-  - With all operands numbers, or from `evaluateExpression`, which knows no
-    value types, arithmetic is unchanged, so the selection pipeline does not
-    change. An expression rule fills a field
-    only with a value that a value type produced. A plain-number result fills
+  - With all operands numbers, or with no `valueTypes` in the context, as
+    the selection pipeline calls `evaluateExpression`, arithmetic is
+    unchanged, so the selection pipeline does not change. An expression rule
+    fills a field only with a value that a value type produced. A plain-number result fills
     nothing for now and leaves the field empty, as mixed currencies do.
   - The engine reads each operand as the copy rule reads a field, and
     evaluates the expression one time for each input. An input with none of
