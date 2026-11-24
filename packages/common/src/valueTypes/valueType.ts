@@ -3,6 +3,8 @@ export const valueTypeOperators = ['add'] as const satisfies readonly Exclude<
   'parse'
 >[];
 
+export type ValueTypeOperator = (typeof valueTypeOperators)[number];
+
 // Method syntax is bivariant, so a `ValueType<MoneyAmount>` fits a registry of
 // `ValueType<unknown>`; an operation only gets what `parse` gave.
 export type ValueType<T> = {

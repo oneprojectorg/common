@@ -1,9 +1,9 @@
 import { logger } from '@op/logging';
 import safeRegex from 'safe-regex2';
 
-import {
-  type ValueType,
-  valueTypeOperators,
+import type {
+  ValueType,
+  ValueTypeOperator,
 } from '../../../valueTypes/valueType';
 import type {
   ArithmeticExpression,
@@ -16,6 +16,25 @@ import type {
   LogicalExpression,
   VariableExpression,
 } from './types';
+
+// Keyed by the context object, as every nested evaluation gets that object, so
+// no caller of `evaluateExpression` can pass value types in.
+const valueTypesByContext = new WeakMap<
+  ExpressionContext,
+  readonly ValueType<unknown>[]
+>();
+
+/**
+ * An `evaluateExpression` whose operations also combine values of the given
+ * types when their operands are not all numbers.
+ */
+export const createExpressionEvaluator =
+  ({ valueTypes }: { valueTypes: readonly ValueType<unknown>[] }) =>
+  (expr: Expression, context: ExpressionContext): unknown => {
+    const typedContext = { ...context };
+    valueTypesByContext.set(typedContext, valueTypes);
+    return evaluateExpression(expr, typedContext);
+  };
 
 /**
  * Evaluates an expression in the given context
@@ -172,13 +191,9 @@ function evaluateOperation(
   const operands: unknown[] = expr.operands.map((op) =>
     evaluateExpression(op, context),
   );
-  return context.valueTypes &&
-    !operands.every((operand) => typeof operand === 'number')
-    ? evaluateTypedValues({
-        operator: expr.operator,
-        operands,
-        valueTypes: context.valueTypes,
-      })
+  const valueTypes = valueTypesByContext.get(context);
+  return valueTypes && !operands.every((operand) => typeof operand === 'number')
+    ? evaluateTypedValues({ operator: expr.operator, operands, valueTypes })
     : evaluateArithmetic({
         operator: expr.operator,
         values: operands.map((operand) =>
@@ -215,8 +230,6 @@ function evaluateArithmetic({
   }
 }
 
-// Null unless exactly one type accepts every present operand, not the first
-// match, and its operation gives a value at each step.
 function evaluateTypedValues({
   operator,
   operands,
@@ -226,29 +239,57 @@ function evaluateTypedValues({
   operands: unknown[];
   valueTypes: readonly ValueType<unknown>[];
 }): unknown {
+  const match = findValueType({ operands, valueTypes });
+  if (!match) {
+    return null;
+  }
+  const { type, values } = match;
+  switch (operator) {
+    case 'add':
+      return type.add
+        ? foldValues({ values, combine: (a, b) => type.add?.(a, b) })
+        : null;
+    default:
+      // Fails to compile when `valueTypeOperators` gains a name with no case.
+      operator satisfies Exclude<typeof operator, ValueTypeOperator>;
+      return null;
+  }
+}
+
+function findValueType({
+  operands,
+  valueTypes,
+}: {
+  operands: unknown[];
+  valueTypes: readonly ValueType<unknown>[];
+}): { type: ValueType<unknown>; values: unknown[] } | undefined {
   const present = operands.filter((operand) => operand != null);
+  if (present.length === 0) {
+    return undefined;
+  }
   const matches = valueTypes.flatMap((type) => {
     const values = present.map((operand) => type.parse(operand));
     return values.every((value) => value !== undefined)
       ? [{ type, values }]
       : [];
   });
-  const [match, ...otherMatches] = matches;
-  if (!match || otherMatches.length > 0) {
-    return null;
-  }
+  return matches.length === 1 ? matches[0] : undefined;
+}
 
-  const operationName = valueTypeOperators.find((name) => name === operator);
-  const operation = operationName
-    ? match.type[operationName]?.bind(match.type)
-    : undefined;
-  const [first, ...rest] = match.values;
-  if (!operation || first === undefined) {
+function foldValues<T>({
+  values,
+  combine,
+}: {
+  values: T[];
+  combine: (a: T, b: T) => T | undefined;
+}): T | null {
+  const [first, ...rest] = values;
+  if (first === undefined) {
     return null;
   }
   let result = first;
   for (const value of rest) {
-    const next = operation(result, value);
+    const next = combine(result, value);
     if (next === undefined) {
       return null;
     }
