@@ -17,16 +17,18 @@ import { Header1, Header3 } from '@op/sense/Header';
 import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
 import { Switch } from '@op/sense/Switch';
 import { usePostHog } from 'posthog-js/react';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 
 import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
+import { LockNote } from '../../components/LockNote';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
+import { usePastPhaseLock } from '../../usePastPhaseLock';
 import { CategoryReviewerCards } from './CategoryReviewerCards';
 
 interface ReviewSettings {
@@ -59,6 +61,10 @@ export function ReviewSettingsContent({
   // Scope is a per-phase review setting: there is exactly one review-capable
   // phase today (the Reviews step is only shown when one exists).
   const reviewPhase = sourcePhases.find(isReviewPhase);
+  const { getLock } = usePastPhaseLock(instanceId);
+  const isScopeLocked =
+    !!reviewPhase && getLock(reviewPhase.phaseId) === 'past';
+  const scopeLockNoteId = useId();
 
   const [settings, setSettings] = useState<ReviewSettings>({
     scope: reviewPhase?.rules?.reviews?.scope ?? 'all',
@@ -99,7 +105,7 @@ export function ReviewSettingsContent({
     setSettings(updated);
     // scope and revisions write to different places: scope to the review
     // phase's rules, revisions to legacy config. Route each independently.
-    if (updates.scope !== undefined && reviewPhase) {
+    if (updates.scope !== undefined && reviewPhase && !isScopeLocked) {
       saveChanges({ phases: phasesWithScope(updated.scope) });
     }
     if (updates.reviewsAllowRevisions !== undefined) {
@@ -130,8 +136,15 @@ export function ReviewSettingsContent({
           <FieldLegend className="mb-3 text-base">
             {t('decisions.processBuilder.reviewScopeQuestion')}
           </FieldLegend>
+          {isScopeLocked && (
+            <LockNote id={scopeLockNoteId} className="mb-3">
+              {t('decisions.processBuilder.reviewScopeLockedNote')}
+            </LockNote>
+          )}
           <RadioGroup
             value={settings.scope}
+            readOnly={isScopeLocked}
+            aria-describedby={isScopeLocked ? scopeLockNoteId : undefined}
             onValueChange={(value) => {
               posthog.capture(
                 'review_scope_changed',

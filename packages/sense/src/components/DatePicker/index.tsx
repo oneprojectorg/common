@@ -54,6 +54,8 @@ function DatePicker({
 }: DatePickerProps) {
   const reactId = React.useId();
   const inputId = id ?? reactId;
+  const descriptionId = `${inputId}-description`;
+  const errorId = `${inputId}-error`;
 
   const [open, setOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState(() => formatDate(value));
@@ -117,6 +119,10 @@ function DatePicker({
             readOnly={readOnly}
             required={required}
             aria-invalid={errorMessage ? true : undefined}
+            aria-describedby={describedBy(
+              description ? descriptionId : undefined,
+              errorMessage ? errorId : undefined,
+            )}
           />
           {readOnly ? null : (
             <InputGroupAddon align="inline-end">
@@ -157,8 +163,12 @@ function DatePicker({
           />
         </PopoverContent>
       </Popover>
-      {description ? <FieldDescription>{description}</FieldDescription> : null}
-      {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
+      {description ? (
+        <FieldDescription id={descriptionId}>{description}</FieldDescription>
+      ) : null}
+      {errorMessage ? (
+        <FieldError id={errorId}>{errorMessage}</FieldError>
+      ) : null}
     </div>
   );
 }
@@ -204,6 +214,8 @@ function DatePickerButton({
 }: DatePickerButtonProps) {
   const reactId = React.useId();
   const buttonId = id ?? reactId;
+  const descriptionId = `${buttonId}-description`;
+  const errorId = `${buttonId}-error`;
 
   const [open, setOpen] = React.useState(false);
 
@@ -227,6 +239,10 @@ function DatePickerButton({
           disabled={disabled}
           required={required}
           aria-invalid={errorMessage ? true : undefined}
+          aria-describedby={describedBy(
+            description ? descriptionId : undefined,
+            errorMessage ? errorId : undefined,
+          )}
         />
       ) : (
         <Popover open={open} onOpenChange={setOpen}>
@@ -237,6 +253,10 @@ function DatePickerButton({
                 variant="outline"
                 disabled={disabled}
                 aria-invalid={errorMessage ? true : undefined}
+                aria-describedby={describedBy(
+                  description ? descriptionId : undefined,
+                  errorMessage ? errorId : undefined,
+                )}
                 className={cn(
                   'justify-start font-normal',
                   !value && 'text-muted-foreground',
@@ -262,8 +282,12 @@ function DatePickerButton({
           </PopoverContent>
         </Popover>
       )}
-      {description ? <FieldDescription>{description}</FieldDescription> : null}
-      {errorMessage ? <FieldError>{errorMessage}</FieldError> : null}
+      {description ? (
+        <FieldDescription id={descriptionId}>{description}</FieldDescription>
+      ) : null}
+      {errorMessage ? (
+        <FieldError id={errorId}>{errorMessage}</FieldError>
+      ) : null}
     </div>
   );
 }
@@ -327,3 +351,9 @@ function dateBounds(minDate: Date | undefined, maxDate: Date | undefined) {
 }
 
 export { DatePicker, DatePickerButton };
+
+// Space-separated ids for `aria-describedby`; undefined when none apply.
+function describedBy(...ids: Array<string | undefined>) {
+  const joined = ids.filter(Boolean).join(' ');
+  return joined || undefined;
+}

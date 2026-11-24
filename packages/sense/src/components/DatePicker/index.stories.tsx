@@ -57,6 +57,12 @@ export const States: Story = {
     <div className="flex w-72 flex-col gap-6">
       <DatePicker label="Disabled" disabled value={new Date(2026, 5, 15)} />
       <DatePicker
+        label="Disabled with description"
+        description="The start date can't change once the phase has begun."
+        disabled
+        value={new Date(2026, 5, 15)}
+      />
+      <DatePicker
         label="Read-only with description"
         description="The start date can't change once the phase has begun."
         readOnly
@@ -64,6 +70,12 @@ export const States: Story = {
       />
       <DatePicker
         label="With error"
+        errorMessage="The end date must come after the start date."
+        value={new Date(2026, 5, 15)}
+      />
+      <DatePicker
+        label="With description and error"
+        description="Type a date or pick one from the calendar."
         errorMessage="The end date must come after the start date."
         value={new Date(2026, 5, 15)}
       />
@@ -98,5 +110,24 @@ export const ButtonReadOnly: Story = {
       value={new Date(2026, 5, 15)}
       className="w-44"
     />
+  ),
+};
+
+export const ButtonStates: Story = {
+  render: () => (
+    <div className="flex w-44 flex-col gap-6">
+      <DatePickerButton
+        label="With description"
+        description="Pick a day from the calendar."
+        value={new Date(2026, 5, 15)}
+      />
+      <DatePickerButton label="With error" errorMessage="Pick a date." />
+      <DatePickerButton
+        label="Disabled with description"
+        description="This date is locked."
+        disabled
+        value={new Date(2026, 5, 15)}
+      />
+    </div>
   ),
 };
