@@ -127,36 +127,19 @@ value expressions of the selection pipeline are the planned next step.
   setup script sets them by hand; no editor writes them. Code reads them only
   through `getDevelopPrefillMappings`. The `{ type, phaseId }` reference stays
   until sources have a form schema ID.
-- **Expression rules (amended 2026-11-24):** a field's `from` can be a path or
-  one expression of the selection pipeline: `add` over field paths. The
-  evaluator of the pipeline computes it and does not change.
-
-  ```ts
-  {
-    from: {
-      operator: 'add',
-      operands: [
-        { field: 'answers.cost_design.amount' },
-        { field: 'answers.cost_construction.amount' },
-      ],
-    },
-    to: 'budget',
-  }
-  ```
-
-  - An absent operand is skipped. An input with no operand, or with a present
-    operand that is not a finite number, gives no value.
-  - An expression rule runs only with one source proposal and one input of
-    its source schema, for example one submitted review of that phase. With
-    more, only the copy rules of the mapping run. How several inputs combine
-    is deferred.
-  - The result is a plain number. The develop prefill makes a number in
-    `budget` money: the default currency, rounded to its minor unit. This
-    step is specific to `budget` on purpose. Value types in the evaluator are
-    deferred until a second use case needs them.
-  - Limits: the currency is the default, not the source's. Amounts in two
-    currencies are added as one number.
-  - When no fragment cloned from the source document fills a target field,
-    the server writes a mapped value that is not a string into its fragment,
-    as JSON text in one paragraph, which is how the editor's field components
-    store it. A string is not written, because it can be rich text.
+- **Expression rules (amended 2026-11-24):** a field's `from` can be `add`
+  over field paths, for example
+  `{ operator: 'add', operands: [{ field: 'answers.cost_design.amount' }, { field: 'answers.cost_construction.amount' }] }`.
+  The pipeline evaluator computes it and does not change.
+  - Operands are numbers. An absent one is skipped; one that is not a finite
+    number gives no value for that input.
+  - The rule runs only with one source proposal and one input of its source
+    schema. How several inputs combine is deferred.
+  - The develop prefill makes a number in `budget` money: the default
+    currency, rounded to its minor unit. Amounts in two currencies are added
+    as one number.
+  - The server writes a mapped value that is not a string into its document
+    fragment when no cloned fragment fills it.
+  - Alternative, built and kept for later: value types in the evaluator,
+    where `add` combines money values and keeps their currency. Not chosen
+    now, because one use case is too little to design them.
