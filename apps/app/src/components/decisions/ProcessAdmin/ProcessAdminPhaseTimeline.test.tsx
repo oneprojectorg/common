@@ -42,7 +42,7 @@ const editorHref = (phaseSlug: string) =>
   `/en/decisions/${SLUG}/manage/phase/${phaseSlug}`;
 
 const templates = {
-  proposalTemplate: { type: 'object', properties: { title: {} } },
+  proposalTemplate: { type: 'object', properties: { summary: {} } },
 };
 
 const renderTimeline = (

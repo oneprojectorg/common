@@ -124,7 +124,7 @@ describe('isPhaseReady', () => {
     startDate: '2026-01-01T00:00:00.000Z',
     endDate: '2026-01-31T00:00:00.000Z',
   };
-  const form = { properties: { title: {} } };
+  const form = { properties: { summary: {} } };
   const emptyForm = { properties: {} };
 
   it('needs both dates', () => {
@@ -156,6 +156,23 @@ describe('isPhaseReady', () => {
         { proposalTemplate: emptyForm },
       ),
     ).toBe(false);
+  });
+
+  it('counts only questions the admin wrote, not the system fields', () => {
+    const collecting = { ...dated, rules: { proposals: { submit: true } } };
+
+    expect(
+      isPhaseReady(collecting, {
+        proposalTemplate: {
+          properties: { title: {}, budget: {}, category: {} },
+        },
+      }),
+    ).toBe(false);
+    expect(
+      isPhaseReady(collecting, {
+        proposalTemplate: { properties: { title: {}, summary: {} } },
+      }),
+    ).toBe(true);
   });
 
   it('needs a criterion on a review phase', () => {

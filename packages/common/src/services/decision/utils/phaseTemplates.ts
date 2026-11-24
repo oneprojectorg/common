@@ -5,6 +5,7 @@
  * template, the client its wire `instanceData`. Client-safe: no server-only
  * imports.
  */
+import { SYSTEM_FIELD_KEYS } from '../getProposalTemplateFieldOrder';
 import type { PhaseRules } from '../schemas/types';
 import type { ProposalTemplateSchema, RubricTemplateSchema } from '../types';
 import { isDevelopPhase, isReviewPhase, isSubmitPhase } from './phaseSettings';
@@ -40,7 +41,7 @@ export function isPhaseReady(
 
   if (
     (isSubmitPhase(phase) || isDevelopPhase(phase)) &&
-    !hasFields(phase.proposalTemplate ?? decision.proposalTemplate)
+    !hasQuestions(phase.proposalTemplate ?? decision.proposalTemplate)
   ) {
     return false;
   }
@@ -50,6 +51,12 @@ export function isPhaseReady(
 
 function hasFields(template: FieldsTemplate): boolean {
   return Object.keys(template?.properties ?? {}).length > 0;
+}
+
+function hasQuestions(template: FieldsTemplate): boolean {
+  return Object.keys(template?.properties ?? {}).some(
+    (key) => !SYSTEM_FIELD_KEYS.has(key),
+  );
 }
 
 /**
