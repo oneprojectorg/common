@@ -7,7 +7,7 @@ import { useLocale } from 'next-intl';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
-import { getSetupBlurbKey } from './phaseSetup';
+import { getPhaseKind } from './phaseKind';
 
 export function ProcessAdminPhaseTimeline({
   slug,
@@ -74,7 +74,7 @@ export function ProcessAdminPhaseTimeline({
               setupAriaLabel={t('processAdmin.setupPhaseLabel', {
                 phaseName: name,
               })}
-              blurb={t(`processAdmin.${getSetupBlurbKey(phase)}`)}
+              blurb={t(`processAdmin.setupBlurb${getPhaseKind(phase)}`)}
             />
           </li>
         );
