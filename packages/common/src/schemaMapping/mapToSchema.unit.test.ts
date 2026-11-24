@@ -342,13 +342,21 @@ describe('mapToSchema with an add rule', () => {
     expect(result).toEqual({ data: {} });
   });
 
-  it('leaves the field empty when one review has a bad amount and another a valid total', () => {
+  it('leaves the field empty for an amount with a currency sign', () => {
     const result = mapCosts([
       costs({ design: { amount: '$500', currency: 'USD' } }),
-      costs({ design: usd(500) }),
     ]);
 
     expect(result).toEqual({ data: {} });
+  });
+
+  it('skips a review with a bad amount and fills the total of the other review', () => {
+    const result = mapCosts([
+      costs({ design: { amount: '$500', currency: 'USD' } }),
+      costs({ design: usd(500), construction: usd(250) }),
+    ]);
+
+    expect(result.data).toEqual({ budget: 750 });
   });
 
   it('known limit: adds the amounts of two currencies as one number', () => {

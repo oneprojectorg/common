@@ -1,4 +1,3 @@
-import { logger } from '@op/logging';
 import { isDeepStrictEqual } from 'node:util';
 
 import { sumAmounts } from '../services/decision/fieldUnit';
@@ -11,9 +10,6 @@ import type {
   SchemaMapping,
   SchemaRef,
 } from './schema';
-
-// An input whose value cannot be mapped; it leaves the field empty for all inputs.
-const BLOCKED = Symbol('blocked');
 
 /**
  * Copies each field of each mapping from each input of the mapping's source
@@ -44,12 +40,6 @@ export const mapToSchema = ({
         if (value === undefined) {
           continue;
         }
-        if (value === BLOCKED) {
-          logger.warn('A mapping rule read a value that is not a number', {
-            targetPhaseId: targetSchema.phaseId,
-            field: field.to,
-          });
-        }
         const values = valuesByField.get(field.to) ?? [];
         values.push(value);
         valuesByField.set(field.to, values);
@@ -62,7 +52,6 @@ export const mapToSchema = ({
   const data = Object.fromEntries(
     [...valuesByField].flatMap<[string, unknown]>(
       ([field, [first, ...rest]]) =>
-        first !== BLOCKED &&
         rest.every((value) => isDeepStrictEqual(first, value))
           ? [[field, structuredClone(first)]]
           : [],
@@ -93,15 +82,15 @@ const evaluateRule = ({
   const values = from.operands
     .map(({ field }) => evaluateSourceField({ data, path: field }))
     .filter((value) => value !== undefined);
-  if (values.length === 0) {
+  // A value that is not a number gives no total, never a partial one.
+  if (values.length === 0 || !values.every(isFiniteNumber)) {
     return undefined;
   }
-  const numbers = values.flatMap((value) =>
-    typeof value === 'number' && Number.isFinite(value) ? [value] : [],
-  );
-  // Never a partial total; and the sum is exact, so equal totals compare equal.
-  return numbers.length === values.length ? sumAmounts(numbers) : BLOCKED;
+  return sumAmounts(values);
 };
+
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
 
 const evaluateSourceField = ({
   data,
