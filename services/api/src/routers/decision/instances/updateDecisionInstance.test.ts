@@ -754,14 +754,14 @@ describe.concurrent('updateDecisionInstance', () => {
     const instanceId = setup.instance.instance.id;
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const reversed = { startDate: DAY_2, endDate: DAY_1 };
+    const [initial] = await loadPhaseRows(instanceId);
+    if (!initial) {
+      throw new Error('Expected the template phase rows');
+    }
     await db
       .update(processPhases)
-      .set({
-        data: sql`${processPhases.data} || ${JSON.stringify(reversed)}::jsonb`,
-      })
-      .where(
-        sql`${processPhases.processInstanceId} = ${instanceId} and ${processPhases.data}->>'phaseId' = 'initial'`,
-      );
+      .set({ data: { ...initial.data, ...reversed } })
+      .where(eq(processPhases.id, initial.id));
 
     const moved = { startDate: DAY_2, endDate: DAY_3 };
     await caller.decision.updateDecisionInstance({
