@@ -34,7 +34,11 @@ interface PhaseCardProps {
    * `needsSetup`.
    */
   editLink?: ReactElement;
-  /** The phase is missing what it needs to run. With `editLink`, the card shows `blurb` and a Setup link. */
+  /**
+   * The phase is missing what it needs to run. With `editLink`, the card shows
+   * `blurb` and a Setup link, except on the current phase, which always links
+   * to its editor from the whole card.
+   */
   needsSetup?: boolean;
   setupLabel?: string;
   /**
