@@ -203,9 +203,7 @@ function evaluateOperation(
       });
 }
 
-/**
- * Evaluate arithmetic expressions on numbers
- */
+/** Arithmetic on numbers. A step that divides by 0, or takes modulo 0, gives 0. */
 function evaluateNumberArithmetic({
   operator,
   values,
@@ -231,6 +229,10 @@ function evaluateNumberArithmetic({
   }
 }
 
+/**
+ * Arithmetic on values of the one value type that accepts every present operand.
+ * Null when no single type fits, or the type lacks the operation or refuses a step.
+ */
 function evaluateTypedArithmetic({
   operator,
   operands,
