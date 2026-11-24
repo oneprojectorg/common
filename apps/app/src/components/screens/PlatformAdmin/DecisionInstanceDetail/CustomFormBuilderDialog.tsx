@@ -415,11 +415,13 @@ const RequiredCapabilitiesField = ({
   };
 
   return (
-    <FieldSet>
+    <FieldSet aria-describedby={`${id}-hint`}>
       <FieldLegend variant="label">
         {t('admin.formCapabilitiesLabel')}
       </FieldLegend>
-      <FieldDescription>{t('admin.formCapabilitiesHint')}</FieldDescription>
+      <FieldDescription id={`${id}-hint`}>
+        {t('admin.formCapabilitiesHint')}
+      </FieldDescription>
       {customFormCapabilitySchema.options.map((capability) => (
         <Field key={capability} orientation="horizontal">
           <Checkbox

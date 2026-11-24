@@ -1,9 +1,7 @@
-import { z } from 'zod';
-
 import {
   type CustomFormCapability,
   type CustomFormShowOn,
-  customFormCapabilitySchema,
+  customFormRequiredCapabilitiesSchema,
 } from './schemas/customForm';
 
 /**
@@ -41,7 +39,7 @@ export const getFormRequiredCapabilities = (
     return [];
   }
 
-  const parsed = z.array(customFormCapabilitySchema).safeParse(value);
+  const parsed = customFormRequiredCapabilitiesSchema.safeParse(value);
 
   return parsed.success ? parsed.data : null;
 };

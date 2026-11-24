@@ -1,7 +1,7 @@
 import { type DbClient, db } from '@op/db/client';
 import type { CustomForm } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
+import { type NormalizedRole, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import {
@@ -10,8 +10,7 @@ import {
   isUserEmailPlatformAdmin,
 } from '../access';
 import { getPhases } from '../decision/instancePhases';
-import { decisionPermission } from '../decision/permissions';
-import type { CustomFormCapability } from './schemas/customForm';
+import { resolveInstanceAccess } from '../decision/resolveInstanceAccess';
 import { getFormRequiredCapabilities } from './utils';
 
 export type CustomFormProcessContext = {
@@ -105,13 +104,6 @@ export const readInstancePhaseSet = async ({
   return { initialPhaseId: phaseIds[0] ?? null, phaseIds };
 };
 
-const CAPABILITY_PERMISSIONS: Record<CustomFormCapability, number> = {
-  review: decisionPermission.REVIEW,
-  vote: decisionPermission.VOTE,
-  submitProposals: decisionPermission.SUBMIT_PROPOSALS,
-  developProposals: decisionPermission.DEVELOP_PROPOSALS,
-};
-
 /** True when the user holds every decision capability the form requires. */
 export const hasFormCapabilities = async ({
   user,
@@ -135,21 +127,17 @@ export const hasFormCapabilities = async ({
     columns: { profileId: true, ownerProfileId: true },
   });
 
-  if (!instance) {
+  if (!instance?.profileId) {
     return false;
   }
 
-  const decisions = capabilities.reduce<number>(
-    (bits, capability) => bits | CAPABILITY_PERMISSIONS[capability],
-    permission.READ,
-  );
-
+  let profileRoles: NormalizedRole[];
   try {
-    await assertInstanceProfileAccess({
+    profileRoles = await assertInstanceProfileAccess({
       user,
       instance,
-      profilePermissions: { decisions },
-      orgFallbackPermissions: { decisions },
+      profilePermissions: { decisions: permission.READ },
+      orgFallbackPermissions: { decisions: permission.READ },
     });
   } catch (error) {
     if (error instanceof UnauthorizedError) {
@@ -158,5 +146,13 @@ export const hasFormCapabilities = async ({
     throw error;
   }
 
-  return true;
+  // The same rule getInstance gives the UI: admins hold every capability, and
+  // org roles count only for a user with no role on the decision.
+  const access = await resolveInstanceAccess(
+    user,
+    { profileId: instance.profileId, ownerProfileId: instance.ownerProfileId },
+    profileRoles,
+  );
+
+  return capabilities.every((capability) => access[capability]);
 };

@@ -32,7 +32,7 @@ async function attachForm(
   onTestFinished: (fn: () => Promise<void>) => void,
   phaseId?: string,
   showOn?: CustomFormShowOn,
-  requiredCapabilities?: CustomFormCapability[],
+  requiredCapabilities?: CustomFormCapability[] | unknown,
 ) {
   const [form] = await db
     .insert(customForms)
@@ -180,6 +180,62 @@ describe.concurrent('customForm.getForProfile', () => {
 
     expect(forMember).toBeNull();
     expect(forReviewer?.id).toBe(form.id);
+  });
+
+  it('hides a form from a caller who holds only some of its required capabilities, and shows it to an admin', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    const reviewer = await testData.createInstanceReviewerWithRole(context);
+    const form = await attachForm(
+      context.instance.profileId,
+      onTestFinished,
+      undefined,
+      'entry',
+      ['review', 'developProposals'],
+    );
+    const [reviewerCaller, adminCaller] = await Promise.all([
+      createAuthenticatedCaller(reviewer.email),
+      createAuthenticatedCaller(context.defaultReviewer.email),
+    ]);
+    const input = {
+      profileId: context.instance.profileId,
+      showOn: 'entry' as const,
+    };
+
+    const [forReviewer, forAdmin] = await Promise.all([
+      reviewerCaller.customForm.getForProfile(input),
+      adminCaller.customForm.getForProfile(input),
+    ]);
+
+    expect(forReviewer).toBeNull();
+    expect(forAdmin?.id).toBe(form.id);
+  });
+
+  it('hides a form whose stored required capabilities cannot be read', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    const reviewer = await testData.createInstanceReviewerWithRole(context);
+    await attachForm(
+      context.instance.profileId,
+      onTestFinished,
+      undefined,
+      'entry',
+      ['admin'],
+    );
+    const caller = await createAuthenticatedCaller(reviewer.email);
+
+    const result = await caller.customForm.getForProfile({
+      profileId: context.instance.profileId,
+      showOn: 'entry',
+    });
+
+    expect(result).toBeNull();
   });
 
   it('returns null when no form is attached', async ({

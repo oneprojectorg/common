@@ -45,6 +45,10 @@ export const customFormCapabilitySchema = z.enum([
 
 export type CustomFormCapability = z.infer<typeof customFormCapabilitySchema>;
 
+export const customFormRequiredCapabilitiesSchema = z.array(
+  customFormCapabilitySchema,
+);
+
 /** True for a stored form definition with an object root and `properties`. */
 export function isCustomFormDefinition(
   schema: Record<string, unknown>,
@@ -190,7 +194,7 @@ export const customFormDefinitionInputSchema = z
     description: z.string().max(2000).optional(),
     'x-phase': z.string().min(1).max(256),
     'x-show-on': customFormShowOnSchema.optional(),
-    'x-required-capabilities': z.array(customFormCapabilitySchema).optional(),
+    'x-required-capabilities': customFormRequiredCapabilitiesSchema.optional(),
     required: z.array(customFormFieldKeySchema),
     properties: z.record(customFormFieldKeySchema, customFormFieldSchema),
     'x-field-order': z.array(customFormFieldKeySchema),

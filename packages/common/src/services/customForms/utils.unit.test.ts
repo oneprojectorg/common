@@ -12,13 +12,26 @@ describe('getFormShowOn', () => {
 });
 
 describe('getFormRequiredCapabilities', () => {
-  it('reads the listed capabilities, none when absent, and null when unreadable', () => {
+  it('reads the listed capabilities', () => {
     expect(
-      getFormRequiredCapabilities({ 'x-required-capabilities': ['review'] }),
-    ).toEqual(['review']);
+      getFormRequiredCapabilities({
+        'x-required-capabilities': ['review', 'vote'],
+      }),
+    ).toEqual(['review', 'vote']);
+  });
+
+  it('requires nothing when the key is absent or empty', () => {
     expect(getFormRequiredCapabilities({})).toEqual([]);
     expect(
-      getFormRequiredCapabilities({ 'x-required-capabilities': ['admin'] }),
+      getFormRequiredCapabilities({ 'x-required-capabilities': [] }),
+    ).toEqual([]);
+  });
+
+  it('returns null for a value it cannot fully read', () => {
+    expect(
+      getFormRequiredCapabilities({
+        'x-required-capabilities': ['review', 'admin'],
+      }),
     ).toBeNull();
     expect(
       getFormRequiredCapabilities({ 'x-required-capabilities': 'review' }),

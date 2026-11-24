@@ -105,6 +105,12 @@ describe('buildDefinition', () => {
     expect(parsed.showOn).toBe('entry');
   });
 
+  it('leaves out required capabilities when none are selected', () => {
+    expect(
+      buildDefinition(form([field({ key: 'answer' })])),
+    ).not.toHaveProperty('x-required-capabilities');
+  });
+
   it('round-trips the required capabilities', () => {
     const { form: parsed, unsupportedKeys } = parseDefinition({
       schema: buildDefinition({
