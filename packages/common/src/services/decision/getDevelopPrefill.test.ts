@@ -992,5 +992,69 @@ describe.concurrent('getDevelopPrefill', () => {
 
       expect(result).toEqual({ data: { title: 'Garden' } });
     });
+
+    it('given costs whose float sum is not exact, when the prefill is built, then the budget is rounded to the cent', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instanceId, createSubmittedProposal, createReview } =
+        await seedDevelopDecision(testData);
+      const garden = await createSubmittedProposal({ title: 'Garden' });
+      const review = await createReview({
+        proposalId: garden.id,
+        phaseId: FEASIBILITY,
+        reviewData: answers({
+          design: 50322.58,
+          construction: 289354.84,
+          contingency: 50322.58,
+        }),
+      });
+
+      const result = await getDevelopPrefill({
+        instanceId,
+        inputs: [
+          { type: 'proposal', phaseId: SUBMISSION, id: garden.id },
+          { type: 'review', id: review.id },
+        ],
+        target: { type: 'proposal', phaseId: BALLOT },
+        mappings: costTotalMappings,
+        user: setup.user,
+      });
+
+      expect(result.data.budget).toStrictEqual({
+        amount: 390000,
+        currency: DEFAULT_MONEY_CURRENCY,
+      });
+    });
+  });
+
+  it('given a copy rule whose budget is not a number, when the prefill is built, then the budget is copied unchanged', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, createSubmittedProposal, createReview } =
+      await seedDevelopDecision(testData);
+    const proposal = await createSubmittedProposal({ title: 'Bike lanes' });
+    const copiedBudget = { amount: 20000, currency: 'EUR', note: 'estimate' };
+    const review = await createReview({
+      proposalId: proposal.id,
+      phaseId: FEASIBILITY,
+      reviewData: { cost_construction: copiedBudget },
+    });
+
+    const result = await getDevelopPrefill({
+      instanceId,
+      inputs: [
+        { type: 'proposal', phaseId: SUBMISSION, id: proposal.id },
+        { type: 'review', id: review.id },
+      ],
+      target: { type: 'proposal', phaseId: BALLOT },
+      mappings,
+      user: setup.user,
+    });
+
+    expect(result.data.budget).toStrictEqual(copiedBudget);
   });
 });

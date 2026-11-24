@@ -1139,104 +1139,47 @@ describe.concurrent('createDevelopedProposal', () => {
       };
     };
 
-    it('prefills the budget with the cost total of the submitted review, without a missing cost key or a draft review', async ({
+    it('prefills the budget with the cost total of the submitted review of the source, rounded to the cent', async ({
       task,
       onTestFinished,
     }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const { instanceId, sources, reviewers, createDraft } =
-        await setUpCostTotal({ testData, sourceCount: 1 });
-      const [source] = sources;
-      if (!source) {
-        throw new Error('Expected a source');
-      }
-      await createCostReview({
-        instanceId,
-        proposalId: source.id,
-        reviewerProfileId: reviewers[0],
-        answers: { cost_design: usd(1000), cost_construction: usd(20000) },
-      });
-      await createCostReview({
-        instanceId,
-        proposalId: source.id,
-        reviewerProfileId: reviewers[1],
-        answers: { cost_design: usd(9999) },
-        state: ProposalReviewState.DRAFT,
-      });
-
-      await expect(createDraft([source.id])).resolves.toHaveProperty('budget', {
-        amount: 21000,
-        currency: DEFAULT_MONEY_CURRENCY,
-      });
-    });
-
-    it('prefills the budget from the reviews that have costs, and only when their totals agree', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-      const { instanceId, sources, reviewers, createDraft } =
-        await setUpCostTotal({ testData, sourceCount: 3 });
-      const [partlyReviewed, disagreeing, noCosts] = sources;
-      if (!partlyReviewed || !disagreeing || !noCosts) {
-        throw new Error('Expected three sources');
+        await setUpCostTotal({ testData, sourceCount: 2 });
+      const [source, unrelated] = sources;
+      if (!source || !unrelated) {
+        throw new Error('Expected two sources');
       }
       await Promise.all([
         createCostReview({
           instanceId,
-          proposalId: partlyReviewed.id,
+          proposalId: source.id,
           reviewerProfileId: reviewers[0],
-          answers: {},
-        }),
-        createCostReview({
-          instanceId,
-          proposalId: partlyReviewed.id,
-          reviewerProfileId: reviewers[1],
           answers: {
-            cost_design: usd(12000),
-            cost_contingency: usd(12000),
-            cost_construction: usd(60000),
+            cost_design: usd(50322.58),
+            cost_construction: usd(289354.84),
+            cost_contingency: usd(50322.58),
           },
         }),
         createCostReview({
           instanceId,
-          proposalId: disagreeing.id,
+          proposalId: source.id,
+          reviewerProfileId: reviewers[1],
+          answers: { cost_design: usd(9999) },
+          state: ProposalReviewState.DRAFT,
+        }),
+        createCostReview({
+          instanceId,
+          proposalId: unrelated.id,
           reviewerProfileId: reviewers[0],
           answers: { cost_construction: usd(5000) },
         }),
-        createCostReview({
-          instanceId,
-          proposalId: disagreeing.id,
-          reviewerProfileId: reviewers[1],
-          answers: {
-            cost_design: usd(0),
-            cost_contingency: usd(25000),
-            cost_construction: usd(250000),
-          },
-        }),
-        createCostReview({
-          instanceId,
-          proposalId: noCosts.id,
-          reviewerProfileId: reviewers[0],
-          answers: {},
-        }),
-        createCostReview({
-          instanceId,
-          proposalId: noCosts.id,
-          reviewerProfileId: reviewers[1],
-          answers: {},
-        }),
       ]);
 
-      await expect(createDraft([partlyReviewed.id])).resolves.toMatchObject({
-        budget: usd(84000),
+      await expect(createDraft([source.id])).resolves.toHaveProperty('budget', {
+        amount: 390000,
+        currency: DEFAULT_MONEY_CURRENCY,
       });
-      await expect(createDraft([disagreeing.id])).resolves.not.toHaveProperty(
-        'budget',
-      );
-      await expect(createDraft([noCosts.id])).resolves.not.toHaveProperty(
-        'budget',
-      );
     });
 
     it('leaves the budget of a merged entry empty, also when its sources give the same total', async ({

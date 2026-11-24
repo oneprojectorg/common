@@ -20,7 +20,7 @@ import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { getPhases } from './instancePhases';
-import { normalizeBudget, parseProposalData } from './proposalDataSchema';
+import { parseProposalData } from './proposalDataSchema';
 import { resolveDocumentFieldValues } from './proposalListPreview';
 import {
   type ProposalReadContext,
@@ -214,22 +214,27 @@ export const buildDevelopPrefill = async ({
 const withMoneyBudget = (
   data: Record<string, unknown>,
 ): Record<string, unknown> => {
-  const { budget: mappedBudget, ...dataWithoutBudget } = data;
-  const budget =
-    typeof mappedBudget === 'number'
-      ? { amount: mappedBudget, currency: DEFAULT_MONEY_CURRENCY }
-      : normalizeBudget(mappedBudget);
-
-  return budget ? { ...dataWithoutBudget, budget } : dataWithoutBudget;
+  if (typeof data.budget !== 'number') {
+    return data;
+  }
+  const currency = DEFAULT_MONEY_CURRENCY;
+  // Rounds to the currency's minor unit, which drops the float noise of a sum.
+  const digits =
+    new Intl.NumberFormat('en', {
+      style: 'currency',
+      currency,
+    }).resolvedOptions().maximumFractionDigits ?? 2;
+  return {
+    ...data,
+    budget: { amount: Number(data.budget.toFixed(digits)), currency },
+  };
 };
 
 const getCopyRules = (mappings: SchemaMapping[]): SchemaMapping[] =>
-  mappings.flatMap((mapping) => {
-    const fields = mapping.fields.filter(
-      (field) => typeof field.from === 'string',
-    );
-    return fields.length > 0 ? [{ ...mapping, fields }] : [];
-  });
+  mappings.map((mapping) => ({
+    ...mapping,
+    fields: mapping.fields.filter((field) => typeof field.from === 'string'),
+  }));
 
 const assertValidRequest = (request: {
   inputs: DevelopPrefillInput[];

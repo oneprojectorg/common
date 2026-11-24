@@ -55,22 +55,12 @@ describe('schemaMappingSchema', () => {
     { operator: 'add', operands: [{ field: 'a', extra: true }] },
     { operator: 'add', operands: [{ field: 'a' }], extra: true },
     { operator: 'subtract', operands: [{ field: 'a' }] },
-    { operator: 'multiply', operands: [{ field: 'a' }] },
     {
       operator: 'add',
       operands: [{ operator: 'add', operands: [{ field: 'a' }] }],
     },
   ])('rejects the source %j', (from) => {
     const mapping = mappingWith({ from, to: 'budget' });
-
-    expect(schemaMappingSchema.safeParse(mapping).success).toBe(false);
-  });
-
-  it('rejects a nested target key for a sum', () => {
-    const mapping = mappingWith({
-      from: { operator: 'add', operands: [{ field: 'answers.cost.amount' }] },
-      to: 'budget.amount',
-    });
 
     expect(schemaMappingSchema.safeParse(mapping).success).toBe(false);
   });

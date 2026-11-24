@@ -1,6 +1,5 @@
 import { isDeepStrictEqual } from 'node:util';
 
-import { sumAmounts } from '../services/decision/fieldUnit';
 import { evaluateExpression } from '../services/decision/selectionPipeline/expressionEvaluator';
 import { readOwnField } from './fieldPath';
 import type {
@@ -79,14 +78,20 @@ const evaluateRule = ({
   if (typeof from === 'string') {
     return evaluateSourceField({ data, path: from });
   }
+  // An absent operand is skipped; any other value that is not a number gives
+  // no value, never a partial one.
   const values = from.operands
-    .map(({ field }) => evaluateSourceField({ data, path: field }))
+    .map(({ field }) => readOwnField({ data, path: field }))
     .filter((value) => value !== undefined);
-  // A value that is not a number gives no total, never a partial one.
   if (values.length === 0 || !values.every(isFiniteNumber)) {
     return undefined;
   }
-  return sumAmounts(values);
+  // Literals, so the evaluator's inherited-property read cannot add a value
+  // the check above did not see.
+  return evaluateExpression(
+    { operator: from.operator, operands: values.map((value) => ({ value })) },
+    { record: data, variables: {}, outputs: {} },
+  );
 };
 
 const isFiniteNumber = (value: unknown): value is number =>
