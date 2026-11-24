@@ -2,7 +2,7 @@ import type { InstancePhaseData, PhaseRules } from '@op/api/encoders';
 
 /**
  * One phase as the manage screens consume it, keyed by the row uuid that
- * `getInstance` returns on each phase.
+ * `getDecisionBySlug` returns on each phase.
  */
 export interface ProcessAdminPhase {
   /** The `decision_process_phases` row uuid; the only identifier a screen or a mutation uses. */
