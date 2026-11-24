@@ -1,5 +1,8 @@
-import type { CustomFormShowOn } from '@op/common/client';
-import { TestDecisionsDataManager } from '@op/common/testing';
+import type { CustomFormCapability, CustomFormShowOn } from '@op/common/client';
+import {
+  TestDecisionsDataManager,
+  TestReviewsDataManager,
+} from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { customFormSubmissions, customForms } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -29,6 +32,7 @@ async function attachForm(
   onTestFinished: (fn: () => Promise<void>) => void,
   phaseId?: string,
   showOn?: CustomFormShowOn,
+  requiredCapabilities?: CustomFormCapability[],
 ) {
   const [form] = await db
     .insert(customForms)
@@ -40,6 +44,9 @@ async function attachForm(
         properties: {},
         ...(phaseId ? { 'x-phase': phaseId } : {}),
         ...(showOn ? { 'x-show-on': showOn } : {}),
+        ...(requiredCapabilities
+          ? { 'x-required-capabilities': requiredCapabilities }
+          : {}),
       },
     })
     .returning();
@@ -138,6 +145,41 @@ describe.concurrent('customForm.getForProfile', () => {
 
     expect(atAction).toBeNull();
     expect(atEntry?.id).toBe(form.id);
+  });
+
+  it('returns a form that requires review only to a caller who can review', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    const [member, reviewer] = await Promise.all([
+      testData.createInstanceMember(context),
+      testData.createInstanceReviewerWithRole(context),
+    ]);
+    const form = await attachForm(
+      context.instance.profileId,
+      onTestFinished,
+      undefined,
+      'entry',
+      ['review'],
+    );
+    const [memberCaller, reviewerCaller] = await Promise.all([
+      createAuthenticatedCaller(member.email),
+      createAuthenticatedCaller(reviewer.email),
+    ]);
+    const input = {
+      profileId: context.instance.profileId,
+      showOn: 'entry' as const,
+    };
+
+    const [forMember, forReviewer] = await Promise.all([
+      memberCaller.customForm.getForProfile(input),
+      reviewerCaller.customForm.getForProfile(input),
+    ]);
+
+    expect(forMember).toBeNull();
+    expect(forReviewer?.id).toBe(form.id);
   });
 
   it('returns null when no form is attached', async ({

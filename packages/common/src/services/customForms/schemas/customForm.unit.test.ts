@@ -43,6 +43,16 @@ describe('customFormDefinitionInputSchema', () => {
     expect(parse(definition({ 'x-show-on': 'later' })).success).toBe(false);
   });
 
+  it('accepts known required capabilities and rejects an unknown one', () => {
+    expect(
+      parse(definition({ 'x-required-capabilities': ['review', 'vote'] }))
+        .success,
+    ).toBe(true);
+    expect(
+      parse(definition({ 'x-required-capabilities': ['admin'] })).success,
+    ).toBe(false);
+  });
+
   it('rejects a form with no fields', () => {
     expect(
       parse(definition({ properties: {}, 'x-field-order': [] })).success,

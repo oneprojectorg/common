@@ -3,11 +3,16 @@ import type { CustomForm, CustomFormSubmission } from '@op/db/schema';
 import { customFormSubmissions } from '@op/db/schema';
 import { permission } from 'access-zones';
 
-import { CommonError, NotFoundError, ValidationError } from '../../utils';
+import {
+  CommonError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from '../../utils';
 import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { assertDecisionProfileReadAccess } from '../decision/assertDecisionProfileReadAccess';
 import { schemaValidator } from '../decision/schemaValidator';
-import { readInstancePhaseSet } from './customFormAuth';
+import { hasFormCapabilities, readInstancePhaseSet } from './customFormAuth';
 import type {
   CreateCustomFormSubmissionInput,
   CustomFormDefinitionSchema,
@@ -65,6 +70,12 @@ export const createCustomFormSubmission = async ({
 
   if (!form) {
     throw new NotFoundError('Custom form', input.customFormId);
+  }
+
+  if (!(await hasFormCapabilities({ user: { id: authUserId }, form }))) {
+    throw new UnauthorizedError(
+      'You do not have the capabilities this form requires',
+    );
   }
 
   // The target profile must belong to the process that owns the form

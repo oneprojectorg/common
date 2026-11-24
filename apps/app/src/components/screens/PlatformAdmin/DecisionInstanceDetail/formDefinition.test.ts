@@ -62,6 +62,7 @@ const form = (fields: BuilderField[]): BuilderForm => ({
   description: 'Take our 1-minute survey.',
   phaseId: 'voting',
   showOn: 'action',
+  requiredCapabilities: [],
   fields,
 });
 
@@ -102,6 +103,34 @@ describe('buildDefinition', () => {
 
     expect(unsupportedKeys).toEqual([]);
     expect(parsed.showOn).toBe('entry');
+  });
+
+  it('round-trips the required capabilities', () => {
+    const { form: parsed, unsupportedKeys } = parseDefinition({
+      schema: buildDefinition({
+        ...form([field({ key: 'answer' })]),
+        requiredCapabilities: ['review'],
+      }),
+      phaseId: 'voting',
+      name: 'Exit survey',
+    });
+
+    expect(unsupportedKeys).toEqual([]);
+    expect(parsed.requiredCapabilities).toEqual(['review']);
+  });
+
+  it('refuses to edit a form whose required capabilities it cannot read', () => {
+    const { unsupportedKeys } = parseDefinition({
+      schema: {
+        type: 'object',
+        properties: {},
+        'x-required-capabilities': ['admin'],
+      },
+      phaseId: 'voting',
+      name: 'Exit survey',
+    });
+
+    expect(unsupportedKeys).toEqual(['x-required-capabilities']);
   });
 
   it('opens a stored form with no x-show-on after the action', () => {

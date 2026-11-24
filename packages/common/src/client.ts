@@ -272,6 +272,7 @@ export {
   customFormSchema,
   customFormWithPhaseSchema,
   customFormShowOnSchema,
+  customFormCapabilitySchema,
   customFormSubmissionSchema,
   customFormFieldSchema,
   customFormDefinitionInputSchema,
@@ -297,9 +298,13 @@ export {
   type ListCustomFormsInput,
   type UpdateCustomFormInput,
   type CustomFormShowOn,
+  type CustomFormCapability,
   isCustomFormDefinition,
 } from './services/customForms/schemas/customForm';
-export { getFormShowOn } from './services/customForms/utils';
+export {
+  getFormRequiredCapabilities,
+  getFormShowOn,
+} from './services/customForms/utils';
 export { serverExtensions } from './services/decision/tiptapExtensions';
 export { tiptapDocToPlainText } from './services/decision/tiptapDocToPlainText';
 export { sanitizeTiptapDoc } from './services/decision/sanitizeTiptapDoc';

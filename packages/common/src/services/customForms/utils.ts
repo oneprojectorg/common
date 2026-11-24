@@ -1,4 +1,10 @@
-import type { CustomFormShowOn } from './schemas/customForm';
+import { z } from 'zod';
+
+import {
+  type CustomFormCapability,
+  type CustomFormShowOn,
+  customFormCapabilitySchema,
+} from './schemas/customForm';
 
 /**
  * Forms written before `x-phase` existed have none, and apply to the initial
@@ -21,3 +27,21 @@ export const getEffectiveFormPhase = ({
 export const getFormShowOn = (
   schema: Record<string, unknown>,
 ): CustomFormShowOn => (schema['x-show-on'] === 'entry' ? 'entry' : 'action');
+
+/**
+ * The capabilities a participant needs to see and answer the form. Null when
+ * the stored value cannot be read, so callers fail closed.
+ */
+export const getFormRequiredCapabilities = (
+  schema: Record<string, unknown>,
+): CustomFormCapability[] | null => {
+  const value = schema['x-required-capabilities'];
+
+  if (value === undefined) {
+    return [];
+  }
+
+  const parsed = z.array(customFormCapabilitySchema).safeParse(value);
+
+  return parsed.success ? parsed.data : null;
+};

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getFormShowOn } from './utils';
+import { getFormRequiredCapabilities, getFormShowOn } from './utils';
 
 describe('getFormShowOn', () => {
   it('opens on entry only for an explicit entry value', () => {
@@ -8,5 +8,20 @@ describe('getFormShowOn', () => {
     expect(getFormShowOn({ 'x-show-on': 'action' })).toBe('action');
     expect(getFormShowOn({ 'x-show-on': 'later' })).toBe('action');
     expect(getFormShowOn({})).toBe('action');
+  });
+});
+
+describe('getFormRequiredCapabilities', () => {
+  it('reads the listed capabilities, none when absent, and null when unreadable', () => {
+    expect(
+      getFormRequiredCapabilities({ 'x-required-capabilities': ['review'] }),
+    ).toEqual(['review']);
+    expect(getFormRequiredCapabilities({})).toEqual([]);
+    expect(
+      getFormRequiredCapabilities({ 'x-required-capabilities': ['admin'] }),
+    ).toBeNull();
+    expect(
+      getFormRequiredCapabilities({ 'x-required-capabilities': 'review' }),
+    ).toBeNull();
   });
 });

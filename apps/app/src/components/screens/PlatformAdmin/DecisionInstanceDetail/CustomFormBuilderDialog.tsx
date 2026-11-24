@@ -3,12 +3,17 @@
 import { trpc } from '@op/api/client';
 import type {
   AdminDecisionPhase,
+  CustomFormCapability,
   CustomFormDefinitionInput,
   CustomFormShowOn,
   CustomFormWithPhaseDTO,
 } from '@op/common/client';
-import { customFormShowOnSchema } from '@op/common/client';
+import {
+  customFormCapabilitySchema,
+  customFormShowOnSchema,
+} from '@op/common/client';
 import { Button } from '@op/sense/Button';
+import { Checkbox } from '@op/sense/Checkbox';
 import {
   Dialog,
   DialogContent,
@@ -17,7 +22,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@op/sense/Dialog';
-import { Field, FieldDescription, FieldLabel } from '@op/sense/Field';
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from '@op/sense/Field';
 import {
   Select,
   SelectContent,
@@ -254,6 +265,14 @@ const FormDetailsFields = ({
         onChange={(showOn) => onChange({ ...draft, showOn })}
       />
 
+      <RequiredCapabilitiesField
+        id={`${fieldId}-capability`}
+        requiredCapabilities={draft.requiredCapabilities}
+        onChange={(requiredCapabilities) =>
+          onChange({ ...draft, requiredCapabilities })
+        }
+      />
+
       <CountedInputField
         id={`${fieldId}-title`}
         label={t('admin.formHeadingLabel')}
@@ -375,6 +394,51 @@ const ShowOnField = ({
       </Select>
       <FieldDescription>{t('admin.formShowOnHint')}</FieldDescription>
     </Field>
+  );
+};
+
+const RequiredCapabilitiesField = ({
+  id,
+  requiredCapabilities,
+  onChange,
+}: {
+  id: string;
+  requiredCapabilities: CustomFormCapability[];
+  onChange: (requiredCapabilities: CustomFormCapability[]) => void;
+}) => {
+  const t = useTranslations();
+  const labels: Record<CustomFormCapability, string> = {
+    review: t('admin.formCapabilityReviewOption'),
+    vote: t('admin.formCapabilityVoteOption'),
+    submitProposals: t('admin.formCapabilitySubmitProposalsOption'),
+    developProposals: t('admin.formCapabilityDevelopProposalsOption'),
+  };
+
+  return (
+    <FieldSet>
+      <FieldLegend variant="label">
+        {t('admin.formCapabilitiesLabel')}
+      </FieldLegend>
+      <FieldDescription>{t('admin.formCapabilitiesHint')}</FieldDescription>
+      {customFormCapabilitySchema.options.map((capability) => (
+        <Field key={capability} orientation="horizontal">
+          <Checkbox
+            id={`${id}-${capability}`}
+            checked={requiredCapabilities.includes(capability)}
+            onCheckedChange={(checked) =>
+              onChange(
+                checked
+                  ? [...requiredCapabilities, capability]
+                  : requiredCapabilities.filter((item) => item !== capability),
+              )
+            }
+          />
+          <FieldLabel htmlFor={`${id}-${capability}`}>
+            {labels[capability]}
+          </FieldLabel>
+        </Field>
+      ))}
+    </FieldSet>
   );
 };
 

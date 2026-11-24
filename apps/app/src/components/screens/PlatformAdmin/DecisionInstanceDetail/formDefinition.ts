@@ -1,5 +1,6 @@
 import type {
   CustomFormDefinitionInput,
+  CustomFormCapability,
   CustomFormField,
   CustomFormShowOn,
   XFormatPropertySchema,
@@ -7,6 +8,7 @@ import type {
 import {
   CUSTOM_FORM_MAX_FIELDS,
   customFormDefinitionInputSchema,
+  getFormRequiredCapabilities,
   getFormShowOn,
 } from '@op/common/client';
 
@@ -78,6 +80,7 @@ export type BuilderForm = {
   description: string;
   phaseId: string;
   showOn: CustomFormShowOn;
+  requiredCapabilities: CustomFormCapability[];
   fields: BuilderField[];
 };
 
@@ -87,6 +90,7 @@ const createEmptyForm = (phaseId: string): BuilderForm => ({
   description: '',
   phaseId,
   showOn: 'action',
+  requiredCapabilities: [],
   fields: [],
 });
 
@@ -119,6 +123,9 @@ export const buildDefinition = (
       : {}),
     'x-phase': form.phaseId,
     'x-show-on': form.showOn,
+    ...(form.requiredCapabilities.length > 0
+      ? { 'x-required-capabilities': form.requiredCapabilities }
+      : {}),
     required: form.fields
       .filter((field) => field.isRequired)
       .map((field) => field.key),
@@ -162,6 +169,7 @@ const ROUND_TRIPPED_DEFINITION_KEYS = new Set([
   'description',
   'x-phase',
   'x-show-on',
+  'x-required-capabilities',
   'required',
   'properties',
   'x-field-order',
@@ -209,6 +217,10 @@ export const parseDefinition = ({
   const unsupportedRoot = Object.keys(schema).filter(
     (key) => !ROUND_TRIPPED_DEFINITION_KEYS.has(key),
   );
+  const requiredCapabilities = getFormRequiredCapabilities(schema);
+  if (!requiredCapabilities) {
+    unsupportedRoot.push('x-required-capabilities');
+  }
 
   return {
     form: {
@@ -218,6 +230,7 @@ export const parseDefinition = ({
         typeof schema.description === 'string' ? schema.description : '',
       phaseId,
       showOn: getFormShowOn(schema),
+      requiredCapabilities: requiredCapabilities ?? [],
       fields,
     },
     unsupportedKeys: [...unsupportedKeys, ...unsupportedRoot],

@@ -1,4 +1,4 @@
-import type { CustomFormShowOn } from '@op/common/client';
+import type { CustomFormCapability, CustomFormShowOn } from '@op/common/client';
 import {
   TestDecisionsDataManager,
   TestReviewsDataManager,
@@ -58,6 +58,7 @@ async function createCustomForm(
   onTestFinished: (fn: () => Promise<void>) => void,
   phaseId?: string,
   showOn?: CustomFormShowOn,
+  requiredCapabilities?: CustomFormCapability[],
 ) {
   const [form] = await db
     .insert(customForms)
@@ -68,6 +69,9 @@ async function createCustomForm(
         ...TEST_FORM_SCHEMA,
         ...(phaseId ? { 'x-phase': phaseId } : {}),
         ...(showOn ? { 'x-show-on': showOn } : {}),
+        ...(requiredCapabilities
+          ? { 'x-required-capabilities': requiredCapabilities }
+          : {}),
       },
     })
     .returning();
@@ -403,6 +407,45 @@ describe.concurrent('customForm.submit', () => {
     });
 
     expect(submission.profileId).toBe(member.profileId);
+  });
+
+  it('accepts a form that requires review only from a caller who can review', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    const [member, reviewer] = await Promise.all([
+      testData.createInstanceMember(context),
+      testData.createInstanceReviewerWithRole(context),
+    ]);
+    const form = await createCustomForm(
+      context.instance.profileId,
+      onTestFinished,
+      await getCurrentPhaseId(context.instance.profileId),
+      'entry',
+      ['review'],
+    );
+    const [memberCaller, reviewerCaller] = await Promise.all([
+      createAuthenticatedCaller(member.email),
+      createAuthenticatedCaller(reviewer.email),
+    ]);
+
+    await expect(
+      memberCaller.customForm.submit({
+        customFormId: form.id,
+        profileId: member.profileId,
+        data: { neighborhood: 'Downtown' },
+      }),
+    ).rejects.toThrow(/capabilities this form requires/i);
+
+    const submission = await reviewerCaller.customForm.submit({
+      customFormId: form.id,
+      profileId: reviewer.profileId,
+      data: { neighborhood: 'Downtown' },
+    });
+
+    expect(submission.profileId).toBe(reviewer.profileId);
   });
 
   it('rejects an entry form submission outside the form phase', async ({

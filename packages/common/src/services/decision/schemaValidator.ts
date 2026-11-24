@@ -38,6 +38,7 @@ export class SchemaValidator {
     this.ajv.addKeyword('x-phase');
     // When a custom form opens in its phase (see CustomFormDefinitionSchema).
     this.ajv.addKeyword('x-show-on');
+    this.ajv.addKeyword('x-required-capabilities');
   }
 
   /**

@@ -25,11 +25,25 @@ export interface CustomFormDefinitionSchema extends JSONSchema7 {
    * participant's `action` there (submit, vote, review). Absent means `action`.
    */
   'x-show-on'?: CustomFormShowOn;
+  /**
+   * Decision capabilities a participant needs, all of them, to see and answer
+   * the form. Absent or empty means anyone who can read the process.
+   */
+  'x-required-capabilities'?: CustomFormCapability[];
 }
 
 export const customFormShowOnSchema = z.enum(['entry', 'action']);
 
 export type CustomFormShowOn = z.infer<typeof customFormShowOnSchema>;
+
+export const customFormCapabilitySchema = z.enum([
+  'review',
+  'vote',
+  'submitProposals',
+  'developProposals',
+]);
+
+export type CustomFormCapability = z.infer<typeof customFormCapabilitySchema>;
 
 /** True for a stored form definition with an object root and `properties`. */
 export function isCustomFormDefinition(
@@ -176,6 +190,7 @@ export const customFormDefinitionInputSchema = z
     description: z.string().max(2000).optional(),
     'x-phase': z.string().min(1).max(256),
     'x-show-on': customFormShowOnSchema.optional(),
+    'x-required-capabilities': z.array(customFormCapabilitySchema).optional(),
     required: z.array(customFormFieldKeySchema),
     properties: z.record(customFormFieldKeySchema, customFormFieldSchema),
     'x-field-order': z.array(customFormFieldKeySchema),
