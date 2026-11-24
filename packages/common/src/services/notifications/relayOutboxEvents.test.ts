@@ -1,8 +1,8 @@
 import { db } from '@op/db/client';
 import { eventOutbox } from '@op/db/schema';
 import { Events } from '@op/events';
-import { randomUUID } from 'node:crypto';
 import { inArray } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it, onTestFinished } from 'vitest';
 
 import type { OutboxEvent } from './buildOutboxEvent';
