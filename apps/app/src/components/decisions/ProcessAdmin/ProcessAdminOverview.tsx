@@ -34,7 +34,6 @@ import {
   PinnedResourcesError,
   PinnedResourcesSkeleton,
 } from '../OverviewPinnedResources';
-import { toProcessPhases } from '../toProcessPhases';
 import { ProcessAdminBanner } from './ProcessAdminBanner';
 import { ProcessAdminLaunchButton } from './ProcessAdminLaunchButton';
 import { ProcessAdminOverviewSkeleton } from './ProcessAdminOverviewSkeleton';
@@ -44,9 +43,16 @@ import {
   STATUS_BADGE_VARIANT,
   getProcessAdminStatus,
 } from './processAdminStatus';
+import { toTimelinePhases } from './toTimelinePhases';
+import type { ProcessAdminPhase } from './types';
 
 interface ProcessAdminOverviewProps {
   slug: string;
+  /**
+   * The phases the rail shows, resolved by the page: the instance's stored
+   * phases today, a fixture behind `?fixture=` in development.
+   */
+  phases: ProcessAdminPhase[];
   /**
    * Whether participants can act on the process (`isProcessOpen`). Computed on
    * the server, because the check reads the clock and would otherwise differ
@@ -64,6 +70,7 @@ interface ProcessAdminOverviewProps {
 /** Read-only admin home for one process, at /decisions/[slug]/manage. */
 export function ProcessAdminOverview({
   slug,
+  phases,
   isOpen,
   aboutSlot,
 }: ProcessAdminOverviewProps) {
@@ -91,6 +98,7 @@ export function ProcessAdminOverview({
       <Suspense fallback={<ProcessAdminOverviewSkeleton />}>
         <ProcessAdminOverviewSuspense
           slug={slug}
+          phases={phases}
           isOpen={isOpen}
           aboutSlot={aboutSlot}
         />
@@ -101,6 +109,7 @@ export function ProcessAdminOverview({
 
 function ProcessAdminOverviewSuspense({
   slug,
+  phases,
   isOpen,
   aboutSlot,
 }: ProcessAdminOverviewProps) {
@@ -130,7 +139,8 @@ function ProcessAdminOverviewSuspense({
           <div className="flex min-w-0 flex-1 flex-col gap-10">
             <ProcessAdminPhaseRail
               slug={slug}
-              instance={instance}
+              instanceId={instance.id}
+              phases={phases}
               isOpen={isOpen}
             />
             {instance.profileId ? (
@@ -300,25 +310,27 @@ function ProcessAdminHero({
 
 function ProcessAdminPhaseRail({
   slug,
-  instance,
+  instanceId,
+  phases,
   isOpen,
 }: {
   slug: string;
-  instance: ProcessInstance;
+  instanceId: string;
+  phases: ProcessAdminPhase[];
   isOpen: boolean;
 }) {
   const t = useTranslations('decisions');
-  const phases = toProcessPhases(instance.instanceData.phases);
+  const timeline = toTimelinePhases(phases);
 
   return (
     <section className="flex flex-col gap-4">
       <Header2 className="text-label">{t('processOverviewHeading')}</Header2>
-      {phases.length > 0 ? (
+      {timeline.phases.length > 0 ? (
         <DecisionPhaseTimeline
-          phases={phases}
-          currentPhaseId={instance.currentStateId ?? ''}
+          phases={timeline.phases}
+          currentPhaseId={timeline.currentPhaseId}
           hasStarted={isOpen}
-          instanceId={instance.id}
+          instanceId={instanceId}
           isAdmin={false}
           decisionSlug={slug}
         />
