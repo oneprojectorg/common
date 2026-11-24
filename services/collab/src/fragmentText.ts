@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 
-// A field that is not rich text keeps its value as one string in one
-// paragraph, so TipTap Cloud serialises the fragment as valid ProseMirror JSON.
+// Mirrors how the editor's field components store a value that is not rich
+// text: one string in one paragraph, so TipTap Cloud serialises valid JSON.
 
 /** The text of each paragraph in the fragment, joined. */
 export function readFragmentText(fragment: Y.XmlFragment): string {

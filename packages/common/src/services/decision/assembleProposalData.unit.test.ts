@@ -12,7 +12,7 @@ const template: ProposalTemplateSchema = {
 };
 
 describe('assembleProposalData', () => {
-  it('reads a money value that the server wrote as a fragment', async () => {
+  it('reads a money value that the server wrote as a fragment, through the server fragment reader', async () => {
     const budget = { amount: 1250.5, currency: 'EUR' };
     const update = encodeFragments({
       copies: [],
@@ -29,10 +29,11 @@ describe('assembleProposalData', () => {
       'budget',
     ]);
 
-    expect(
-      assembleProposalData(template, {
-        budget: getFragmentTextFromTipTapDoc(fragments.budget),
-      }),
-    ).toEqual({ budget });
+    const text = getFragmentTextFromTipTapDoc(fragments.budget);
+
+    expect(text).toBe(JSON.stringify(budget));
+    expect(assembleProposalData(template, { budget: text })).toEqual({
+      budget,
+    });
   });
 });
