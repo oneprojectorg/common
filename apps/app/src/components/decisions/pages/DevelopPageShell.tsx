@@ -1,10 +1,9 @@
 'use client';
 
-import type { InstancePhaseData } from '@op/api/encoders';
 import { Header1 } from '@op/sense/Header';
 import type { ReactNode } from 'react';
 
-import { type TranslateFn, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 interface DevelopPageShellProps {
   children: ReactNode;
@@ -43,17 +42,4 @@ export function DevelopPageShell({
       </div>
     </div>
   );
-}
-
-/**
- * The name shown for the develop phase's developed proposals. The default
- * stands until the phase's form schema supplies a name.
- */
-export function getEntryName({
-  t,
-}: {
-  developPhase: InstancePhaseData | undefined;
-  t: TranslateFn<'decisions'>;
-}): string {
-  return t('develop.defaultEntryName');
 }

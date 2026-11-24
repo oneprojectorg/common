@@ -114,13 +114,8 @@ export function ReadonlyBudgetField({
   placeholder: string;
 }) {
   return (
-    <ReadonlyField
-      title={title}
-      description={description}
-      required={required}
-      className="w-full sm:max-w-68"
-    >
-      <ReadonlyValueBox isEmpty={!value}>
+    <ReadonlyField title={title} description={description} required={required}>
+      <ReadonlyValueBox isEmpty={!value} className="sm:max-w-68">
         {value ?? placeholder}
       </ReadonlyValueBox>
     </ReadonlyField>
@@ -136,19 +131,17 @@ function ReadonlyField({
   title,
   description,
   required,
-  className,
   children,
 }: {
   title?: string;
   description?: ReactNode;
   required?: boolean;
-  className?: string;
   children: ReactNode;
 }) {
   return (
     // Authored template text, so direction follows the content — resolved once
     // for the block rather than per element.
-    <Field className={className} dir="auto">
+    <Field dir="auto">
       {title && (
         <FieldTitle>
           {title}
@@ -167,9 +160,11 @@ function ReadonlyField({
  */
 function ReadonlyValueBox({
   isEmpty,
+  className,
   children,
 }: {
   isEmpty: boolean;
+  className?: string;
   children: ReactNode;
 }) {
   return (
@@ -177,6 +172,7 @@ function ReadonlyValueBox({
       className={cn(
         'rounded-lg border border-input bg-muted px-3 py-2.5 text-base',
         isEmpty ? 'text-muted-foreground' : 'text-foreground',
+        className,
       )}
       dir="auto"
     >

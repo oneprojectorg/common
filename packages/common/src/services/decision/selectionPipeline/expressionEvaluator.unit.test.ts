@@ -146,9 +146,9 @@ describe('evaluateExpression function calls', () => {
     );
   });
 
-  it('throws for an unknown function', () => {
-    expect(() => evaluateExpression(call('unknown'), context())).toThrow(
-      'Unknown function: unknown',
+  it.each(['unknown', 'constructor'])('throws for the function %s', (name) => {
+    expect(() => evaluateExpression(call(name), context())).toThrow(
+      `Unknown function: ${name}`,
     );
   });
 });
