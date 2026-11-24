@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { moneyValueType } from '../../../valueTypes/moneyValueType';
 import type { ValueType } from '../../../valueTypes/valueType';
 import { evaluateExpression } from './expressionEvaluator';
 import type {
@@ -86,25 +87,38 @@ describe('evaluateExpression add', () => {
     ).toBeNull();
   });
 
-  it('keeps the other operators on numbers when value types are given', () => {
+  it('gives null for a number next to a money value', () => {
+    expect(
+      evaluateExpression(
+        add({ amount: 5, currency: 'USD' }, 2),
+        context([moneyValueType]),
+      ),
+    ).toBeNull();
+  });
+
+  it('gives null for an operator the type has no operation for', () => {
     const result = evaluateExpression(
       {
         operator: 'subtract',
-        operands: [{ value: { meters: 5 } }, { value: 2 }],
+        operands: [
+          { value: { amount: 5, currency: 'USD' } },
+          { value: { amount: 2, currency: 'USD' } },
+        ],
       },
-      context([lengthType]),
+      context([moneyValueType]),
     );
 
-    expect(result).toBe(-2);
+    expect(result).toBeNull();
   });
 });
 
 describe('evaluateExpression arithmetic on numbers', () => {
-  it.each<{
+  const cases: {
     operator: ArithmeticExpression['operator'];
     operands: number[];
     result: number;
-  }>([
+  }[] = [
+    { operator: 'add', operands: [1, 2], result: 3 },
     { operator: 'subtract', operands: [10, 3, 2], result: 5 },
     { operator: 'multiply', operands: [2, 3], result: 6 },
     { operator: 'divide', operands: [12, 3, 2], result: 2 },
@@ -112,15 +126,22 @@ describe('evaluateExpression arithmetic on numbers', () => {
     { operator: 'modulo', operands: [7, 4], result: 3 },
     { operator: 'modulo', operands: [7, 0], result: 0 },
     { operator: 'power', operands: [2, 3], result: 8 },
-  ])(
-    '$operator of $operands gives $result',
-    ({ operator, operands, result }) => {
+  ];
+
+  it.each(
+    cases.flatMap((testCase) => [
+      { ...testCase, registry: 'no value types', valueTypes: undefined },
+      { ...testCase, registry: 'value types', valueTypes: [moneyValueType] },
+    ]),
+  )(
+    '$operator of $operands with $registry gives $result',
+    ({ operator, operands, result, valueTypes }) => {
       const expression: Expression = {
         operator,
         operands: operands.map((value) => ({ value })),
       };
 
-      expect(evaluateExpression(expression, context())).toBe(result);
+      expect(evaluateExpression(expression, context(valueTypes))).toBe(result);
     },
   );
 });

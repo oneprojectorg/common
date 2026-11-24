@@ -6,7 +6,7 @@ import type { ValueType } from './valueType';
 // keys is not read as money.
 const moneyValueSchema = moneyAmountSchema.strict();
 
-export const moneyValueType: ValueType<MoneyAmount> = {
+export const moneyValueType = {
   parse(value) {
     const result = moneyValueSchema.safeParse(value);
     // zod rejects NaN but lets Infinity through
@@ -20,4 +20,4 @@ export const moneyValueType: ValueType<MoneyAmount> = {
     }
     return { amount: sumAmounts([a.amount, b.amount]), currency: a.currency };
   },
-};
+} satisfies ValueType<MoneyAmount>;

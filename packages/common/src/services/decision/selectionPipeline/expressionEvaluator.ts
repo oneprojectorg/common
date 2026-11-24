@@ -1,7 +1,10 @@
 import { logger } from '@op/logging';
 import safeRegex from 'safe-regex2';
 
-import type { ValueType } from '../../../valueTypes/valueType';
+import {
+  type ValueType,
+  valueTypeOperators,
+} from '../../../valueTypes/valueType';
 import type {
   ArithmeticExpression,
   ComparisonExpression,
@@ -38,7 +41,7 @@ export function evaluateExpression(
 
   // Arithmetic
   if ('operator' in expr && 'operands' in expr) {
-    return evaluateArithmetic(expr as ArithmeticExpression, context);
+    return evaluateOperation(expr as ArithmeticExpression, context);
   }
 
   // Function call
@@ -163,48 +166,70 @@ function evaluateLogical(
 }
 
 /**
- * Evaluate arithmetic expressions
+ * Evaluates the operands one time, then routes: numbers, or values of a
+ * registered type.
  */
-function evaluateArithmetic(
+function evaluateOperation(
   expr: ArithmeticExpression,
   context: ExpressionContext,
 ): unknown {
   const operands: unknown[] = expr.operands.map((op) =>
     evaluateExpression(op, context),
   );
-  const numbers = operands.map((value) =>
-    typeof value === 'number' ? value : 0,
-  );
+  return context.valueTypes &&
+    !operands.every((operand) => typeof operand === 'number')
+    ? evaluateTypedValues({
+        operator: expr.operator,
+        operands,
+        valueTypes: context.valueTypes,
+      })
+    : evaluateArithmetic({
+        operator: expr.operator,
+        values: operands.map((operand) =>
+          typeof operand === 'number' ? operand : 0,
+        ),
+      });
+}
 
-  switch (expr.operator) {
+/**
+ * Evaluate arithmetic expressions
+ */
+function evaluateArithmetic({
+  operator,
+  values,
+}: {
+  operator: ArithmeticExpression['operator'];
+  values: number[];
+}): number {
+  switch (operator) {
     case 'add':
-      return context.valueTypes &&
-        !operands.every((operand) => typeof operand === 'number')
-        ? addTypedValues({ operands, valueTypes: context.valueTypes })
-        : numbers.reduce((a, b) => a + b, 0);
+      return values.reduce((a, b) => a + b, 0);
     case 'subtract':
-      return numbers.reduce((a, b) => a - b);
+      return values.reduce((a, b) => a - b);
     case 'multiply':
-      return numbers.reduce((a, b) => a * b, 1);
+      return values.reduce((a, b) => a * b, 1);
     case 'divide':
-      return numbers.reduce((a, b) => (b !== 0 ? a / b : 0));
+      return values.reduce((a, b) => (b !== 0 ? a / b : 0));
     case 'modulo':
-      return numbers.reduce((a, b) => (b !== 0 ? a % b : 0));
+      return values.reduce((a, b) => (b !== 0 ? a % b : 0));
     case 'power':
-      return numbers.reduce((a, b) => Math.pow(a, b));
+      return values.reduce((a, b) => Math.pow(a, b));
     default:
-      throw new Error(`Unknown arithmetic operator: ${expr.operator}`);
+      throw new Error(`Unknown arithmetic operator: ${operator}`);
   }
 }
 
 /**
  * Null unless exactly one value type accepts every operand that is not null
- * and can add them all. A missing operand is skipped.
+ * and has the operation, and the operation gives a value at each step. A
+ * missing operand is skipped.
  */
-function addTypedValues({
+function evaluateTypedValues({
+  operator,
   operands,
   valueTypes,
 }: {
+  operator: ArithmeticExpression['operator'];
   operands: unknown[];
   valueTypes: readonly ValueType<unknown>[];
 }): unknown {
@@ -220,19 +245,23 @@ function addTypedValues({
     return null;
   }
 
+  const operationName = valueTypeOperators.find((name) => name === operator);
+  const operation = operationName
+    ? match.type[operationName]?.bind(match.type)
+    : undefined;
   const [first, ...rest] = match.values;
-  if (first === undefined) {
+  if (!operation || first === undefined) {
     return null;
   }
-  let total = first;
+  let result = first;
   for (const value of rest) {
-    const sum = match.type.add(total, value);
-    if (sum === undefined) {
+    const next = operation(result, value);
+    if (next === undefined) {
       return null;
     }
-    total = sum;
+    result = next;
   }
-  return total;
+  return result;
 }
 
 /**
