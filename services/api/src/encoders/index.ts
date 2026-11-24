@@ -4,6 +4,7 @@ export * from './customForms';
 export * from './decision';
 export * from './joinProfileRequests';
 export * from './links';
+export * from './notifications';
 export * from './organizations';
 export * from './individuals';
 export * from './projects';
