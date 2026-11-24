@@ -1,15 +1,18 @@
 import {
   type FragmentCopy,
-  encodeFragmentCopies,
+  type FragmentTextWrite,
+  encodeFragments,
   getTipTapClient,
 } from '@op/collab';
 import { db } from '@op/db/client';
+import { ProposalReviewState } from '@op/db/schema';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 
 import type { SchemaMapping } from '../../schemaMapping';
 import { NotFoundError, ValidationError } from '../../utils';
 import {
+  type DevelopPrefillInput,
   type DevelopPrefillInstance,
   buildDevelopPrefill,
 } from './getDevelopPrefill';
@@ -66,15 +69,23 @@ export async function getDevelopedEntryPrefill({
 
   let data: Record<string, unknown>;
   try {
+    const reviewInputs = await getSubmittedReviewInputs({
+      instanceId: instance.id,
+      mappings,
+      sourceProposalIds,
+    });
     ({ data } = await buildDevelopPrefill({
       instance,
       phases,
       targetPhase: developPhase,
-      inputs: sourceProposalIds.map((id) => ({
-        type: 'proposal',
-        phaseId: sourcePhaseId,
-        id,
-      })),
+      inputs: [
+        ...sourceProposalIds.map((id): DevelopPrefillInput => ({
+          type: 'proposal',
+          phaseId: sourcePhaseId,
+          id,
+        })),
+        ...reviewInputs,
+      ],
       mappings,
       user,
     }));
@@ -94,6 +105,8 @@ export async function getDevelopedEntryPrefill({
     return null;
   }
 
+  const proposalData = toSystemFields(data);
+
   let documentUpdate: Uint8Array<ArrayBuffer> | null = null;
   try {
     documentUpdate = await getEntryDocumentUpdate({
@@ -103,16 +116,44 @@ export async function getDevelopedEntryPrefill({
         developPhaseId: developPhase.phaseId,
         targetKeys: Object.keys(data),
       }),
+      texts: getFragmentTexts(data),
       sourceProposalIds,
     });
   } catch (error) {
-    logger.warn('Could not copy the develop sources into the entry document', {
+    logger.warn('Could not build the entry document from the develop sources', {
       ...context,
       error,
     });
   }
 
-  return { proposalData: toSystemFields(data), documentUpdate };
+  return { proposalData, documentUpdate };
+}
+
+async function getSubmittedReviewInputs({
+  instanceId,
+  mappings,
+  sourceProposalIds,
+}: {
+  instanceId: string;
+  mappings: SchemaMapping[];
+  sourceProposalIds: string[];
+}): Promise<DevelopPrefillInput[]> {
+  if (!mappings.some((mapping) => mapping.from.type === 'review')) {
+    return [];
+  }
+
+  const reviews = await db.query.proposalReviews.findMany({
+    where: {
+      state: ProposalReviewState.SUBMITTED,
+      assignment: {
+        processInstanceId: instanceId,
+        proposalId: { in: sourceProposalIds },
+      },
+    },
+    columns: { id: true },
+  });
+
+  return reviews.map((review) => ({ type: 'review', id: review.id }));
 }
 
 /**
@@ -162,7 +203,7 @@ export async function seedDevelopedEntryDocument({
   }
 }
 
-/** A rule with a nested source path has no fragment of its own; it is left out. */
+/** A rule with a nested source path or an expression has no fragment to copy. */
 function getFragmentRules({
   mappings,
   sourcePhaseId,
@@ -185,22 +226,52 @@ function getFragmentRules({
         mapping.to.phaseId === developPhaseId,
     )
     .flatMap((mapping) => mapping.fields)
-    .filter((field) => keys.has(field.to) && !field.from.includes('.'));
+    .flatMap(({ from, to }) =>
+      typeof from === 'string' && keys.has(to) && !from.includes('.')
+        ? [{ from, to }]
+        : [],
+    );
+}
+
+/**
+ * A string can be rich text, which one paragraph would misrepresent, so only
+ * the other values are written, as the JSON the field components store.
+ */
+function getFragmentTexts(data: Record<string, unknown>): FragmentTextWrite[] {
+  return Object.entries(data).flatMap(([to, value]) =>
+    value == null || typeof value === 'string'
+      ? []
+      : [{ to, text: JSON.stringify(value) }],
+  );
+}
+
+/** A target that a fragment rule copies keeps the copy over its written text. */
+async function getEntryDocumentUpdate({
+  fields,
+  texts,
+  sourceProposalIds,
+}: {
+  fields: Array<{ from: string; to: string }>;
+  texts: FragmentTextWrite[];
+  sourceProposalIds: string[];
+}): Promise<Uint8Array<ArrayBuffer> | null> {
+  const copies = await getFragmentCopies({ fields, sourceProposalIds });
+  return encodeFragments({ copies, texts });
 }
 
 /**
  * Each source document is fetched once. The mapped data holds a key only when
  * the sources agreed, so the first source that has the fragment fills it.
  */
-async function getEntryDocumentUpdate({
+async function getFragmentCopies({
   fields,
   sourceProposalIds,
 }: {
   fields: Array<{ from: string; to: string }>;
   sourceProposalIds: string[];
-}): Promise<Uint8Array<ArrayBuffer> | null> {
+}): Promise<FragmentCopy[]> {
   if (fields.length === 0) {
-    return null;
+    return [];
   }
 
   const rows = await db.query.proposals.findMany({
@@ -233,11 +304,9 @@ async function getEntryDocumentUpdate({
     }),
   );
 
-  const copies: FragmentCopy[] = fields.flatMap(({ from, to }) =>
+  return fields.flatMap(({ from, to }) =>
     sourceUpdates.flatMap((sourceUpdate) =>
       sourceUpdate ? [{ sourceUpdate, from, to }] : [],
     ),
   );
-
-  return encodeFragmentCopies(copies);
 }

@@ -19,9 +19,13 @@ import {
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
+import { DEFAULT_MONEY_CURRENCY } from '../../money';
 import type { SchemaMapping } from '../../schemaMapping';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
-import { getDevelopPrefill } from './getDevelopPrefill';
+import {
+  type DevelopPrefillInput,
+  getDevelopPrefill,
+} from './getDevelopPrefill';
 import { parseProposalData } from './proposalDataSchema';
 import type { DecisionSchemaDefinition } from './schemas/types';
 
@@ -869,5 +873,224 @@ describe.concurrent('getDevelopPrefill', () => {
       errorClass: ValidationError,
       message: `Proposal '${proposal.id}' is not in phase '${FEASIBILITY}'`,
     });
+  });
+
+  describe('with the sum of review costs', () => {
+    const costTotalMappings: SchemaMapping[] = [
+      {
+        from: submissionRef,
+        to: ballotRef,
+        fields: [{ from: 'title', to: 'title' }],
+      },
+      {
+        from: feasibilityRef,
+        to: ballotRef,
+        fields: [
+          {
+            from: {
+              operator: 'add',
+              operands: [
+                { field: 'answers.cost_design.amount' },
+                { field: 'answers.cost_construction.amount' },
+                { field: 'answers.cost_contingency.amount' },
+              ],
+            },
+            to: 'budget',
+          },
+        ],
+      },
+    ];
+
+    const answers = (values: Parameters<typeof costs>[0]) => ({
+      answers: costs(values),
+    });
+
+    it('given one proposal with one feasibility review and an equity review, when the prefill is built, then the budget is the feasibility total', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instanceId, createSubmittedProposal, createReview } =
+        await seedDevelopDecision(testData);
+      const garden = await createSubmittedProposal({ title: 'Garden' });
+      const reviews = await Promise.all([
+        createReview({
+          proposalId: garden.id,
+          phaseId: FEASIBILITY,
+          reviewData: answers({ design: 10, construction: 20, contingency: 5 }),
+        }),
+        // An equity review is of another source schema and is not counted.
+        createReview({
+          proposalId: garden.id,
+          phaseId: EQUITY,
+          reviewData: { answers: equityScores },
+        }),
+      ]);
+
+      const result = await getDevelopPrefill({
+        instanceId,
+        inputs: [
+          { type: 'proposal', phaseId: SUBMISSION, id: garden.id },
+          ...reviews.map((review): DevelopPrefillInput => ({
+            type: 'review',
+            id: review.id,
+          })),
+        ],
+        target: { type: 'proposal', phaseId: BALLOT },
+        mappings: costTotalMappings,
+        user: setup.user,
+      });
+
+      expect(result).toStrictEqual({
+        data: {
+          title: 'Garden',
+          budget: { amount: 35, currency: DEFAULT_MONEY_CURRENCY },
+        },
+      });
+    });
+
+    it('given one proposal whose two feasibility reviews give the same total, when the prefill is built, then the budget stays empty and the copy rules still apply', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instanceId, createSubmittedProposal, createReview } =
+        await seedDevelopDecision(testData);
+      const garden = await createSubmittedProposal({ title: 'Garden' });
+      const reviews = await Promise.all([
+        createReview({
+          proposalId: garden.id,
+          phaseId: FEASIBILITY,
+          reviewData: answers({ design: 10, construction: 20, contingency: 5 }),
+        }),
+        createReview({
+          proposalId: garden.id,
+          phaseId: FEASIBILITY,
+          reviewData: answers({ design: 10, construction: 20, contingency: 5 }),
+          reviewer: 1,
+        }),
+      ]);
+
+      const result = await getDevelopPrefill({
+        instanceId,
+        inputs: [
+          { type: 'proposal', phaseId: SUBMISSION, id: garden.id },
+          ...reviews.map((review): DevelopPrefillInput => ({
+            type: 'review',
+            id: review.id,
+          })),
+        ],
+        target: { type: 'proposal', phaseId: BALLOT },
+        mappings: costTotalMappings,
+        user: setup.user,
+      });
+
+      expect(result).toStrictEqual({ data: { title: 'Garden' } });
+    });
+
+    it('given two proposals whose reviews give the same total, when the prefill is built, then the budget stays empty and the copy rules still apply', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instanceId, createSubmittedProposal, createReview } =
+        await seedDevelopDecision(testData);
+      const garden = await createSubmittedProposal({ title: 'Garden' });
+      const benches = await createSubmittedProposal({ title: 'Garden' });
+      const reviews = await Promise.all(
+        [garden, benches].map((proposal) =>
+          createReview({
+            proposalId: proposal.id,
+            phaseId: FEASIBILITY,
+            reviewData: answers({
+              design: 1000,
+              construction: 3000,
+              contingency: 1000,
+            }),
+          }),
+        ),
+      );
+
+      const result = await getDevelopPrefill({
+        instanceId,
+        inputs: [
+          { type: 'proposal', phaseId: SUBMISSION, id: garden.id },
+          { type: 'proposal', phaseId: SUBMISSION, id: benches.id },
+          ...reviews.map((review): DevelopPrefillInput => ({
+            type: 'review',
+            id: review.id,
+          })),
+        ],
+        target: { type: 'proposal', phaseId: BALLOT },
+        mappings: costTotalMappings,
+        user: setup.user,
+      });
+
+      expect(result).toEqual({ data: { title: 'Garden' } });
+    });
+
+    it('given costs whose float sum is not exact, when the prefill is built, then the budget is rounded to the cent', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instanceId, createSubmittedProposal, createReview } =
+        await seedDevelopDecision(testData);
+      const garden = await createSubmittedProposal({ title: 'Garden' });
+      const review = await createReview({
+        proposalId: garden.id,
+        phaseId: FEASIBILITY,
+        reviewData: answers({
+          design: 50322.58,
+          construction: 289354.84,
+          contingency: 50322.58,
+        }),
+      });
+
+      const result = await getDevelopPrefill({
+        instanceId,
+        inputs: [
+          { type: 'proposal', phaseId: SUBMISSION, id: garden.id },
+          { type: 'review', id: review.id },
+        ],
+        target: { type: 'proposal', phaseId: BALLOT },
+        mappings: costTotalMappings,
+        user: setup.user,
+      });
+
+      expect(result.data.budget).toStrictEqual({
+        amount: 390000,
+        currency: DEFAULT_MONEY_CURRENCY,
+      });
+    });
+  });
+
+  it('given a copy rule whose budget is not a number, when the prefill is built, then the budget is copied unchanged', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, createSubmittedProposal, createReview } =
+      await seedDevelopDecision(testData);
+    const proposal = await createSubmittedProposal({ title: 'Bike lanes' });
+    const copiedBudget = { amount: 20000, currency: 'EUR', note: 'estimate' };
+    const review = await createReview({
+      proposalId: proposal.id,
+      phaseId: FEASIBILITY,
+      reviewData: { cost_construction: copiedBudget },
+    });
+
+    const result = await getDevelopPrefill({
+      instanceId,
+      inputs: [
+        { type: 'proposal', phaseId: SUBMISSION, id: proposal.id },
+        { type: 'review', id: review.id },
+      ],
+      target: { type: 'proposal', phaseId: BALLOT },
+      mappings,
+      user: setup.user,
+    });
+
+    expect(result.data.budget).toStrictEqual(copiedBudget);
   });
 });

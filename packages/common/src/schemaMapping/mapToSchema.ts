@@ -3,6 +3,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { evaluateExpression } from '../services/decision/selectionPipeline/expressionEvaluator';
 import { readOwnField } from './fieldPath';
 import type {
+  FieldMapping,
   MappingInput,
   MappingResult,
   SchemaMapping,
@@ -34,10 +35,7 @@ export const mapToSchema = ({
 
     for (const field of mapping.fields) {
       for (const source of sources) {
-        const value = evaluateSourceField({
-          data: source.data,
-          path: field.from,
-        });
+        const value = evaluateRule({ data: source.data, from: field.from });
         if (value === undefined) {
           continue;
         }
@@ -69,6 +67,35 @@ const isSameSchemaRef = ({
   left: SchemaRef;
   right: SchemaRef;
 }): boolean => left.type === right.type && left.phaseId === right.phaseId;
+
+const evaluateRule = ({
+  data,
+  from,
+}: {
+  data: unknown;
+  from: FieldMapping['from'];
+}): unknown => {
+  if (typeof from === 'string') {
+    return evaluateSourceField({ data, path: from });
+  }
+  // An absent operand is skipped; any other value that is not a number gives
+  // no value, never a partial one.
+  const values = from.operands
+    .map(({ field }) => readOwnField({ data, path: field }))
+    .filter((value) => value !== undefined);
+  if (values.length === 0 || !values.every(isFiniteNumber)) {
+    return undefined;
+  }
+  // Literals, so the evaluator's inherited-property read cannot add a value
+  // the check above did not see.
+  return evaluateExpression(
+    { operator: from.operator, operands: values.map((value) => ({ value })) },
+    { record: data, variables: {}, outputs: {} },
+  );
+};
+
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
 
 const evaluateSourceField = ({
   data,

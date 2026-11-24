@@ -5,6 +5,7 @@ import {
   getMoneyAmount,
   getMoneyCurrency,
   isValidCurrencyCode,
+  roundToMinorUnit,
 } from './money';
 
 describe('money value readers', () => {
@@ -56,5 +57,23 @@ describe('getCurrencySymbol', () => {
   it('returns malformed persisted codes verbatim instead of throwing', () => {
     expect(getCurrencySymbol('BOGUS')).toBe('BOGUS');
     expect(getCurrencySymbol('')).toBe('');
+  });
+});
+
+describe('roundToMinorUnit', () => {
+  it('drops the float noise of a sum', () => {
+    expect(
+      roundToMinorUnit({ amount: 390000.00000000006, currency: 'USD' }),
+    ).toBe(390000);
+  });
+
+  it('keeps an amount with two decimals', () => {
+    expect(roundToMinorUnit({ amount: 50322.58, currency: 'USD' })).toBe(
+      50322.58,
+    );
+  });
+
+  it('rounds to an integer for a currency without decimals', () => {
+    expect(roundToMinorUnit({ amount: 1234.56, currency: 'JPY' })).toBe(1235);
   });
 });

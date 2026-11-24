@@ -4,6 +4,7 @@ import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
+import { DEFAULT_MONEY_CURRENCY, roundToMinorUnit } from '../../money';
 import {
   type MappingInput,
   type MappingResult,
@@ -191,12 +192,55 @@ export const buildDevelopPrefill = async ({
     readContext: getProposalReadContext({ user, decisionRoles }),
   });
 
-  return mapToSchema({
-    mappings,
+  // An `add` rule runs only on one source proposal and one input of its source
+  // schema: how the totals of several inputs combine is not decided yet.
+  const sourceCount = inputs.filter(
+    (input) => input.type === 'proposal',
+  ).length;
+  const countInputsOf = (schema: SchemaRef) =>
+    mappingInputs.filter(
+      (input) =>
+        input.schema.type === schema.type &&
+        input.schema.phaseId === schema.phaseId,
+    ).length;
+
+  const { data } = mapToSchema({
+    mappings: mappings.map((mapping) =>
+      sourceCount > 1 || countInputsOf(mapping.from) > 1
+        ? getCopyRule(mapping)
+        : mapping,
+    ),
     inputs: mappingInputs,
     targetSchema,
   });
+
+  return { data: withMoneyBudget(data) };
 };
+
+/**
+ * Makes any number in `budget` money; specific to `budget` on purpose, as
+ * value types in the evaluator are deferred.
+ */
+const withMoneyBudget = (
+  data: Record<string, unknown>,
+): Record<string, unknown> => {
+  if (typeof data.budget !== 'number') {
+    return data;
+  }
+  const currency = DEFAULT_MONEY_CURRENCY;
+  return {
+    ...data,
+    budget: {
+      amount: roundToMinorUnit({ amount: data.budget, currency }),
+      currency,
+    },
+  };
+};
+
+const getCopyRule = (mapping: SchemaMapping): SchemaMapping => ({
+  ...mapping,
+  fields: mapping.fields.filter((field) => typeof field.from === 'string'),
+});
 
 const assertValidRequest = (request: {
   inputs: DevelopPrefillInput[];

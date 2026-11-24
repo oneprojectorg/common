@@ -3,13 +3,21 @@ import {
   mockCollab,
   textFragment,
 } from '@op/collab/testing';
-import { type PhaseInstanceData, getInstancePhases } from '@op/common';
+import {
+  DEFAULT_MONEY_CURRENCY,
+  type PhaseInstanceData,
+  type ProposalTemplateSchema,
+  assembleProposalData,
+  getInstancePhases,
+} from '@op/common';
 import {
   TEST_PERMISSION_BITS,
   TestDecisionsDataManager,
   createCategoryReviewerWithTerm,
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
+  createProposalReview,
+  createReviewAssignment,
   grantInstanceRole,
   openDevelopWindow,
   testDevelopSchema,
@@ -18,6 +26,7 @@ import {
 import {
   ProcessStatus,
   ProposalRelationshipType,
+  ProposalReviewState,
   ProposalStatus,
   processInstances,
   proposals,
@@ -122,6 +131,11 @@ const prefillEntrySchema = {
   },
 };
 
+const budgetTemplate: ProposalTemplateSchema = {
+  type: 'object',
+  properties: { budget: { type: 'object', 'x-format': 'money' } },
+};
+
 const SOURCE_TITLE = 'Riverside community garden expansion';
 const SOURCE_BUDGET = '{"amount":500,"currency":"USD"}';
 
@@ -174,6 +188,66 @@ const configurePrefill = async ({
     ]),
   });
   return { entryFormSchemaId: entryRow.id };
+};
+
+const usd = (amount: number) => ({ amount, currency: 'USD' });
+
+const configureCostTotal = async (instanceId: string) => {
+  const entryRow = await insertFormSchema({
+    processInstanceId: instanceId,
+    name: 'Ballot entry',
+    schema: prefillEntrySchema,
+  });
+  await configureDevelopPhase(instanceId, {
+    formSchemaId: entryRow.id,
+    developPrefillMappings: [
+      {
+        from: { type: 'review', phaseId: 'initial' },
+        to: { type: 'proposal', phaseId: 'final' },
+        fields: [
+          {
+            from: {
+              operator: 'add',
+              operands: [
+                { field: 'answers.cost_design.amount' },
+                { field: 'answers.cost_construction.amount' },
+                { field: 'answers.cost_contingency.amount' },
+              ],
+            },
+            to: 'budget',
+          },
+        ],
+      },
+    ],
+  });
+};
+
+const createCostReview = async ({
+  instanceId,
+  proposalId,
+  reviewerProfileId,
+  answers,
+  state = ProposalReviewState.SUBMITTED,
+  phaseId = 'initial',
+}: {
+  instanceId: string;
+  proposalId: string;
+  reviewerProfileId: string;
+  answers: Record<string, unknown>;
+  state?: ProposalReviewState;
+  phaseId?: string;
+}) => {
+  const assignment = await createReviewAssignment({
+    processInstanceId: instanceId,
+    proposalId,
+    reviewerProfileId,
+    phaseId,
+  });
+  return createProposalReview({
+    assignmentId: assignment.id,
+    state,
+    reviewData: { answers },
+  });
 };
 
 const EMPTY_FRAGMENT = { type: 'doc', content: [] };
@@ -673,6 +747,42 @@ describe.concurrent('createDevelopedProposal', () => {
     });
   });
 
+  it('keeps the copied budget fragment over the value it would write', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    await configurePrefill({
+      instanceId,
+      sourceId: source.id,
+      summary: 'Plant trees along the river.',
+    });
+    // Key order differs from the written `{ amount, currency }`.
+    const sourceBudget = '{"currency":"USD","amount":500}';
+    await seedCollabFragments(source.id, {
+      title: SOURCE_TITLE,
+      budget: sourceBudget,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const draft = await caller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: {},
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    await expect(readProposalData(draft.id)).resolves.toMatchObject({
+      budget: { amount: 500, currency: 'USD' },
+    });
+    await expect(readEntryDocument(draft.id)).resolves.toMatchObject({
+      budget: textFragment(sourceBudget),
+    });
+  });
+
   it('copies a formatted source field with its formatting', async ({
     task,
     onTestFinished,
@@ -826,7 +936,7 @@ describe.concurrent('createDevelopedProposal', () => {
     });
   });
 
-  it('seeds no document field for a rule that reads a nested source path', async ({
+  it('seeds no document field for a string from a nested source path', async ({
     task,
     onTestFinished,
   }) => {
@@ -842,7 +952,7 @@ describe.concurrent('createDevelopedProposal', () => {
     await configureDevelopPhase(instanceId, {
       developPrefillMappings: sourceToEntry([
         { from: 'title', to: 'title' },
-        { from: 'budget.amount', to: 'description' },
+        { from: 'budget.currency', to: 'description' },
       ]),
     });
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -854,6 +964,7 @@ describe.concurrent('createDevelopedProposal', () => {
     });
     testData.trackProfileForCleanup(draft.profileId);
 
+    // A string can be rich text, so only a copied fragment seeds it.
     await expect(readEntryDocument(draft.id)).resolves.toEqual({
       title: textFragment(SOURCE_TITLE),
       description: EMPTY_FRAGMENT,
@@ -1039,5 +1150,182 @@ describe.concurrent('createDevelopedProposal', () => {
       columns: { id: true },
     });
     expect(instanceProposals).toEqual([{ id: source.id }]);
+  });
+
+  describe('with the sum of review costs', () => {
+    const setUpCostTotal = async ({
+      testData,
+      sourceCount,
+    }: {
+      testData: TestDecisionsDataManager;
+      sourceCount: number;
+    }) => {
+      const { setup, instanceId, source, otherSources } =
+        await createDevelopPhaseSetup({ testData, sourceCount });
+      await configureCostTotal(instanceId);
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+      const reviewers: [string, string] = [
+        setup.organization.profileId,
+        setup.instance.profileId,
+      ];
+      const createDraft = async (sourceProposalIds: string[]) => {
+        const draft = await caller.decision.createDevelopedProposal({
+          processInstanceId: instanceId,
+          sourceProposalIds,
+          proposalData: {},
+        });
+        testData.trackProfileForCleanup(draft.profileId);
+        return readProposalData(draft.id);
+      };
+      return {
+        instanceId,
+        sources: [source, ...otherSources],
+        reviewers,
+        createDraft,
+      };
+    };
+
+    it('prefills the budget with the cost total of the one submitted review of the source, rounded to the cent, past a draft review, a review of another phase and a review of another proposal', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instanceId, sources, reviewers, createDraft } =
+        await setUpCostTotal({ testData, sourceCount: 2 });
+      const [source, unrelated] = sources;
+      if (!source || !unrelated) {
+        throw new Error('Expected two sources');
+      }
+      await Promise.all([
+        createCostReview({
+          instanceId,
+          proposalId: source.id,
+          reviewerProfileId: reviewers[0],
+          answers: {
+            cost_design: usd(50322.58),
+            cost_construction: usd(289354.84),
+            cost_contingency: usd(50322.58),
+          },
+        }),
+        createCostReview({
+          instanceId,
+          proposalId: source.id,
+          reviewerProfileId: reviewers[1],
+          answers: { cost_design: usd(9999) },
+          state: ProposalReviewState.DRAFT,
+        }),
+        createCostReview({
+          instanceId,
+          proposalId: source.id,
+          reviewerProfileId: reviewers[1],
+          answers: { cost_design: usd(7777) },
+          phaseId: 'final',
+        }),
+        createCostReview({
+          instanceId,
+          proposalId: unrelated.id,
+          reviewerProfileId: reviewers[0],
+          answers: { cost_construction: usd(5000) },
+        }),
+      ]);
+
+      await expect(createDraft([source.id])).resolves.toHaveProperty('budget', {
+        amount: 390000,
+        currency: DEFAULT_MONEY_CURRENCY,
+      });
+    });
+
+    it('writes the prefilled budget into the entry document, where the submit validation reads the stored budget', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instanceId, source } = await createDevelopPhaseSetup({
+        testData,
+      });
+      await configureCostTotal(instanceId);
+      await createCostReview({
+        instanceId,
+        proposalId: source.id,
+        reviewerProfileId: setup.organization.profileId,
+        answers: { cost_design: usd(1200.5), cost_construction: usd(3000) },
+      });
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      const draft = await caller.decision.createDevelopedProposal({
+        processInstanceId: instanceId,
+        sourceProposalIds: [source.id],
+        proposalData: {},
+      });
+      testData.trackProfileForCleanup(draft.profileId);
+
+      const budget = { amount: 4200.5, currency: DEFAULT_MONEY_CURRENCY };
+      await expect(readProposalData(draft.id)).resolves.toHaveProperty(
+        'budget',
+        budget,
+      );
+      // One paragraph, whose plain text is what the validation reads.
+      const writtenText = JSON.stringify(budget);
+      await expect(readEntryDocument(draft.id)).resolves.toMatchObject({
+        budget: textFragment(writtenText),
+      });
+      expect(
+        assembleProposalData(budgetTemplate, { budget: writtenText }),
+      ).toEqual({ budget });
+    });
+
+    it('leaves the budget empty when the source has two submitted reviews', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instanceId, sources, reviewers, createDraft } =
+        await setUpCostTotal({ testData, sourceCount: 1 });
+      const [source] = sources;
+      if (!source) {
+        throw new Error('Expected a source');
+      }
+      await Promise.all(
+        reviewers.map((reviewerProfileId) =>
+          createCostReview({
+            instanceId,
+            proposalId: source.id,
+            reviewerProfileId,
+            answers: { cost_construction: usd(5000) },
+          }),
+        ),
+      );
+
+      await expect(createDraft([source.id])).resolves.not.toHaveProperty(
+        'budget',
+      );
+    });
+
+    it('leaves the budget of a merged entry empty, also when its sources give the same total', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instanceId, sources, reviewers, createDraft } =
+        await setUpCostTotal({ testData, sourceCount: 2 });
+      const [garden, benches] = sources;
+      if (!garden || !benches) {
+        throw new Error('Expected two sources');
+      }
+      await Promise.all(
+        [garden, benches].map((source) =>
+          createCostReview({
+            instanceId,
+            proposalId: source.id,
+            reviewerProfileId: reviewers[0],
+            answers: { cost_construction: usd(5000) },
+          }),
+        ),
+      );
+
+      await expect(
+        createDraft([garden.id, benches.id]),
+      ).resolves.not.toHaveProperty('budget');
+    });
   });
 });
