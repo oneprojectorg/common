@@ -116,8 +116,6 @@ export const Advanceable: Story = {
   ),
 };
 
-// Editing rail: each ready card links to its phase editor; unfinished ones
-// ask for setup, the first of them with the primary link.
 export const Editing: Story = {
   render: () => (
     <ol className="flex w-96 flex-col gap-2">
@@ -163,7 +161,6 @@ export const Editing: Story = {
   ),
 };
 
-// Setup: a phase still missing what it needs to run.
 export const Setup: Story = {
   render: () => (
     <Row>

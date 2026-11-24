@@ -6,7 +6,6 @@ import { useLocale } from 'next-intl';
 
 import { useTranslations } from '@/lib/i18n';
 
-/** The process admin rail: every phase of the decision, in stored order, as a `PhaseCard`. */
 export function ProcessAdminPhaseTimeline({
   slug,
   phases,
@@ -19,7 +18,6 @@ export function ProcessAdminPhaseTimeline({
   currentStateId: string | null | undefined;
   /** Before the first phase starts, every phase shows as upcoming. */
   hasStarted: boolean;
-  /** Each card links to its phase's editor. */
   isEditing?: boolean;
 }) {
   const locale = useLocale();
