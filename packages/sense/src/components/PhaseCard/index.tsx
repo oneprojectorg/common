@@ -36,6 +36,12 @@ interface PhaseCardProps {
   /** The phase is missing what it needs to run. With `editLink`, the card shows `blurb` and a Setup link. */
   needsSetup?: boolean;
   setupLabel?: string;
+  /**
+   * Accessible name of the Setup link. Starts with the visible `setupLabel`
+   * and names the phase, in the word order of the locale, e.g. "Setup Voting".
+   * Defaults to `setupLabel` followed by `name`.
+   */
+  setupAriaLabel?: string;
   /** Shown in place of the dates on a card that needs setup. */
   blurb?: string;
   /** The first phase that needs setup: its Setup link takes the primary style. */
@@ -43,9 +49,9 @@ interface PhaseCardProps {
 }
 
 /**
- * One phase row in a phase timeline. Renders a `div`, or a button for a ready
- * card in the editing treatment; the consumer owns the `<ol>`, each `<li>`,
- * and the state derivation.
+ * One phase row in a phase timeline. Renders a `div`, or the `editLink`
+ * element for a ready card in the editing treatment; the consumer owns the
+ * `<ol>`, each `<li>`, and the state derivation.
  *
  * Two treatments share one set of props. The resting treatment (the decision
  * Overview and the process admin rail) follows `state`. The editing treatment,
@@ -222,7 +228,12 @@ function UpcomingPhaseCard({
 type EditingPhaseCardProps = PhaseContentProps &
   Pick<
     PhaseCardProps,
-    'isNowOpen' | 'nowOpenLabel' | 'setupLabel' | 'blurb' | 'isLead'
+    | 'isNowOpen'
+    | 'nowOpenLabel'
+    | 'setupLabel'
+    | 'setupAriaLabel'
+    | 'blurb'
+    | 'isLead'
   > & { editLink: ReactElement };
 
 /** Editing, ready: the whole card links to the phase's editor. */
@@ -273,6 +284,7 @@ function SetupPhaseCard({
   className,
   editLink,
   setupLabel = 'Setup',
+  setupAriaLabel = `${setupLabel} ${name}`,
   blurb,
   isLead,
 }: EditingPhaseCardProps) {
@@ -286,7 +298,9 @@ function SetupPhaseCard({
     >
       <div className="flex min-w-0 flex-col">
         <PhaseName name={name} />
-        <span className="min-h-5 text-sm text-muted-foreground">{blurb}</span>
+        <span className="min-h-5 text-sm text-muted-foreground">
+          <bdi>{blurb}</bdi>
+        </span>
       </div>
       <Button
         size="sm"
@@ -294,7 +308,7 @@ function SetupPhaseCard({
         nativeButton={false}
         role={undefined}
         render={editLink}
-        aria-label={`${setupLabel} ${name}`}
+        aria-label={setupAriaLabel}
         className="shrink-0"
       >
         {setupLabel}
