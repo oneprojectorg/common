@@ -243,61 +243,95 @@ function evaluateFunctionCall(
   context: ExpressionContext,
 ): any {
   const args = expr.arguments.map((arg) => evaluateExpression(arg, context));
-  const evaluate = FUNCTIONS.get(expr.function);
-  if (!evaluate) {
-    throw new Error(`Unknown function: ${expr.function}`);
-  }
-  return evaluate(args);
-}
 
-// A Map, not an object literal, so a name such as `constructor` stays unknown.
-const FUNCTIONS = new Map<string, (args: unknown[]) => unknown>([
-  ['sum', sumNumbers],
-  ['avg', (args) => (args.length === 0 ? 0 : sumNumbers(args) / args.length)],
-  ['count', (args) => args.length],
-  ['min', (args) => Math.min(...args.filter(isNumber))],
-  ['max', (args) => Math.max(...args.filter(isNumber))],
-  [
-    'if',
-    (args) => {
+  switch (expr.function) {
+    case 'sum':
+      return args.reduce(
+        (sum, val) => sum + (typeof val === 'number' ? val : 0),
+        0,
+      );
+
+    case 'avg':
+      if (args.length === 0) {
+        return 0;
+      }
+      const sum = args.reduce(
+        (s, val) => s + (typeof val === 'number' ? val : 0),
+        0,
+      );
+      return sum / args.length;
+
+    case 'count':
+      return args.length;
+
+    case 'min':
+      return Math.min(...args.filter((v) => typeof v === 'number'));
+
+    case 'max':
+      return Math.max(...args.filter((v) => typeof v === 'number'));
+
+    case 'if':
+      // if(condition, trueValue, falseValue)
       if (args.length !== 3) {
         throw new Error('if function requires 3 arguments');
       }
-      const [condition, whenTrue, whenFalse] = args;
-      return condition ? whenTrue : whenFalse;
-    },
-  ],
-  ['coalesce', (args) => args.find((value) => value != null) ?? null],
-  ['concat', (args) => args.map(String).join('')],
-  [
-    'length',
-    ([first]) =>
-      typeof first === 'string' || Array.isArray(first) ? first.length : 0,
-  ],
-  ['abs', ([first]) => (isNumber(first) ? Math.abs(first) : 0)],
-  ['round', ([first]) => (isNumber(first) ? Math.round(first) : 0)],
-  ['floor', ([first]) => (isNumber(first) ? Math.floor(first) : 0)],
-  ['ceil', ([first]) => (isNumber(first) ? Math.ceil(first) : 0)],
-  [
-    'toLowerCase',
-    ([first]) => (typeof first === 'string' ? first.toLowerCase() : ''),
-  ],
-  [
-    'toUpperCase',
-    ([first]) => (typeof first === 'string' ? first.toUpperCase() : ''),
-  ],
-  ['trim', ([first]) => (typeof first === 'string' ? first.trim() : '')],
-]);
+      return args[0] ? args[1] : args[2];
 
-function sumNumbers(args: unknown[]): number {
-  return args.reduce<number>(
-    (sum, value) => sum + (isNumber(value) ? value : 0),
-    0,
-  );
-}
+    case 'coalesce':
+      // Return first non-null value
+      return args.find((v) => v != null) ?? null;
 
-function isNumber(value: unknown): value is number {
-  return typeof value === 'number';
+    case 'concat':
+      return args.map(String).join('');
+
+    case 'length':
+      if (args.length === 0) {
+        return 0;
+      }
+      const val = args[0];
+      if (typeof val === 'string' || Array.isArray(val)) {
+        return val.length;
+      }
+      return 0;
+
+    case 'abs':
+      return args.length > 0 && typeof args[0] === 'number'
+        ? Math.abs(args[0])
+        : 0;
+
+    case 'round':
+      return args.length > 0 && typeof args[0] === 'number'
+        ? Math.round(args[0])
+        : 0;
+
+    case 'floor':
+      return args.length > 0 && typeof args[0] === 'number'
+        ? Math.floor(args[0])
+        : 0;
+
+    case 'ceil':
+      return args.length > 0 && typeof args[0] === 'number'
+        ? Math.ceil(args[0])
+        : 0;
+
+    case 'toLowerCase':
+      return args.length > 0 && typeof args[0] === 'string'
+        ? args[0].toLowerCase()
+        : '';
+
+    case 'toUpperCase':
+      return args.length > 0 && typeof args[0] === 'string'
+        ? args[0].toUpperCase()
+        : '';
+
+    case 'trim':
+      return args.length > 0 && typeof args[0] === 'string'
+        ? args[0].trim()
+        : '';
+
+    default:
+      throw new Error(`Unknown function: ${expr.function}`);
+  }
 }
 
 /**
