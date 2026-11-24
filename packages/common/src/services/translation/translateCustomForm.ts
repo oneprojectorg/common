@@ -1,7 +1,8 @@
 import { db } from '@op/db/client';
 
-import { NotFoundError, ValidationError } from '../../utils';
+import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import type { AccessUser } from '../access';
+import { hasFormCapabilities } from '../customForms/customFormAuth';
 import { isCustomFormDefinition } from '../customForms/schemas/customForm';
 import { assertDecisionProfileReadAccess } from '../decision/assertDecisionProfileReadAccess';
 import type { SupportedLocale } from './locales';
@@ -16,7 +17,8 @@ import {
 /**
  * Translates the admin-authored text of a custom form: its title and
  * description, each field's title and description, and each option label.
- * The caller must be able to read the decision the form belongs to.
+ * The caller must be able to read the decision the form belongs to, and hold
+ * a capability the form requires when it lists any.
  */
 export async function translateCustomForm({
   user,
@@ -44,6 +46,12 @@ export async function translateCustomForm({
     user,
     profileId: form.profileId,
   });
+
+  if (!(await hasFormCapabilities({ user, form }))) {
+    throw new UnauthorizedError(
+      'You do not have a capability this form requires',
+    );
+  }
 
   const definition = form.schema;
   if (!isCustomFormDefinition(definition)) {

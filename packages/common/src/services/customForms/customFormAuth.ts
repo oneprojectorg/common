@@ -110,7 +110,7 @@ export const hasFormCapabilities = async ({
   form,
 }: {
   user: AccessUser;
-  form: CustomForm;
+  form: Pick<CustomForm, 'profileId' | 'schema'>;
 }): Promise<boolean> => {
   const capabilities = getFormRequiredCapabilities(form.schema);
 
