@@ -20,6 +20,14 @@ let currentPhaseId = 'review';
 let canRead = true;
 let user: { profileId: string | null } | undefined;
 
+// Resolve the lazily loaded modal up front, so a case that expects nothing
+// to open cannot pass only because the chunk has not loaded yet.
+vi.mock('next/dynamic', async () => {
+  const { PhaseEntryCustomFormModal } =
+    await import('./PhaseEntryCustomFormModal');
+  return { default: () => PhaseEntryCustomFormModal };
+});
+
 vi.mock('@op/api/client', () => ({
   trpc: {
     decision: {

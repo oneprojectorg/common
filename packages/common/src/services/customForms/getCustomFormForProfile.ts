@@ -53,16 +53,17 @@ export const getCustomFormForProfile = async ({
     getFormForPhase({ profileId, phaseId, initialPhaseId, trigger }),
   ]);
 
-  if (
-    !form ||
-    !(await hasFormCapabilities({ user: { id: authUserId }, form }))
-  ) {
+  if (!form) {
     return null;
   }
 
-  const answer = await getCallerSubmission({ formId: form.id, authUserId });
+  // Independent reads; the caller already passed the read-access check above.
+  const [canSee, answer] = await Promise.all([
+    hasFormCapabilities({ user: { id: authUserId }, form }),
+    getCallerSubmission({ formId: form.id, authUserId }),
+  ]);
 
-  return answer ? null : form;
+  return canSee && !answer ? form : null;
 };
 
 const getFormForPhase = async ({

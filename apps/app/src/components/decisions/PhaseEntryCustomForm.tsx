@@ -2,20 +2,22 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { CustomForm } from '@op/api/encoders';
-import { logger } from '@op/logging/client';
-import { toast } from '@op/sense/Toast';
+import dynamic from 'next/dynamic';
 import { useQueryState } from 'nuqs';
 import { useState } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
-
 import { QUERY_PARAM as RESULTS_LIVE_QUERY_PARAM } from './FinalPhaseSubmissionSuccessDialog';
-import {
-  CustomFormModal,
-  type CustomFormValues,
-} from './proposalEditor/CustomFormModal';
-import { hasSkipCookie, setSkipCookie } from './skipCookie';
+import { getFormSkipCookieName, hasSkipCookie } from './skipCookie';
+
+// Loaded only when a participant owes an entry form: this mounts on every
+// decision page, and the form modal brings the AJV validator with it.
+const PhaseEntryCustomFormModal = dynamic(
+  () =>
+    import('./PhaseEntryCustomFormModal').then(
+      (module) => module.PhaseEntryCustomFormModal,
+    ),
+  { ssr: false },
+);
 
 /** Opens the current phase's custom form when it is set to open on entry. */
 export const PhaseEntryCustomForm = ({
@@ -71,68 +73,3 @@ export const PhaseEntryCustomForm = ({
     />
   );
 };
-
-function PhaseEntryCustomFormModal({
-  form,
-  participantProfileId,
-  onClose,
-}: {
-  form: CustomForm;
-  participantProfileId: string;
-  onClose: () => void;
-}) {
-  const t = useTranslations('decisions.proposals');
-  const utils = trpc.useUtils();
-  const submitForm = trpc.customForm.submit.useMutation({
-    onSuccess: () => {
-      onClose();
-      void utils.customForm.getForProfile.invalidate({
-        profileId: form.profileId,
-      });
-    },
-    onError: (error) => {
-      logger.error('Failed to submit phase entry custom form', {
-        error,
-        customFormId: form.id,
-      });
-      toast.error(t('submitFormError'));
-    },
-  });
-
-  const handleModalSubmit = (values: CustomFormValues) => {
-    submitForm.mutate({
-      customFormId: form.id,
-      profileId: participantProfileId,
-      data: values,
-    });
-  };
-
-  const handleModalOpenChange = (open: boolean) => {
-    if (open || submitForm.isPending) {
-      return;
-    }
-    setSkipCookie(
-      getFormSkipCookieName({ formId: form.id, participantProfileId }),
-    );
-    onClose();
-  };
-
-  return (
-    <CustomFormModal
-      isOpen
-      customFormId={form.id}
-      schema={form.schema}
-      isSubmitting={submitForm.isPending}
-      onSubmit={handleModalSubmit}
-      onOpenChange={handleModalOpenChange}
-    />
-  );
-}
-
-const getFormSkipCookieName = ({
-  formId,
-  participantProfileId,
-}: {
-  formId: string;
-  participantProfileId: string;
-}) => `form-skipped-${formId}-${participantProfileId}`;
