@@ -11,6 +11,7 @@ export {
   supabaseTestClient,
 } from './supabase';
 
+export { costTotalExpression } from './data/costTotalRule';
 export { TestDecisionsDataManager } from './helpers/TestDecisionsDataManager';
 export {
   createDevelopPhaseSetup,

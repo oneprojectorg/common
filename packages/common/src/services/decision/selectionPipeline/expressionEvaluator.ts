@@ -1,6 +1,8 @@
 import { logger } from '@op/logging';
 import safeRegex from 'safe-regex2';
 
+import { type MoneyAmount, moneyAmountSchema } from '../../../money';
+import { sumAmounts } from '../fieldUnit';
 import type {
   ArithmeticExpression,
   ComparisonExpression,
@@ -285,9 +287,56 @@ function evaluateFunctionCall(
         ? args[0].trim()
         : '';
 
+    case 'decimalSum':
+      return sumDecimals(args);
+
+    case 'same':
+      return getSameValue(args);
+
+    case 'isMoney':
+      return parseMoney(args[0]) !== null;
+
+    case 'money':
+      return parseMoney({ amount: args[0], currency: args[1] });
+
     default:
       throw new Error(`Unknown function: ${expr.function}`);
   }
+}
+
+/**
+ * Adds at the finest decimal precision of the arguments, so `0.1 + 0.2` is
+ * `0.3`. A null argument is skipped; any other non-number gives null.
+ */
+function sumDecimals(args: unknown[]): number | null {
+  const numbers = args.filter((value) => value != null);
+  if (!numbers.every(isFiniteNumber)) {
+    return null;
+  }
+  return sumAmounts(numbers);
+}
+
+/** The value every non-null argument has, or null when they differ or are all null. */
+function getSameValue(args: unknown[]): unknown {
+  const values = new Set(args.filter((value) => value != null));
+  const [only] = values;
+  return values.size === 1 ? only : null;
+}
+
+// Strict, so an object with other keys next to an amount and a currency is
+// not read as money.
+const strictMoneySchema = moneyAmountSchema.strict();
+
+function parseMoney(value: unknown): MoneyAmount | null {
+  const result = strictMoneySchema.safeParse(value);
+  // zod rejects NaN but lets Infinity through
+  return result.success && Number.isFinite(result.data.amount)
+    ? result.data
+    : null;
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
 }
 
 /**

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
+import { costTotalExpression } from '../../testing/data/costTotalRule';
 import { schemaMappingSchema } from './schema';
 
-const mappingWith = (field: { from: string; to: string }) => ({
+const mappingWith = (field: { from: unknown; to: string }) => ({
   from: { type: 'proposal', phaseId: 'submission' },
   to: { type: 'proposal', phaseId: 'ballot' },
   fields: [field],
@@ -29,6 +30,23 @@ describe('schemaMappingSchema', () => {
       from: 'cost.__proto__.amount',
       to: 'budget',
     });
+
+    expect(schemaMappingSchema.safeParse(mapping).success).toBe(false);
+  });
+
+  it('accepts an expression of the selection pipeline', () => {
+    const mapping = mappingWith({ from: costTotalExpression, to: 'budget' });
+
+    expect(schemaMappingSchema.safeParse(mapping).success).toBe(true);
+  });
+
+  it.each([
+    { function: 'money', arguments: [{ field: 'a' }], extra: true },
+    { function: 'money', arguments: [{ field: '' }] },
+    { function: 'money' },
+    { moneySum: ['answers.cost_design'] },
+  ])('rejects the source %j', (from) => {
+    const mapping = mappingWith({ from, to: 'budget' });
 
     expect(schemaMappingSchema.safeParse(mapping).success).toBe(false);
   });

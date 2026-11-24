@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
+import { costTotalExpression } from '../../testing/data/costTotalRule';
 import { mapToSchema } from './mapToSchema';
-import type { FieldMapping, MappingInput, SchemaRef } from './schema';
+import type {
+  FieldMapping,
+  MappingInput,
+  SchemaMapping,
+  SchemaRef,
+} from './schema';
 
 const proposalRef: SchemaRef = { type: 'proposal', phaseId: 'submission' };
 const reviewRef: SchemaRef = { type: 'review', phaseId: 'feasibility' };
@@ -99,7 +105,7 @@ describe('mapToSchema', () => {
   it('skips inputs of another source schema', () => {
     const result = mapProposals({
       fields: [{ from: 'title', to: 'title' }],
-      inputs: [{ schema: reviewRef, data: { title: 'Trees' } }],
+      inputs: [review({ title: 'Trees' })],
     });
 
     expect(result).toEqual({ data: {} });
@@ -176,5 +182,292 @@ describe('mapToSchema', () => {
     });
 
     expect(result).toEqual({ data: {} });
+  });
+});
+
+describe('mapToSchema with an expression rule', () => {
+  const costTotal: SchemaMapping = {
+    from: reviewRef,
+    to: targetRef,
+    fields: [
+      {
+        from: costTotalExpression,
+        to: 'budget',
+      },
+    ],
+  };
+
+  const usd = (amount: number) => ({ amount, currency: 'USD' });
+
+  const costs = ({
+    design,
+    construction,
+    contingency,
+  }: {
+    design?: unknown;
+    construction?: unknown;
+    contingency?: unknown;
+  }) => ({
+    answers: {
+      ...(design === undefined ? {} : { cost_design: design }),
+      ...(construction === undefined
+        ? {}
+        : { cost_construction: construction }),
+      ...(contingency === undefined ? {} : { cost_contingency: contingency }),
+      __overall_recommendation: 'feasible',
+    },
+  });
+
+  const mapCosts = (
+    inputs: MappingInput[],
+    mappings: SchemaMapping[] = [costTotal],
+  ) => mapToSchema({ mappings, inputs, targetSchema: targetRef });
+
+  it.each([
+    {
+      answers: {
+        design: usd(20000),
+        contingency: usd(20000),
+        construction: usd(120000),
+      },
+      budget: usd(160000),
+    },
+    {
+      answers: { contingency: usd(3600), construction: usd(18000) },
+      budget: usd(21600),
+    },
+    { answers: { construction: usd(5000) }, budget: usd(5000) },
+    { answers: { design: usd(500000) }, budget: usd(500000) },
+    {
+      answers: {
+        design: usd(0),
+        contingency: usd(5000),
+        construction: usd(50000),
+      },
+      budget: usd(55000),
+    },
+    {
+      answers: {
+        design: usd(50322.58),
+        contingency: usd(50322.58),
+        construction: usd(289354.84),
+      },
+      budget: usd(390000),
+    },
+    {
+      answers: {
+        design: usd(46451.61),
+        contingency: usd(46451.61),
+        construction: usd(267096.77),
+      },
+      budget: usd(359999.99),
+    },
+    {
+      answers: {
+        design: usd(60387.1),
+        contingency: usd(60387.1),
+        construction: usd(45290.32),
+      },
+      budget: usd(166064.52),
+    },
+    {
+      answers: {
+        design: usd(10000000),
+        contingency: usd(10000000),
+        construction: usd(50000000),
+      },
+      budget: usd(70000000),
+    },
+    {
+      answers: { design: usd(0), contingency: usd(0), construction: usd(0) },
+      budget: usd(0),
+    },
+  ])(
+    'fills the total of the cost fields of one review: $budget.amount',
+    ({ answers, budget }) => {
+      const result = mapCosts([proposal({}), review(costs(answers))]);
+
+      expect(result.data).toEqual({ budget });
+    },
+  );
+
+  it('leaves the field empty for a review without a cost field', () => {
+    const result = mapCosts([review(costs({}))]);
+
+    expect(result).toEqual({ data: {} });
+  });
+
+  it('skips a review without a cost field and fills the total of the other review', () => {
+    const result = mapCosts([
+      review(costs({})),
+      review(
+        costs({
+          design: usd(12000),
+          contingency: usd(12000),
+          construction: usd(60000),
+        }),
+      ),
+    ]);
+
+    expect(result.data).toEqual({ budget: usd(84000) });
+  });
+
+  it('reads a null or empty cost field as missing', () => {
+    const result = mapCosts([
+      review(costs({ design: null, contingency: '', construction: usd(40) })),
+    ]);
+
+    expect(result.data).toEqual({ budget: usd(40) });
+  });
+
+  it('leaves the field empty when two reviews give different totals', () => {
+    const result = mapCosts([
+      review(costs({ construction: usd(5000) })),
+      review(
+        costs({
+          design: usd(0),
+          contingency: usd(25000),
+          construction: usd(250000),
+        }),
+      ),
+    ]);
+
+    expect(result).toEqual({ data: {} });
+  });
+
+  it('fills the total when two reviews with different fields give the same total', () => {
+    const result = mapCosts([
+      review(costs({ design: usd(100), construction: usd(200) })),
+      review(costs({ contingency: usd(300) })),
+    ]);
+
+    expect(result.data).toEqual({ budget: usd(300) });
+  });
+
+  it.each([
+    {
+      name: 'two currencies',
+      answers: {
+        design: usd(100),
+        construction: { amount: 100, currency: 'EUR' },
+      },
+    },
+    {
+      name: 'an amount with a thousands separator',
+      answers: { design: { amount: '1,000', currency: 'USD' } },
+    },
+    {
+      name: 'an amount with a currency sign',
+      answers: { design: { amount: '$500', currency: 'USD' } },
+    },
+    {
+      name: 'a null amount',
+      answers: { design: { amount: null, currency: 'USD' } },
+    },
+    {
+      name: 'an extra key',
+      answers: { design: { amount: 100, currency: 'USD', note: 'estimate' } },
+    },
+    {
+      name: 'an infinite amount',
+      answers: { design: { amount: Infinity, currency: 'USD' } },
+    },
+    {
+      name: 'a plain number next to money',
+      answers: { design: usd(100), construction: 250 },
+    },
+  ])(
+    'leaves the field empty for $name, also when another review gives a total',
+    ({ answers }) => {
+      const result = mapCosts([
+        review(costs(answers)),
+        review(costs({ construction: usd(100) })),
+      ]);
+
+      expect(result).toEqual({ data: {} });
+    },
+  );
+
+  it('leaves the field empty when a copy rule gives a value and a review has a bad cost', () => {
+    const result = mapCosts(
+      [
+        proposal({ budget: usd(500) }),
+        review(costs({ design: usd(100), construction: 250 })),
+      ],
+      [
+        costTotal,
+        {
+          from: proposalRef,
+          to: targetRef,
+          fields: [{ from: 'budget', to: 'budget' }],
+        },
+      ],
+    );
+
+    expect(result).toEqual({ data: {} });
+  });
+
+  it('reads own fields in comparisons and arithmetic', () => {
+    const result = mapCosts(
+      [review({ answers: { a: 2, b: 3 } })],
+      [
+        {
+          from: reviewRef,
+          to: targetRef,
+          fields: [
+            {
+              from: {
+                operator: 'greaterThan',
+                left: {
+                  operator: 'add',
+                  operands: [{ field: 'answers.a' }, { field: 'answers.b' }],
+                },
+                right: { value: 4 },
+              },
+              to: 'large',
+            },
+          ],
+        },
+      ],
+    );
+
+    expect(result.data).toEqual({ large: true });
+  });
+
+  it('reads own fields in comparisons and arithmetic', () => {
+    const result = mapToSchema({
+      inputs: [review({ answers: { a: 2, b: 3 } })],
+      targetSchema: targetRef,
+      mappings: [
+        {
+          from: reviewRef,
+          to: targetRef,
+          fields: [
+            {
+              from: {
+                operator: 'greaterThan',
+                left: {
+                  operator: 'add',
+                  operands: [{ field: 'answers.a' }, { field: 'answers.b' }],
+                },
+                right: { value: 4 },
+              },
+              to: 'large',
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(result.data).toEqual({ large: true });
+  });
+
+  it('does not read an inherited property', () => {
+    const result = mapCosts([
+      review({ answers: Object.create({ cost_design: usd(9) }) }),
+      review(costs({ design: usd(5) })),
+    ]);
+
+    expect(result.data).toEqual({ budget: usd(5) });
   });
 });

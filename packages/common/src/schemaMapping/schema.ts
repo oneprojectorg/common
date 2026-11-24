@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { expressionSchema } from '../services/decision/selectionPipeline/schema';
+
 const FORBIDDEN_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
 
 // Temporary: a schema is named by its type and phase, because rubrics and
@@ -30,7 +32,7 @@ export const targetKeySchema = z
   );
 
 export const fieldMappingSchema = z.strictObject({
-  from: fieldPathSchema,
+  from: z.union([fieldPathSchema, expressionSchema]),
   to: targetKeySchema,
 });
 
