@@ -22,8 +22,6 @@ export const eventOutbox = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    // Sweep: WHERE sent_at IS NULL ORDER BY created_at. Partial, so the
-    // relay stays fast whatever the table's size (ADR 0023).
     index('event_outbox_unsent_created_at_idx')
       .on(table.createdAt)
       .where(sql`sent_at IS NULL`),

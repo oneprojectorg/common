@@ -35,22 +35,18 @@ export const notifications = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    // Replay-idempotent fan-out (ADR 0023).
     uniqueIndex('notifications_activity_id_user_id_idx').on(
       table.activityId,
       table.userId,
     ),
-    // List: WHERE user_id = ? ORDER BY created_at DESC, id DESC.
     index('notifications_user_id_created_at_id_idx').on(
       table.userId,
       table.createdAt.desc().nullsFirst(),
       table.id.desc().nullsFirst(),
     ),
-    // Unread badge.
     index('notifications_user_id_unread_idx')
       .on(table.userId)
       .where(sql`read_at IS NULL`),
-    // Needs-action tab.
     index('notifications_user_id_needs_action_idx')
       .on(table.userId)
       .where(sql`action_required AND read_at IS NULL`),

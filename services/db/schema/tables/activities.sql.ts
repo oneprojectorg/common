@@ -18,9 +18,6 @@ export const activities = pgTable(
   'activities',
   {
     id: autoId().primaryKey(),
-    // Plain uuid, no FK: pruning the outbox never blocks on or deletes
-    // feed history; replay only needs the key within Inngest's retry
-    // window (ADR 0023).
     outboxId: uuid().notNull(),
     eventName: varchar({ length: 255 }).notNull(),
     actorProfileId: uuid().references(() => profiles.id, {
@@ -44,7 +41,6 @@ export const activities = pgTable(
   (table) => [
     ...serviceRolePolicies,
     uniqueIndex('activities_outbox_id_idx').on(table.outboxId),
-    // Feed sort per scope: WHERE <scope> = ? ORDER BY created_at DESC, id DESC.
     index('activities_organization_id_created_at_id_idx').on(
       table.organizationId,
       table.createdAt.desc().nullsFirst(),

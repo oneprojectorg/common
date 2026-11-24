@@ -1150,13 +1150,6 @@ export const relations = defineRelations(schema, (r) => ({
     }),
   },
 
-  /**
-   * Notification relations (ADR 0023)
-   *
-   * `outboxId` on activities is a plain uuid, not a foreign key, so the
-   * outbox has no relation here. Scope columns are nullable, so their
-   * relations stay optional.
-   */
   activities: {
     actorProfile: r.one.profiles({
       from: r.activities.actorProfileId,

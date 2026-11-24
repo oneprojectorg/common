@@ -299,7 +299,6 @@ export {
   type ContentTranslation,
 } from './tables/contentTranslations.sql';
 
-// Notifications (ADR 0023): outbox, activity, per-recipient rows, deliveries
 export { eventOutbox } from './tables/eventOutbox.sql';
 export type { EventOutbox, NewEventOutbox } from './tables/eventOutbox.sql';
 export { activities } from './tables/activities.sql';

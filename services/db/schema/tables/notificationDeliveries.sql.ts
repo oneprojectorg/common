@@ -22,7 +22,6 @@ export const notificationDeliveries = pgTable(
     index('notification_deliveries_notification_id_idx').on(
       table.notificationId,
     ),
-    // Provider webhooks key back by message id.
     index('notification_deliveries_provider_message_id_idx').on(
       table.providerMessageId,
     ),
