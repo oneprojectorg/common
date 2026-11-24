@@ -27,7 +27,6 @@ export const relayOutboxEvents = async ({
   let sent = 0;
   let failed = 0;
 
-  // Sequential on purpose: the relay runs one sweep at a time (ADR 0023).
   for (const row of rows) {
     try {
       await send(buildOutboxEvent(row));

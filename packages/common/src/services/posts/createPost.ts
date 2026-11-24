@@ -146,8 +146,6 @@ export const createPost = async (input: CreatePostServiceInput) => {
       await tx.insert(attachments).values(attachmentValues);
     }
 
-    // ADR 0023: the outbox row commits or rolls back with the post, so a
-    // rollback emits nothing and a commit always leaves a relayable event.
     if (postKind === 'proposalComment') {
       await writeOutboxEvent({
         eventName: Events.proposalCommentPosted.name,
@@ -192,8 +190,6 @@ export const createPost = async (input: CreatePostServiceInput) => {
               },
             });
             break;
-          // proposalComment is emitted through the transactional outbox
-          // above, not through a post-commit send.
           case 'decisionUpdate':
             await event.send({
               name: Events.decisionUpdatePosted.name,
