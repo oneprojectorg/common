@@ -26,6 +26,13 @@ describe('moneyValueType', () => {
     expect(moneyValueType.add(usd(0.1), usd(0.2))).toEqual(usd(0.3));
   });
 
+  it('adds currency codes that differ only in case, in the first spelling', () => {
+    expect(moneyValueType.add({ amount: 5, currency: 'usd' }, usd(2))).toEqual({
+      amount: 7,
+      currency: 'usd',
+    });
+  });
+
   it('cannot add two currencies', () => {
     expect(
       moneyValueType.add(usd(100), { amount: 100, currency: 'EUR' }),
