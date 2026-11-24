@@ -80,13 +80,18 @@ describe('attachPhaseRows', () => {
   it('attaches the stored phases without ids', () => {
     const result = attachPhaseRows({ instance, storedPhases });
 
-    expect(result.phases.map(({ phaseId }) => phaseId)).toEqual([
-      'submission',
-      'review-slug',
+    expect(result.phases).toEqual([
+      {
+        phaseId: 'submission',
+        name: 'Stored submission',
+        startDate: '2026-02-01',
+      },
+      {
+        phaseId: 'review-slug',
+        name: 'Stored review',
+        description: 'No stored phaseId',
+      },
     ]);
-    expect(
-      result.phases.every((phase) => !('id' in phase) && !('slug' in phase)),
-    ).toBe(true);
     expect(result.id).toBe('instance-1');
   });
 

@@ -58,7 +58,7 @@ export const attachBlobPhases = <T extends InstanceWithData>({
   phases: [...getInstancePhases(instance.instanceData)],
 });
 
-// `id` is `null` while the decision still reads instanceData.phases.
+// `id` and `slug` are `null` while the decision still reads instanceData.phases.
 export type Phase = PhaseInstanceData & {
   id: string | null;
   slug: string | null;
