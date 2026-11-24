@@ -6,11 +6,14 @@ import { permission } from 'access-zones';
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { getCachedInstance } from './getCachedInstance';
-import { attachPhaseRows } from './instancePhases';
-import { listPhases, phaseIdOf } from './phaseHelpers';
+import { attachPhaseRows, toPhasesWithRowIds } from './instancePhases';
+import { listPhases } from './phaseHelpers';
 import { resolveInstanceAccess } from './resolveInstanceAccess';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import type {
+  DecisionInstanceData,
+  PhaseInstanceData,
+} from './schemas/instanceData';
 
 export interface GetInstanceInput {
   instanceId: string;
@@ -54,14 +57,16 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
 
     // Filter budget from phase settings if hideBudget is true
     const instanceData = instance.instanceData as DecisionInstanceData;
-    const phases = instanceData.config?.hideBudget
-      ? instance.phases.map((phase) => ({
-          ...phase,
-          settings: phase.settings
-            ? { ...phase.settings, budget: undefined }
-            : phase.settings,
-        }))
-      : instance.phases;
+    const hideBudget = instanceData.config?.hideBudget;
+    const withoutBudget = <P extends PhaseInstanceData>(phase: P): P =>
+      hideBudget && phase.settings
+        ? { ...phase, settings: { ...phase.settings, budget: undefined } }
+        : phase;
+    const phases = instance.phases.map(withoutBudget);
+    const phasesWithRowIds = toPhasesWithRowIds({
+      instance: cached,
+      phases: rows,
+    }).map(withoutBudget);
 
     const manualSelectionStatus = await resolveManualSelectionStatus({
       instance,
@@ -73,7 +78,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       instanceData,
       phases,
       // Not on `phases`: a builder save persists every PhaseInstanceData key.
-      phaseRowIds: rows.map((row) => ({ id: row.id, phaseId: phaseIdOf(row) })),
+      phasesWithRowIds,
       access,
       selectionsAreConfirmed: manualSelectionStatus.selectionsAreConfirmed,
     };

@@ -393,12 +393,9 @@ export const processInstanceWithSchemaEncoder = z.preprocess(
 );
 
 /** A phase with the row uuid the phase endpoints take; `null` before the decision has rows. */
-export const instancePhaseWithRowIdEncoder = instancePhaseDataEncoder.extend({
+const instancePhaseWithRowIdEncoder = instancePhaseDataEncoder.extend({
   id: z.uuid().nullable(),
 });
-export type InstancePhaseWithRowId = z.infer<
-  typeof instancePhaseWithRowIdEncoder
->;
 
 export const processInstanceWithPhasesEncoder = z.preprocess(
   withPhasesInInstanceData,

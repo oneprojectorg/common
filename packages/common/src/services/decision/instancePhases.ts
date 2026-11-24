@@ -70,6 +70,23 @@ export const attachPhaseRows = <T extends InstanceWithData>({
     ? { ...instance, phases: phases.map(toInstanceDataPhase) }
     : attachBlobPhases({ instance });
 
+export type PhaseWithRowId = PhaseInstanceData & { id: string | null };
+
+// `null` while the decision still reads instanceData.phases.
+export const toPhasesWithRowIds = ({
+  instance,
+  phases,
+}: {
+  instance: InstanceWithData;
+  phases: ProcessPhaseWithProfile[];
+}): PhaseWithRowId[] =>
+  phases.length > 0
+    ? phases.map((phase) => ({ ...toInstanceDataPhase(phase), id: phase.id }))
+    : getInstancePhases(instance.instanceData).map((phase) => ({
+        ...phase,
+        id: null,
+      }));
+
 export const resolvePhasesForAll = async <T extends InstanceWithData>({
   instances,
   db = defaultDb,

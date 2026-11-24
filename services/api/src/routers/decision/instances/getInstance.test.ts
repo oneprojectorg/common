@@ -200,14 +200,14 @@ describe.concurrent('getInstance', () => {
       db.query.processPhases.findMany({
         where: { processInstanceId: instanceId },
         columns: { id: true },
+        with: { profile: { columns: { name: true } } },
         orderBy: { sortOrder: 'asc' },
       }),
     ]);
 
     expect(rows.length).toBeGreaterThan(0);
-    expect(result.phases.map(({ id }) => id)).toEqual(rows.map(({ id }) => id));
-    expect(result.phases.map(({ phaseId }) => phaseId)).toEqual(
-      result.instanceData.phases?.map(({ phaseId }) => phaseId),
+    expect(result.phases.map(({ id, name }) => [id, name])).toEqual(
+      rows.map(({ id, profile }) => [id, profile.name]),
     );
     expect(result.instanceData.phases?.[0]).not.toHaveProperty('id');
   });
