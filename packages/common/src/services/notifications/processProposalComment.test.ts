@@ -7,8 +7,8 @@ import {
   notifications,
 } from '@op/db/schema';
 import { Events } from '@op/events';
-import { randomUUID } from 'node:crypto';
 import { eq, sql } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { describe, expect, it, onTestFinished } from 'vitest';
 
 import { createPost } from '../posts/createPost';
