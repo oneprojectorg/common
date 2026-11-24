@@ -1,17 +1,13 @@
 import { type Proposal, ProposalStatus, Visibility } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
+import { buildProposalRow } from '../../../../testing/helpers/proposalRows';
 import { executeSelectionPipeline } from './pipelineEngine';
 import type {
   ExecutionContext,
   SelectionPipeline,
   VoteAggregation,
 } from './types';
-
-// These tests fix how each caller of the expression evaluator reaches the
-// record that a `field` expression reads. Blocks that evaluate per proposal
-// read the proposal row. Blocks that evaluate once read the execution context
-// itself: `proposals`, `voteData`, `variables` and `outputs`.
 
 describe('executeSelectionPipeline field access', () => {
   describe('blocks that evaluate per proposal read the proposal row', () => {
@@ -47,7 +43,7 @@ describe('executeSelectionPipeline field access', () => {
       expect(selected.map((proposal) => proposal.id)).toEqual(['p2']);
     });
 
-    it('transform reads the row, not the context, for every path', async () => {
+    it('transform reads the row and its own voteData, not the context, for every path', async () => {
       const selected = await run({
         variables: { budget: 100 },
         blocks: [
@@ -79,7 +75,7 @@ describe('executeSelectionPipeline field access', () => {
       expect(readKey(first, 'readTitle')).toBe('First');
       expect(readKey(first, 'readMissing')).toBeUndefined();
       expect(readKey(first, 'readDeepMissing')).toBeNull();
-      expect(readKey(first, 'readVoteData')).toBeNull();
+      expect(readKey(first, 'readVoteData')).toBe(7);
       expect(readKey(first, 'readVariables')).toBeNull();
       expect(readKey(first, 'readProposals')).toBeUndefined();
       expect(readKey(first, 'readProposal')).toBeUndefined();
@@ -111,7 +107,7 @@ describe('executeSelectionPipeline field access', () => {
       ]);
     });
 
-    it('score reads the row in a formula', async () => {
+    it('score reads the row and its voteData in a formula', async () => {
       const selected = await run({
         blocks: [
           {
@@ -130,7 +126,7 @@ describe('executeSelectionPipeline field access', () => {
       });
 
       expect(selected.map((proposal) => readKey(proposal, 'score'))).toEqual([
-        10, 20, 30,
+        17, 23, 35,
       ]);
     });
 
@@ -164,7 +160,7 @@ describe('executeSelectionPipeline field access', () => {
         selected.map((proposal) =>
           readKey(readKey(proposal, 'metadata'), 'score'),
         ),
-      ).toEqual([2600, 4700.5, 6801]);
+      ).toEqual([3100, 4200.5, 6801]);
     });
 
     it('sort reads the row for string and expression fields', async () => {
@@ -174,7 +170,7 @@ describe('executeSelectionPipeline field access', () => {
             id: 'sort',
             type: 'sort',
             sortBy: [
-              { field: 'voteData.likesCount', order: 'desc' },
+              { field: 'voteData.approvalRate', order: 'desc' },
               { field: 'status', order: 'asc' },
               {
                 field: {
@@ -213,7 +209,7 @@ describe('executeSelectionPipeline field access', () => {
                 min: { operation: 'min', field: 'proposalData.amount' },
                 max: { operation: 'max', field: 'proposalData.amount' },
                 likes: { operation: 'sum', field: 'voteData.likesCount' },
-                noLikes: { operation: 'max', field: 'voteData.likesCount' },
+                mostLikes: { operation: 'max', field: 'voteData.likesCount' },
               },
             },
             {
@@ -242,8 +238,8 @@ describe('executeSelectionPipeline field access', () => {
             avg: 15,
             min: 10,
             max: 20,
-            likes: 0,
-            noLikes: null,
+            likes: 10,
+            mostLikes: 7,
           },
         },
         {
@@ -255,8 +251,8 @@ describe('executeSelectionPipeline field access', () => {
             avg: 30,
             min: 30,
             max: 30,
-            likes: 0,
-            noLikes: null,
+            likes: 5,
+            mostLikes: 5,
           },
         },
       ]);
@@ -479,8 +475,7 @@ describe('executeSelectionPipeline field access', () => {
                 {
                   id: 'filter',
                   type: 'filter',
-                  // The row has no voteData, so every proposal passes.
-                  condition: { not: { field: 'voteData' } },
+                  condition: { not: { field: 'proposals' } },
                 },
               ],
             },
@@ -584,6 +579,7 @@ function makeVotes({
     rejectionCount: 0,
     abstainCount: 0,
     approvalRate: 0,
+    rankCounts: {},
     votes: [],
   };
 }
@@ -594,3 +590,203 @@ function readKey(value: unknown, key: string): unknown {
   }
   return Reflect.get(value, key);
 }
+
+const proposal = buildProposalRow({ id: 'p1' });
+const proposals = [proposal, buildProposalRow({ id: 'p2' })];
+const top = (
+  count: number,
+  extra: Partial<{ input: string; output: string }> = {},
+) => ({ id: `top-${count}`, type: 'limit' as const, count, ...extra });
+
+describe('executeSelectionPipeline branches', () => {
+  it('runs the first branch whose condition holds and stores its output', async () => {
+    const outputs: Record<string, unknown> = {};
+    const selected = await executeSelectionPipeline(
+      {
+        version: '1.0.0',
+        blocks: [
+          {
+            id: 'route',
+            type: 'branch',
+            branches: [
+              { condition: { value: false }, blocks: [top(2)] },
+              { condition: { value: true }, blocks: [top(1)], output: 'kept' },
+            ],
+          },
+        ],
+      },
+      { proposals, variables: {}, outputs },
+    );
+
+    expect(selected.map((item) => item.id)).toEqual(['p1']);
+    expect(outputs.kept).toEqual(selected);
+  });
+
+  it('falls back to the default branch when no condition holds', async () => {
+    const outputs: Record<string, unknown> = {};
+    const selected = await executeSelectionPipeline(
+      {
+        version: '1.0.0',
+        blocks: [
+          {
+            id: 'route',
+            type: 'branch',
+            branches: [{ condition: { value: false }, blocks: [top(2)] }],
+            default: { blocks: [top(1)], output: 'fallback' },
+          },
+        ],
+      },
+      { proposals, variables: {}, outputs },
+    );
+
+    expect(selected.map((item) => item.id)).toEqual(['p1']);
+    expect(outputs.fallback).toEqual(selected);
+  });
+
+  it('passes every proposal through when nothing matches and there is no default', async () => {
+    const selected = await executeSelectionPipeline(
+      {
+        version: '1.0.0',
+        blocks: [
+          {
+            id: 'route',
+            type: 'branch',
+            branches: [{ condition: { value: false }, blocks: [top(1)] }],
+          },
+        ],
+      },
+      { proposals, variables: {}, outputs: {} },
+    );
+
+    expect(selected).toHaveLength(2);
+  });
+});
+
+describe('executeSelectionPipeline inputs and outputs', () => {
+  it('stores each block output under its name and reads a named input', async () => {
+    const outputs: Record<string, unknown> = {};
+
+    const selected = await executeSelectionPipeline(
+      {
+        version: '1.0.0',
+        blocks: [
+          top(2, { output: 'both' }),
+          top(1, { output: 'one' }),
+          top(2, { input: 'both', output: 'again' }),
+        ],
+      },
+      { proposals, variables: {}, outputs },
+    );
+
+    expect(selected).toHaveLength(2);
+    expect(outputs.one).toHaveLength(1);
+    expect(outputs.again).toHaveLength(2);
+  });
+
+  it('falls back to the running proposals when a named input is not a list', async () => {
+    const selected = await executeSelectionPipeline(
+      {
+        version: '1.0.0',
+        blocks: [top(1, { input: 'count' })],
+      },
+      { proposals, variables: {}, outputs: { count: 'x' } },
+    );
+
+    expect(selected).toHaveLength(1);
+  });
+
+  it('returns the named final output, or the running proposals when it is not a list', async () => {
+    const pipeline = {
+      version: '1.0.0',
+      blocks: [top(2, { output: 'both' }), top(1)],
+    };
+
+    const named = await executeSelectionPipeline(
+      { ...pipeline, output: 'both' },
+      { proposals, variables: {}, outputs: {} },
+    );
+    const missing = await executeSelectionPipeline(
+      { ...pipeline, output: 'nowhere' },
+      { proposals, variables: {}, outputs: {} },
+    );
+
+    expect(named).toHaveLength(2);
+    expect(missing).toHaveLength(1);
+  });
+
+  it('lets a computed variable replace the caller value, and a pipeline default fill a missing one', async () => {
+    const three = [...proposals, buildProposalRow({ id: 'p3' })];
+    const context: ExecutionContext = {
+      proposals: three,
+      variables: { limit: 2 },
+      outputs: {},
+    };
+
+    const selected = await executeSelectionPipeline(
+      {
+        version: '1.0.0',
+        variables: { offset: 1 },
+        blocks: [
+          {
+            id: 'bump',
+            type: 'compute',
+            computations: { limit: { value: 3 } },
+          },
+          {
+            id: 'top',
+            type: 'limit',
+            count: { variable: 'limit' },
+            offset: { variable: 'offset' },
+          },
+        ],
+      },
+      context,
+    );
+
+    expect(selected.map((item) => item.id)).toEqual(['p2', 'p3']);
+    expect(context.variables).toEqual({ limit: 3, offset: 1 });
+  });
+
+  it('wraps an unexpected failure as a pipeline error', async () => {
+    await expect(
+      executeSelectionPipeline(
+        {
+          version: '1.0.0',
+          blocks: [
+            {
+              id: 'bad',
+              type: 'filter',
+              condition: { function: 'nope', arguments: [] },
+            },
+          ],
+        },
+        { proposals, variables: {}, outputs: {} },
+      ),
+    ).rejects.toThrow('Pipeline execution failed: Unknown function: nope');
+  });
+});
+
+describe('executeSelectionPipeline variables', () => {
+  it('lets the phase settings override the pipeline defaults', async () => {
+    const pipeline: SelectionPipeline = {
+      version: '1.0.0',
+      variables: { count: 1, offset: 1 },
+      blocks: [
+        {
+          id: 'top',
+          type: 'limit',
+          count: { variable: '$count' },
+          offset: { variable: '$offset' },
+        },
+      ],
+    };
+
+    const selected = await executeSelectionPipeline(pipeline, {
+      proposals,
+      variables: { offset: 0 },
+      outputs: {},
+    });
+
+    expect(selected.map((item) => item.id)).toEqual(['p1']);
+  });
+});

@@ -1,6 +1,10 @@
 import type { Proposal } from '@op/db/schema';
 
-import { evaluateExpression, setValueByPath } from '../expressionEvaluator';
+import {
+  evaluateExpression,
+  proposalExpressionContext,
+  setValueByPath,
+} from '../expressionEvaluator';
 import type {
   BlockExecutionResult,
   BlockExecutor,
@@ -17,10 +21,7 @@ export class ScoreBlock implements BlockExecutor<ScoreBlockType> {
     context: ExecutionContext,
   ): BlockExecutionResult {
     const scoredProposals = context.proposals.map((proposal) => {
-      const proposalContext = {
-        ...context,
-        record: proposal,
-      };
+      const proposalContext = proposalExpressionContext(context, proposal);
 
       let score: number;
 
@@ -29,7 +30,7 @@ export class ScoreBlock implements BlockExecutor<ScoreBlockType> {
         score = this.calculateCompositeScore(
           block.formula,
           proposalContext,
-          context.proposals,
+          context,
         );
       } else {
         // Direct expression evaluation
@@ -53,7 +54,7 @@ export class ScoreBlock implements BlockExecutor<ScoreBlockType> {
   private calculateCompositeScore(
     criteria: ScoringCriteria[],
     proposalContext: ExpressionContext,
-    allProposals: Proposal[],
+    context: ExecutionContext,
   ): number {
     let totalScore = 0;
 
@@ -80,12 +81,7 @@ export class ScoreBlock implements BlockExecutor<ScoreBlockType> {
 
       // Normalize if requested
       if (criterion.normalize) {
-        value = this.normalizeValue(
-          value,
-          criterion.field,
-          allProposals,
-          proposalContext,
-        );
+        value = this.normalizeValue(value, criterion.field, context);
       }
 
       // Invert if requested
@@ -103,8 +99,7 @@ export class ScoreBlock implements BlockExecutor<ScoreBlockType> {
   private normalizeValue(
     value: number,
     field: string | Expression | undefined,
-    allProposals: Proposal[],
-    baseContext: ExpressionContext,
+    context: ExecutionContext,
   ): number {
     if (!field) {
       return value;
@@ -112,10 +107,12 @@ export class ScoreBlock implements BlockExecutor<ScoreBlockType> {
 
     // Get all values for this field
     const fieldExpr = typeof field === 'string' ? { field: field } : field;
-    const values = allProposals
+    const values = context.proposals
       .map((p) => {
-        const ctx = { ...baseContext, record: p };
-        const result = evaluateExpression(fieldExpr, ctx);
+        const result = evaluateExpression(
+          fieldExpr,
+          proposalExpressionContext(context, p),
+        );
         return typeof result === 'number' ? result : 0;
       })
       .filter((v) => typeof v === 'number');

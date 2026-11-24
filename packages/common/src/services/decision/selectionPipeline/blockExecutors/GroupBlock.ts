@@ -1,6 +1,9 @@
 import type { Proposal } from '@op/db/schema';
 
-import { evaluateExpression } from '../expressionEvaluator';
+import {
+  evaluateExpression,
+  proposalExpressionContext,
+} from '../expressionEvaluator';
 import type {
   BlockExecutionResult,
   BlockExecutor,
@@ -23,7 +26,7 @@ export class GroupBlock implements BlockExecutor<GroupBlockType> {
     const groupMap = new Map<string, Proposal[]>();
 
     for (const proposal of context.proposals) {
-      const proposalContext = { ...context, record: proposal };
+      const proposalContext = proposalExpressionContext(context, proposal);
 
       const groupKey =
         typeof block.groupBy === 'string'
@@ -88,7 +91,7 @@ export class GroupBlock implements BlockExecutor<GroupBlockType> {
         }
         let sum = 0;
         for (const proposal of proposals) {
-          const ctx = { ...baseContext, record: proposal };
+          const ctx = proposalExpressionContext(baseContext, proposal);
           const value = evaluateExpression({ field: config.field }, ctx);
           sum += typeof value === 'number' ? value : 0;
         }
@@ -101,7 +104,7 @@ export class GroupBlock implements BlockExecutor<GroupBlockType> {
         }
         let sum = 0;
         for (const proposal of proposals) {
-          const ctx = { ...baseContext, record: proposal };
+          const ctx = proposalExpressionContext(baseContext, proposal);
           const value = evaluateExpression({ field: config.field }, ctx);
           sum += typeof value === 'number' ? value : 0;
         }
@@ -113,7 +116,7 @@ export class GroupBlock implements BlockExecutor<GroupBlockType> {
           return null;
         }
         const values = proposals.map((proposal) => {
-          const ctx = { ...baseContext, record: proposal };
+          const ctx = proposalExpressionContext(baseContext, proposal);
           return evaluateExpression({ field: config.field! }, ctx);
         });
         const numericValues = values.filter((v) => typeof v === 'number');
@@ -128,7 +131,7 @@ export class GroupBlock implements BlockExecutor<GroupBlockType> {
           return null;
         }
         const values = proposals.map((proposal) => {
-          const ctx = { ...baseContext, record: proposal };
+          const ctx = proposalExpressionContext(baseContext, proposal);
           return evaluateExpression({ field: config.field! }, ctx);
         });
         const numericValues = values.filter((v) => typeof v === 'number');

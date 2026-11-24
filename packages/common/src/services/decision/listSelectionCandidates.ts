@@ -14,6 +14,8 @@ import type { Proposal } from './schemas/proposal';
 export interface SelectionCandidate extends Proposal {
   /** The inbound selection pipeline chose it; the transition awaits approval. */
   selectedByPipeline: boolean;
+  /** What that pipeline computed for it, e.g. rankPoints, position, cost; null unless selected. */
+  pipelineScores: Record<string, unknown> | null;
 }
 
 export interface SelectionCandidates {
@@ -73,7 +75,7 @@ export async function listSelectionCandidates({
     return { items: [], totalCandidates: 0 };
   }
 
-  const pipelineSelectedIds = await resolveHeldSelection({
+  const pipelineSelection = await resolveHeldSelection({
     processInstanceId,
     currentStateId: instance.currentStateId,
     db,
@@ -125,7 +127,8 @@ export async function listSelectionCandidates({
   return {
     items: items.map((item) => ({
       ...item,
-      selectedByPipeline: pipelineSelectedIds.has(item.id),
+      selectedByPipeline: pipelineSelection.has(item.id),
+      pipelineScores: pipelineSelection.get(item.id) ?? null,
     })),
     totalCandidates,
   };
@@ -133,8 +136,8 @@ export async function listSelectionCandidates({
 
 /**
  * The proposals the pipeline attached to the latest inbound transition while
- * it awaits approval. Empty once confirmed, or when the phase was entered
- * without a pipeline.
+ * it awaits approval, with their scores. Empty once confirmed, or when the
+ * phase was entered without a pipeline.
  */
 async function resolveHeldSelection({
   processInstanceId,
@@ -144,20 +147,27 @@ async function resolveHeldSelection({
   processInstanceId: string;
   currentStateId: string | null;
   db: DbClient;
-}): Promise<Set<string>> {
+}): Promise<Map<string, Record<string, unknown>>> {
   if (!currentStateId) {
-    return new Set();
+    return new Map();
   }
   const inbound = await db.query.stateTransitionHistory.findFirst({
     where: { processInstanceId, toStateId: currentStateId },
     orderBy: { transitionedAt: 'desc' },
     columns: { selectionConfirmedAt: true },
-    with: { transitionProposals: { columns: { proposalId: true } } },
+    with: {
+      transitionProposals: { columns: { proposalId: true, scores: true } },
+    },
   });
   if (!inbound || inbound.selectionConfirmedAt !== null) {
-    return new Set();
+    return new Map();
   }
-  return new Set(inbound.transitionProposals.map((row) => row.proposalId));
+  return new Map(
+    inbound.transitionProposals.map((row) => [
+      row.proposalId,
+      row.scores ?? {},
+    ]),
+  );
 }
 
 async function resolvePreviousPhaseId({

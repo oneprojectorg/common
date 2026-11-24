@@ -1,5 +1,7 @@
 import type { Proposal } from '@op/db/schema';
 
+import type { PhaseProposalCosts } from '../getPhaseProposalCosts';
+
 /**
  * Top-level selection pipeline definition
  */
@@ -23,6 +25,7 @@ export type Block =
   | LimitBlock
   | SortBlock
   | ScoreBlock
+  | BudgetBlock
   | DebugBlock;
 
 /**
@@ -143,6 +146,14 @@ export interface ScoringCriteria {
 }
 
 /**
+ * Budget block - accepts proposals in order while their cost fits what is left
+ */
+export interface BudgetBlock extends BaseBlock {
+  type: 'budget';
+  budget: number | Expression;
+}
+
+/**
  * Debug block - log intermediate state
  */
 export interface DebugBlock extends BaseBlock {
@@ -233,8 +244,8 @@ export interface VariableExpression {
 /**
  * What an expression reads. A `field` expression reads `record`. A `variable`
  * expression reads `variables`, then `outputs`. A block that evaluates per
- * proposal passes the proposal as `record`; a block that evaluates once passes
- * its execution context.
+ * proposal passes the proposal row, with its vote metrics under `voteData`,
+ * as `record`; a block that evaluates once passes its execution context.
  */
 export interface ExpressionContext {
   record: unknown;
@@ -250,6 +261,7 @@ export interface ExecutionContext {
   };
   variables: Record<string, any>;
   outputs: Record<string, any>;
+  proposalCosts?: PhaseProposalCosts;
 }
 
 /**
@@ -264,6 +276,7 @@ export interface VoteAggregation {
   rejectionCount: number; // For decision votes
   abstainCount: number; // For decision votes
   approvalRate: number; // approvalCount / voteCount
+  rankCounts: { [rank: number]: number }; // keyed by 1-based rank
   participationRate?: number; // voteCount / totalEligibleVoters
   votes: any[]; // Raw vote records
   // Additional custom metrics can be added here

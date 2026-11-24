@@ -1,6 +1,10 @@
 import type { Proposal } from '@op/db/schema';
 
-import { evaluateExpression, setValueByPath } from '../expressionEvaluator';
+import {
+  evaluateExpression,
+  proposalExpressionContext,
+  setValueByPath,
+} from '../expressionEvaluator';
 import type {
   BlockExecutionResult,
   BlockExecutor,
@@ -14,10 +18,7 @@ export class TransformBlock implements BlockExecutor<TransformBlockType> {
     context: ExecutionContext,
   ): BlockExecutionResult {
     const transformedProposals = context.proposals.map((proposal) => {
-      const proposalContext = {
-        ...context,
-        record: proposal,
-      };
+      const proposalContext = proposalExpressionContext(context, proposal);
 
       // Create a deep copy of the proposal to avoid mutations
       // structuredClone is available in Node 17+ and modern browsers

@@ -173,7 +173,7 @@ describe('getProposalCosts', () => {
         unit: USD,
       }),
     ).rejects.toMatchObject({
-      name: 'BallotCostError',
+      name: 'UnpriceableCostError',
       message: expect.stringContaining(
         'The budget of "Community garden" is not a valid amount',
       ),
@@ -238,5 +238,25 @@ describe('getProposalCosts', () => {
     });
 
     expect(costs.get('a')).toBeNull();
+  });
+
+  it('rejects a value in another currency when it must be priced', async () => {
+    await expect(
+      getProposalCosts({
+        proposals: [
+          {
+            id: 'a',
+            proposalData: {
+              title: 'Garden',
+              budget: { amount: 300, currency: 'EUR' },
+            },
+          },
+        ],
+        proposalTemplate: template,
+        voterCostField: 'budget',
+        unit: USD,
+        otherUnit: 'throw',
+      }),
+    ).rejects.toMatchObject({ field: 'budget', proposalTitle: 'Garden' });
   });
 });
