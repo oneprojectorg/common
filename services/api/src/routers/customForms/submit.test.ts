@@ -387,7 +387,7 @@ describe.concurrent('customForm.submit', () => {
     ).rejects.toThrow(/does not belong to this form/i);
   });
 
-  it('records an entry form submission from a member who neither voted nor reviews', async ({
+  it('stores an entry form submission from a member who neither voted nor reviews, and stops asking them', async ({
     task,
     onTestFinished,
   }) => {
@@ -402,14 +402,32 @@ describe.concurrent('customForm.submit', () => {
     );
 
     const caller = await createAuthenticatedCaller(member.email);
+    const lookup = {
+      profileId: context.instance.profileId,
+      trigger: 'entry' as const,
+    };
+
+    expect((await caller.customForm.getForProfile(lookup))?.id).toBe(form.id);
 
     const submission = await caller.customForm.submit({
       customFormId: form.id,
       profileId: member.profileId,
-      data: { neighborhood: 'Downtown' },
+      data: { neighborhood: 'Downtown', agreeToTerms: true },
     });
 
-    expect(submission.profileId).toBe(member.profileId);
+    const rows = await db.query.customFormSubmissions.findMany({
+      where: { customFormId: form.id },
+    });
+    expect(rows).toEqual([
+      expect.objectContaining({
+        id: submission.id,
+        customFormId: form.id,
+        profileId: member.profileId,
+        data: { neighborhood: 'Downtown', agreeToTerms: true },
+        deletedAt: null,
+      }),
+    ]);
+    expect(await caller.customForm.getForProfile(lookup)).toBeNull();
   });
 
   it('accepts a form that requires review only from a caller who can review', async ({
