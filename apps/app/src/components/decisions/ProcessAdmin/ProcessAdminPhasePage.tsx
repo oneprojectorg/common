@@ -3,6 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { formatDateRange } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
+import { Card } from '@op/sense/Card';
 import {
   Empty,
   EmptyDescription,
@@ -58,8 +59,16 @@ export function ProcessAdminPhasePage({
 export function ProcessAdminPhasePageSkeleton() {
   return (
     <PhasePageFrame>
-      <Skeleton className="h-10 w-64" />
-      <Skeleton className="h-5 w-40" />
+      <PhaseTitle>
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-5 w-40" />
+      </PhaseTitle>
+      <PhaseColumns>
+        <Skeleton className="h-96 min-w-0 flex-1 rounded-lg" />
+        <PhaseSettingsColumn>
+          <Skeleton className="h-40 rounded-lg" />
+        </PhaseSettingsColumn>
+      </PhaseColumns>
     </PhasePageFrame>
   );
 }
@@ -87,8 +96,14 @@ function ProcessAdminPhasePageSuspense({
     <PhasePageFrame slug={slug}>
       {phase ? (
         <>
-          <Header1>{phase.name}</Header1>
-          {dates ? <p className="text-muted-foreground">{dates}</p> : null}
+          <PhaseTitle>
+            <Header1>{phase.name}</Header1>
+            {dates ? <p className="text-muted-foreground">{dates}</p> : null}
+          </PhaseTitle>
+          <PhaseColumns>
+            <Card className="min-w-0 flex-1 shadow-none" />
+            <PhaseSettingsColumn />
+          </PhaseColumns>
         </>
       ) : (
         <Empty className="border-0">
@@ -112,9 +127,9 @@ function PhasePageFrame({
   const tShared = useTranslations();
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-      <header className="sticky top-0 z-30 border-b bg-accent">
-        <div className="flex h-14 items-center px-4 md:px-6">
+    <div className="flex min-h-dvh flex-col bg-muted">
+      <header className="sticky top-0 z-30 shrink-0 border-b bg-background">
+        <div className="flex h-14 items-center justify-between gap-3 px-4 md:px-6">
           {slug ? (
             <ButtonLink href={`/decisions/${slug}/manage`} variant="link">
               <LuArrowLeft className="size-4 rtl:-scale-x-100" aria-hidden />
@@ -125,9 +140,29 @@ function PhasePageFrame({
           )}
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-272 flex-col gap-2 px-4 py-6 md:px-6 md:py-12">
+      <main className="mx-auto flex w-full max-w-272 flex-col gap-10 px-4 py-10 md:px-6">
         {children}
       </main>
+    </div>
+  );
+}
+
+function PhaseTitle({ children }: { children: ReactNode }) {
+  return <div className="flex flex-col items-start gap-2">{children}</div>;
+}
+
+function PhaseColumns({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-10">
+      {children}
+    </div>
+  );
+}
+
+function PhaseSettingsColumn({ children }: { children?: ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-4 md:w-73 md:shrink-0">
+      {children}
     </div>
   );
 }
