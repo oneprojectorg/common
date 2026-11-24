@@ -23,7 +23,7 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-function expectNoIdsInInstanceData(phases: object[] | undefined) {
+function expectNoRowFieldsInInstanceData(phases: object[] | undefined) {
   expect(phases?.length).toBeGreaterThan(0);
   for (const phase of phases ?? []) {
     expect(phase).not.toHaveProperty('id');
@@ -197,7 +197,7 @@ describe.concurrent('getDecisionBySlug', () => {
         .reverse()
         .map(({ id, profile }) => [id, profile.slug, profile.name]),
     );
-    expectNoIdsInInstanceData(result.processInstance.instanceData.phases);
+    expectNoRowFieldsInInstanceData(result.processInstance.instanceData.phases);
   });
 
   it("returns each phase's whole selection pipeline and proposal template", async ({
@@ -273,7 +273,7 @@ describe.concurrent('getDecisionBySlug', () => {
         phaseId,
       ]),
     );
-    expectNoIdsInInstanceData(result.processInstance.instanceData.phases);
+    expectNoRowFieldsInInstanceData(result.processInstance.instanceData.phases);
   });
 });
 
