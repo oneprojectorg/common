@@ -1,5 +1,6 @@
 'use client';
 
+import { useMaybeUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { Button } from '@op/sense/Button';
@@ -129,6 +130,13 @@ const ForbiddenWithInviteCheck = () => {
 };
 
 export const ForbiddenContent = () => {
+  const user = useMaybeUser();
+
+  // Invites need a session; without one the API rejects the query with a 401.
+  if (!user) {
+    return <NoAccessMessage />;
+  }
+
   return (
     <ErrorBoundary fallback={<NoAccessMessage />}>
       <Suspense
