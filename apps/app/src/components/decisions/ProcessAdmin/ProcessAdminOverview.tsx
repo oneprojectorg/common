@@ -134,7 +134,7 @@ function ProcessAdminOverviewSuspense({
               slug={slug}
               instanceId={instance.id}
               phases={toProcessAdminPhases({
-                phases: instance.instanceData.phases,
+                phases: instance.phases,
                 currentStateId: instance.currentStateId,
               })}
               isOpen={isOpen}

@@ -21,6 +21,19 @@ describe('toTimelinePhases', () => {
     expect(currentPhaseId).toBe('b');
   });
 
+  it('keys a phase with no row id by its position, current included', () => {
+    const timeline = toTimelinePhases([
+      phase({ id: null }),
+      phase({ id: null, sortOrder: 1, isCurrent: true }),
+    ]);
+
+    expect(timeline.phases.map(({ id }) => id)).toEqual([
+      'unstored-0',
+      'unstored-1',
+    ]);
+    expect(timeline.currentPhaseId).toBe('unstored-1');
+  });
+
   it('passes an empty current id when no phase is current', () => {
     expect(toTimelinePhases([phase({})]).currentPhaseId).toBe('');
   });

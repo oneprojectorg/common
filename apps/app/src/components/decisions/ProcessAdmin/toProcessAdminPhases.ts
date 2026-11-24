@@ -1,21 +1,19 @@
-import type { InstancePhaseData } from '@op/api/encoders';
+import type { RouterOutput } from '@op/api/client';
 
 import type { ProcessAdminPhase } from './types';
 
-/**
- * Maps the instance's stored phases to the manage shape until the screens read
- * `getDecisionBySlug`'s phase rows. The stored slug stands in for the row uuid, so this is the one
- * place a slug reaches the manage surface; the wiring milestone deletes it.
- */
+type DecisionPhase =
+  RouterOutput['decision']['getDecisionBySlug']['processInstance']['phases'][number];
+
 export function toProcessAdminPhases({
   phases,
   currentStateId,
 }: {
-  phases: InstancePhaseData[] | undefined;
+  phases: DecisionPhase[];
   currentStateId: string | null | undefined;
 }): ProcessAdminPhase[] {
-  return (phases ?? []).map((phase, index) => ({
-    id: phase.phaseId,
+  return phases.map((phase, index) => ({
+    id: phase.id,
     isCurrent: phase.phaseId === currentStateId,
     sortOrder: index,
     name: phase.name ?? '',

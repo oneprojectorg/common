@@ -5,8 +5,8 @@ import type { InstancePhaseData, PhaseRules } from '@op/api/encoders';
  * `getDecisionBySlug` returns on each phase.
  */
 export interface ProcessAdminPhase {
-  /** The `decision_process_phases` row uuid; the only identifier a screen or a mutation uses. */
-  id: string;
+  /** The `decision_process_phases` row uuid; `null` until the decision's phases are stored as rows. */
+  id: string | null;
   /**
    * Whether the instance's current phase is this one. A draft has one too; the
    * rail presents it as current only once the process is open.

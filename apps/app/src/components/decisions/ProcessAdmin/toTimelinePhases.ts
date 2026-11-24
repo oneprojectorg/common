@@ -7,15 +7,20 @@ export function toTimelinePhases(phases: ProcessAdminPhase[]): {
   phases: ProcessPhase[];
   currentPhaseId: string;
 } {
+  const current = phases.find((phase) => phase.isCurrent);
+
   return {
     phases: phases.map((phase) => ({
-      id: phase.id,
+      id: toTimelineId(phase),
       name: phase.name,
       description: phase.description,
       phase: { startDate: phase.startDate, endDate: phase.endDate },
       advancementMethod: phase.rules?.advancement?.method,
       config: { allowProposals: phase.rules?.proposals?.submit },
     })),
-    currentPhaseId: phases.find((phase) => phase.isCurrent)?.id ?? '',
+    currentPhaseId: current ? toTimelineId(current) : '',
   };
 }
+
+const toTimelineId = ({ id, sortOrder }: ProcessAdminPhase) =>
+  id ?? `unstored-${sortOrder}`;

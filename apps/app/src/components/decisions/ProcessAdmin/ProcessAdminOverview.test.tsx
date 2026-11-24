@@ -201,6 +201,7 @@ const profile = ({
     description,
     currentStateId,
     steward,
+    phases,
     instanceData: {
       phases,
       config: { isPrivate },
@@ -227,11 +228,13 @@ const succeedSave = (saved: unknown) =>
 const failSave = () => act(() => updateInstance.fail());
 
 const phase = {
+  id: 'row-submit',
   phaseId: 'submit',
   name: 'Submit',
   startDate: '2026-01-01T00:00:00.000Z',
 };
 const votePhase = {
+  id: 'row-vote',
   phaseId: 'vote',
   name: 'Vote',
   startDate: '2026-02-01T00:00:00.000Z',
@@ -306,7 +309,7 @@ describe('ProcessAdminOverview', () => {
 
     const timeline = screen.getByTestId('phase-timeline');
     expect(timeline.dataset.started).toBe('true');
-    expect(timeline.dataset.current).toBe('vote');
+    expect(timeline.dataset.current).toBe('row-vote');
     expect(screen.queryByText('No phases yet')).toBeNull();
   });
 
@@ -322,7 +325,7 @@ describe('ProcessAdminOverview', () => {
 
     const timeline = screen.getByTestId('phase-timeline');
     expect(timeline.dataset.names).toBe('Ideas,Vote');
-    expect(timeline.dataset.current).toBe('vote');
+    expect(timeline.dataset.current).toBe('row-vote');
   });
 
   it('links to the proposals once the process is open', () => {
