@@ -104,6 +104,7 @@ const phaseRulesEncoder = z.object({
     .object({
       method: z.enum(['date', 'manual']),
       endDate: z.string().optional(),
+      needsApproval: z.boolean().optional(),
     })
     .optional(),
   reviews: phaseReviewSettingsSchema.optional(),

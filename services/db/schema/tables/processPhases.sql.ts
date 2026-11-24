@@ -1,12 +1,5 @@
 import { sql } from 'drizzle-orm';
-import {
-  boolean,
-  index,
-  integer,
-  jsonb,
-  pgTable,
-  uuid,
-} from 'drizzle-orm/pg-core';
+import { index, integer, jsonb, pgTable, uuid } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { processInstances } from './processInstances.sql';
@@ -36,11 +29,6 @@ export const processPhases = pgTable(
     data: jsonb()
       .notNull()
       .default(sql`'{}'::jsonb`),
-
-    // The pipeline only proposes a selection; an admin confirms it before anything advances.
-    selectionNeedsApproval: boolean('selection_needs_approval')
-      .notNull()
-      .default(true),
 
     ...timestamps,
   },
