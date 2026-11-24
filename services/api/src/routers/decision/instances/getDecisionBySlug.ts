@@ -7,7 +7,7 @@ import {
 import { collapseRoles } from 'access-zones';
 import { z } from 'zod';
 
-import { decisionProfileWithSchemaEncoder } from '../../../encoders/decision';
+import { decisionProfileWithPhasesEncoder } from '../../../encoders/decision';
 import { openProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
@@ -19,7 +19,7 @@ export const getDecisionBySlugRouter = router({
     rateLimit: { windowSize: 10, maxRequests: 100 },
   })
     .input(inputSchema)
-    .output(decisionProfileWithSchemaEncoder)
+    .output(decisionProfileWithPhasesEncoder)
     .query(async ({ input, ctx }) => {
       const { user } = ctx;
       const { slug } = input;
@@ -29,7 +29,13 @@ export const getDecisionBySlugRouter = router({
         user,
       });
 
-      const parsed = decisionProfileWithSchemaEncoder.parse(result);
+      const parsed = decisionProfileWithPhasesEncoder.parse({
+        ...result,
+        processInstance: {
+          ...result.processInstance,
+          phases: result.processInstance.phasesWithIds,
+        },
+      });
 
       const { profileId } = parsed.processInstance;
       if (!profileId) {
@@ -47,7 +53,7 @@ export const getDecisionBySlugRouter = router({
         Channels.decisionInstance(parsed.processInstance.id),
       ]);
 
-      return decisionProfileWithSchemaEncoder.parse({
+      return decisionProfileWithPhasesEncoder.parse({
         ...parsed,
         processInstance: {
           ...parsed.processInstance,
