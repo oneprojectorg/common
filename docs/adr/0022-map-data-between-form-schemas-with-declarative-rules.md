@@ -127,3 +127,57 @@ value expressions of the selection pipeline are the planned next step.
   setup script sets them by hand; no editor writes them. Code reads them only
   through `getDevelopPrefillMappings`. The `{ type, phaseId }` reference stays
   until sources have a form schema ID.
+- **Sum of fields (amended 2026-11-23):** an entry's budget must start from
+  the cost total of a review of an earlier phase, and a copy rule cannot add
+  values. A field's `from` can now be an expression of the selection
+  pipeline whose operands are source fields, with an operator that value
+  types implement. Today that is only `add`:
+
+  ```ts
+  {
+    from: { type: 'review', phaseId: 'feasibility' },
+    to: { type: 'proposal', phaseId: 'ballot' },
+    fields: [
+      {
+        from: {
+          operator: 'add',
+          operands: [
+            { field: 'answers.cost_design' },
+            { field: 'answers.cost_construction' },
+            { field: 'answers.cost_contingency' },
+          ],
+        },
+        to: 'budget',
+      },
+    ],
+  }
+  ```
+
+  - `createExpressionEvaluator({ valueTypes })` makes an evaluator that
+    sets the consumer's value types in the optional `valueTypes` field of
+    `ExpressionContext`, on a copy of the caller's context. A value type
+    must have `parse`, which accepts only a value of the type. An operation
+    such as `add` is an optional method that combines two values or gives no
+    value, and a type without the operation gives no value. A new operator
+    is a name in `valueTypeOperators`, a method on `ValueType` and a case in
+    the evaluator. Money is the first type: `{ amount, currency }` with no
+    other key and a finite amount; two currencies cannot be added.
+  - The type of an operand comes from its value: the one type whose `parse`
+    accepts every operand. It does not come from `x-format` or the field
+    schema. When no single type accepts them, or `add` gives no value, the
+    result is `null`. A missing operand is skipped.
+  - With all operands numbers, or with no `valueTypes` in the context, as
+    the selection pipeline calls `evaluateExpression`, arithmetic is
+    unchanged, so the selection pipeline does not change. An expression rule
+    fills a field only with a value that a value type produced. A plain-number result fills
+    nothing for now and leaves the field empty, as mixed currencies do.
+  - The engine reads each operand as the copy rule reads a field, and
+    evaluates the expression one time for each input. An input with none of
+    the operands gives no value. An input with operands but no result, for
+    example mixed currencies, leaves the field empty, also when other inputs
+    or rules give it a value.
+  - The rule across sources is still deferred. An expression rule gives no
+    value when a target has more than one source proposal, because two
+    sources with equal totals would fill the total of one.
+  - The develop create path loads the submitted reviews of the sources, in
+    each phase that a review mapping names.

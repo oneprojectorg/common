@@ -870,4 +870,157 @@ describe.concurrent('getDevelopPrefill', () => {
       message: `Proposal '${proposal.id}' is not in phase '${FEASIBILITY}'`,
     });
   });
+
+  describe('with the sum of review costs', () => {
+    const costTotalMappings: SchemaMapping[] = [
+      {
+        from: submissionRef,
+        to: ballotRef,
+        fields: [{ from: 'title', to: 'title' }],
+      },
+      {
+        from: feasibilityRef,
+        to: ballotRef,
+        fields: [
+          {
+            from: {
+              operator: 'add',
+              operands: [
+                { field: 'answers.cost_design' },
+                { field: 'answers.cost_construction' },
+                { field: 'answers.cost_contingency' },
+              ],
+            },
+            to: 'budget',
+          },
+        ],
+      },
+    ];
+
+    const answers = (values: Parameters<typeof costs>[0]) => ({
+      answers: costs(values),
+    });
+
+    it('given one proposal whose two feasibility reviews give the same total, when the prefill is built, then the budget is that total', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instanceId, createSubmittedProposal, createReview } =
+        await seedDevelopDecision(testData);
+      const garden = await createSubmittedProposal({ title: 'Garden' });
+      const reviews = await Promise.all([
+        createReview({
+          proposalId: garden.id,
+          phaseId: FEASIBILITY,
+          reviewData: answers({ design: 10, construction: 20, contingency: 5 }),
+        }),
+        createReview({
+          proposalId: garden.id,
+          phaseId: FEASIBILITY,
+          reviewData: answers({ design: 0, construction: 30, contingency: 5 }),
+          reviewer: 1,
+        }),
+        // An equity review is of another source schema and is not summed.
+        createReview({
+          proposalId: garden.id,
+          phaseId: EQUITY,
+          reviewData: { answers: equityScores },
+        }),
+      ]);
+
+      const result = await getDevelopPrefill({
+        instanceId,
+        inputs: [
+          { type: 'proposal', phaseId: SUBMISSION, id: garden.id },
+          ...reviews.map((review) => ({
+            type: 'review' as const,
+            id: review.id,
+          })),
+        ],
+        target: { type: 'proposal', phaseId: BALLOT },
+        mappings: costTotalMappings,
+        user: setup.user,
+      });
+
+      expect(result).toEqual({
+        data: { title: 'Garden', budget: { amount: 35, currency: 'USD' } },
+      });
+    });
+
+    it('given a feasibility review whose costs are plain numbers, when the prefill is built, then the budget stays empty', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instanceId, createSubmittedProposal, createReview } =
+        await seedDevelopDecision(testData);
+      const garden = await createSubmittedProposal({ title: 'Garden' });
+      const review = await createReview({
+        proposalId: garden.id,
+        phaseId: FEASIBILITY,
+        reviewData: {
+          answers: {
+            cost_design: 100,
+            cost_construction: 200,
+            __overall_recommendation: 'feasible',
+          },
+        },
+      });
+
+      const result = await getDevelopPrefill({
+        instanceId,
+        inputs: [
+          { type: 'proposal', phaseId: SUBMISSION, id: garden.id },
+          { type: 'review', id: review.id },
+        ],
+        target: { type: 'proposal', phaseId: BALLOT },
+        mappings: costTotalMappings,
+        user: setup.user,
+      });
+
+      expect(result).toEqual({ data: { title: 'Garden' } });
+    });
+
+    it('given two proposals whose reviews give the same total, when the prefill is built, then the budget stays empty and the copy rules still apply', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instanceId, createSubmittedProposal, createReview } =
+        await seedDevelopDecision(testData);
+      const garden = await createSubmittedProposal({ title: 'Garden' });
+      const benches = await createSubmittedProposal({ title: 'Garden' });
+      const reviews = await Promise.all(
+        [garden, benches].map((proposal) =>
+          createReview({
+            proposalId: proposal.id,
+            phaseId: FEASIBILITY,
+            reviewData: answers({
+              design: 1000,
+              construction: 3000,
+              contingency: 1000,
+            }),
+          }),
+        ),
+      );
+
+      const result = await getDevelopPrefill({
+        instanceId,
+        inputs: [
+          { type: 'proposal', phaseId: SUBMISSION, id: garden.id },
+          { type: 'proposal', phaseId: SUBMISSION, id: benches.id },
+          ...reviews.map((review) => ({
+            type: 'review' as const,
+            id: review.id,
+          })),
+        ],
+        target: { type: 'proposal', phaseId: BALLOT },
+        mappings: costTotalMappings,
+        user: setup.user,
+      });
+
+      expect(result).toEqual({ data: { title: 'Garden' } });
+    });
+  });
 });

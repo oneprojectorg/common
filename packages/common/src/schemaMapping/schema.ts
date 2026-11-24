@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { valueTypeOperators } from '../valueTypes/valueType';
+
 const FORBIDDEN_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
 
 // Temporary: a schema is named by its type and phase, because rubrics and
@@ -29,8 +31,13 @@ export const targetKeySchema = z
     { message: 'Must be one non-empty key with no dot and no prototype key' },
   );
 
+const fieldsExpressionSchema = z.strictObject({
+  operator: z.enum(valueTypeOperators),
+  operands: z.array(z.strictObject({ field: fieldPathSchema })).min(1),
+});
+
 export const fieldMappingSchema = z.strictObject({
-  from: fieldPathSchema,
+  from: z.union([fieldPathSchema, fieldsExpressionSchema]),
   to: targetKeySchema,
 });
 
