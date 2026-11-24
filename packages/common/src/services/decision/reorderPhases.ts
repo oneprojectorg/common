@@ -7,6 +7,7 @@ import {
   type ProcessPhaseWithProfile,
   assertDecisionAdmin,
   assertPhaseEndsOnOrAfterStart,
+  hasPhaseDatesChanged,
 } from './phaseHelpers';
 import { writePhasesWithLock } from './phaseWrites';
 
@@ -73,8 +74,18 @@ export const reorderPhases = async ({
           })
           .where(eq(processPhases.id, phaseId))
           .returning({ data: processPhases.data });
-        if (startDate !== undefined || endDate !== undefined) {
-          assertPhaseEndsOnOrAfterStart(updated?.data);
+        const storedPhase = stored.find((row) => row.id === phaseId);
+        if (
+          storedPhase &&
+          hasPhaseDatesChanged({
+            stored: storedPhase.data,
+            merged: updated?.data,
+          })
+        ) {
+          assertPhaseEndsOnOrAfterStart({
+            data: updated?.data,
+            phaseLabel: storedPhase.name,
+          });
         }
       }
     },

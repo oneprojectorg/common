@@ -205,7 +205,13 @@ export const readPhaseSettings = (data: unknown): PhaseSettingsFields => {
   };
 };
 
-export const assertPhaseEndsOnOrAfterStart = (data: unknown): void => {
+export const assertPhaseEndsOnOrAfterStart = ({
+  data,
+  phaseLabel,
+}: {
+  data: unknown;
+  phaseLabel: string;
+}): void => {
   if (
     !isJsonObject(data) ||
     typeof data.startDate !== 'string' ||
@@ -214,10 +220,25 @@ export const assertPhaseEndsOnOrAfterStart = (data: unknown): void => {
     return;
   }
   if (Date.parse(data.endDate) < Date.parse(data.startDate)) {
-    throw new ValidationError('A phase cannot end before it starts', {
-      endDate: 'End the phase on or after its start date',
-    });
+    throw new ValidationError(
+      `Phase "${phaseLabel}" cannot end before it starts`,
+      { endDate: 'End the phase on or after its start date' },
+    );
   }
+};
+
+export const hasPhaseDatesChanged = ({
+  stored,
+  merged,
+}: {
+  stored: unknown;
+  merged: unknown;
+}): boolean => {
+  const before = isJsonObject(stored) ? stored : {};
+  const after = isJsonObject(merged) ? merged : {};
+  return (
+    before.startDate !== after.startDate || before.endDate !== after.endDate
+  );
 };
 
 export const getPhaseAsDecisionAdmin = async ({

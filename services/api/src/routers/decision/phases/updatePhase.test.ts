@@ -233,6 +233,17 @@ describe.concurrent('updatePhase', () => {
       endDate: DAY_1,
       headline: 'Pitch an idea',
     });
+
+    const resent = await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: {
+        startDate: DAY_2,
+        endDate: DAY_1,
+        description: 'Unchanged dates',
+      },
+    });
+
+    expect(resent.data).toMatchObject({ description: 'Unchanged dates' });
   });
 
   it('keeps every field when updates to different fields run at once', async ({

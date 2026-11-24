@@ -34,6 +34,7 @@ import {
 import {
   type ProcessPhaseWithProfile,
   assertPhaseEndsOnOrAfterStart,
+  hasPhaseDatesChanged,
   reconcilePhases,
   toInstanceDataPhase,
 } from './phaseHelpers';
@@ -390,7 +391,10 @@ async function saveInstanceData({
           existingPhases,
           mergedPhases: merged.phases,
         })) {
-          assertPhaseEndsOnOrAfterStart(phase);
+          assertPhaseEndsOnOrAfterStart({
+            data: phase,
+            phaseLabel: phase.name ?? phase.phaseId,
+          });
         }
         await reconcilePhases({
           tx,
@@ -429,13 +433,12 @@ function getPhasesWithChangedDates({
   const existingById = new Map(
     existingPhases.map((phase) => [phase.phaseId, phase]),
   );
-  return mergedPhases.filter((phase) => {
-    const existing = existingById.get(phase.phaseId);
-    return (
-      existing?.startDate !== phase.startDate ||
-      existing?.endDate !== phase.endDate
-    );
-  });
+  return mergedPhases.filter((phase) =>
+    hasPhaseDatesChanged({
+      stored: existingById.get(phase.phaseId),
+      merged: phase,
+    }),
+  );
 }
 
 async function sendQueuedInvites({

@@ -14,6 +14,7 @@ import {
   assertPhaseSchemasCompile,
   assertPhaseSettings,
   getPhaseAsDecisionAdmin,
+  hasPhaseDatesChanged,
   readPhaseSettings,
 } from './phaseHelpers';
 import { writePhasesWithLock } from './phaseWrites';
@@ -54,13 +55,12 @@ export const updatePhase = async ({
     patch !== undefined &&
     (patch.set.settings !== undefined ||
       patch.set.settingsSchema !== undefined);
-  const touchesDates =
-    patch !== undefined &&
-    (patch.set.startDate !== undefined || patch.set.endDate !== undefined);
 
   const { result } = await writePhasesWithLock({
     processInstanceId,
-    write: async (tx) => {
+    write: async (tx, { phases: stored }) => {
+      const storedPhase = stored.find((row) => row.id === phaseId);
+
       const [profile] =
         name === undefined
           ? await tx.select().from(profiles).where(eq(profiles.id, profileId))
@@ -98,8 +98,13 @@ export const updatePhase = async ({
           phaseLabel: profile.name,
         });
       }
-      if (touchesDates) {
-        assertPhaseEndsOnOrAfterStart(phase.data);
+      if (
+        hasPhaseDatesChanged({ stored: storedPhase?.data, merged: phase.data })
+      ) {
+        assertPhaseEndsOnOrAfterStart({
+          data: phase.data,
+          phaseLabel: profile.name,
+        });
       }
 
       return { phase, profile };
