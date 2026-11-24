@@ -55,6 +55,11 @@ interface PhaseCardProps {
 
 type EditingPhaseCardProps = PhaseCardProps & { editLink: ReactElement };
 
+type PhaseContentProps = Pick<
+  PhaseCardProps,
+  'name' | 'startDate' | 'endDate' | 'locale' | 'className'
+>;
+
 /**
  * One phase row in a phase timeline. Renders a `div`, or the `editLink`
  * element for a ready card in the editing treatment; the consumer owns the
@@ -88,13 +93,6 @@ function PhaseCard(props: PhaseCardProps) {
   }
 }
 
-/** Fields shared by every treatment. */
-type PhaseContentProps = Pick<
-  PhaseCardProps,
-  'name' | 'startDate' | 'endDate' | 'locale' | 'className'
->;
-
-/** Completed: gray rail + name with a green check, dates below. */
 function CompletedPhaseCard({
   name,
   startDate,
@@ -125,10 +123,7 @@ function CompletedPhaseCard({
   );
 }
 
-/**
- * Current: filled teal card linking to `href`. Badge over the name, dates
- * below; the navigation arrow reveals on hover/focus (per the Figma master).
- */
+/** The navigation arrow reveals on hover and focus, per the Figma master. */
 function CurrentPhaseCard({
   name,
   startDate,
@@ -141,40 +136,36 @@ function CurrentPhaseCard({
 }: PhaseContentProps &
   Pick<PhaseCardProps, 'isNowOpen' | 'nowOpenLabel' | 'href'>) {
   return (
-    <div className={className}>
-      <a
-        href={href}
-        data-slot="phase-card-current"
-        className="group flex items-center justify-between gap-4 rounded-lg bg-teal-50 p-4 text-teal-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none"
-      >
-        <div className="flex min-w-0 flex-col gap-2">
-          {isNowOpen ? (
-            <Badge className="w-fit bg-teal-500 text-background">
-              {nowOpenLabel}
-            </Badge>
-          ) : null}
-          <div className="flex min-w-0 flex-col">
-            <PhaseName name={name} />
-            <PhaseDates
-              startDate={startDate}
-              endDate={endDate}
-              locale={locale}
-            />
-          </div>
+    <a
+      href={href}
+      data-slot="phase-card-current"
+      className={cn(
+        'group flex items-center justify-between gap-4 rounded-lg bg-accent p-4 text-accent-foreground transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none',
+        className,
+      )}
+    >
+      <div className="flex min-w-0 flex-col gap-2">
+        {isNowOpen ? (
+          <Badge className="w-fit bg-primary text-background">
+            {nowOpenLabel}
+          </Badge>
+        ) : null}
+        <div className="flex min-w-0 flex-col">
+          <PhaseName name={name} />
+          <PhaseDates startDate={startDate} endDate={endDate} locale={locale} />
         </div>
-        <span
-          aria-hidden
-          data-slot="phase-card-arrow"
-          className="flex size-8 shrink-0 items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
-        >
-          <LuArrowRight className="size-4 rtl:-scale-x-100" />
-        </span>
-      </a>
-    </div>
+      </div>
+      <span
+        aria-hidden
+        data-slot="phase-card-arrow"
+        className="flex size-8 shrink-0 items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
+      >
+        <LuArrowRight className="size-4 rtl:-scale-x-100" />
+      </span>
+    </a>
   );
 }
 
-/** Upcoming + advanceable: light card, name over dates, with a Start button. */
 function AdvanceablePhaseCard({
   name,
   startDate,
@@ -187,7 +178,7 @@ function AdvanceablePhaseCard({
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-4 rounded-lg bg-gray-50 p-4',
+        'flex items-center justify-between gap-4 rounded-lg bg-muted p-4',
         className,
       )}
     >
@@ -200,11 +191,7 @@ function AdvanceablePhaseCard({
           className="text-muted-foreground"
         />
       </div>
-      <Button
-        variant="outline"
-        onClick={() => onAdvance?.()}
-        className="shrink-0"
-      >
+      <Button variant="outline" onClick={onAdvance} className="shrink-0">
         <LuPlay className="size-4 rtl:-scale-x-100" aria-hidden />
         {advanceLabel}
       </Button>
@@ -212,7 +199,6 @@ function AdvanceablePhaseCard({
   );
 }
 
-/** Upcoming: gray rail, name over dates. */
 function UpcomingPhaseCard({
   name,
   startDate,
@@ -236,7 +222,6 @@ function UpcomingPhaseCard({
 const editingCardClassName =
   'flex items-center justify-between gap-4 rounded-lg p-4 ring-1 ring-border ring-inset';
 
-/** Editing, ready: the whole card links to the phase's editor. */
 function EditablePhaseCard({
   name,
   startDate,
@@ -280,7 +265,6 @@ function EditablePhaseCard({
   });
 }
 
-/** Editing, not ready: name over a blurb, with a Setup link to the phase's editor. */
 function SetupPhaseCard({
   name,
   className,
