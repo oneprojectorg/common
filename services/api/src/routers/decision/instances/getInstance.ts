@@ -2,7 +2,7 @@ import { Channels, getInstance } from '@op/common';
 
 import {
   getInstanceInputSchema,
-  processInstanceWithPhasesEncoder,
+  processInstanceWithSchemaEncoder,
 } from '../../../encoders/decision';
 import {
   legacyGetInstanceInputSchema,
@@ -64,7 +64,7 @@ export const getInstanceRouter = router({
     rateLimit: { windowSize: 10, maxRequests: 100 },
   })
     .input(getInstanceInputSchema)
-    .output(processInstanceWithPhasesEncoder)
+    .output(processInstanceWithSchemaEncoder)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
 
@@ -75,11 +75,10 @@ export const getInstanceRouter = router({
 
       ctx.registerQueryChannels([Channels.decisionInstance(input.instanceId)]);
 
-      return processInstanceWithPhasesEncoder.parse({
+      return processInstanceWithSchemaEncoder.parse({
         ...instance,
         instanceData: instance.instanceData,
         process: instance.process,
-        phases: instance.phasesWithIds,
       });
     }),
 });

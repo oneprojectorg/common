@@ -1,4 +1,3 @@
-import { db } from '@op/db/client';
 import { logger } from '@op/logging';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
@@ -6,8 +5,7 @@ import { permission } from 'access-zones';
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { getCachedInstance } from './getCachedInstance';
-import { type Phase, toPhaseInstanceData, toPhases } from './instancePhases';
-import { listPhases } from './phaseHelpers';
+import { resolvePhases } from './instancePhases';
 import { resolveInstanceAccess } from './resolveInstanceAccess';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -27,8 +25,8 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       throw new NotFoundError('Process instance', instanceId);
     }
 
-    const [storedPhases, profileRoles] = await Promise.all([
-      listPhases({ db, processInstanceId: cached.id }),
+    const [instance, profileRoles] = await Promise.all([
+      resolvePhases({ instance: cached }),
       assertInstanceProfileAccess({
         user,
         instance: cached,
@@ -36,11 +34,6 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
         orgFallbackPermissions: { decisions: permission.READ },
       }),
     ]);
-    const allPhases = toPhases({ instance: cached, storedPhases });
-    const instance = {
-      ...cached,
-      phases: allPhases.map(toPhaseInstanceData),
-    };
 
     // Resolve access capabilities for the current user.
     // profileId is guaranteed non-null here: assertInstanceProfileAccess throws above if null.
@@ -58,13 +51,14 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
 
     // Filter budget from phase settings if hideBudget is true
     const instanceData = instance.instanceData as DecisionInstanceData;
-    const hideBudget = instanceData.config?.hideBudget;
-    const applyHideBudget = (phase: Phase): Phase =>
-      hideBudget && phase.settings
-        ? { ...phase, settings: { ...phase.settings, budget: undefined } }
-        : phase;
-    const visiblePhases = allPhases.map(applyHideBudget);
-    const phases = visiblePhases.map(toPhaseInstanceData);
+    const phases = instanceData.config?.hideBudget
+      ? instance.phases.map((phase) => ({
+          ...phase,
+          settings: phase.settings
+            ? { ...phase.settings, budget: undefined }
+            : phase.settings,
+        }))
+      : instance.phases;
 
     const manualSelectionStatus = await resolveManualSelectionStatus({
       instance,
@@ -75,8 +69,6 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       slug: instance.profile?.slug ?? null,
       instanceData,
       phases,
-      // Not on `phases`: a builder save persists every PhaseInstanceData key.
-      phasesWithIds: visiblePhases,
       access,
       selectionsAreConfirmed: manualSelectionStatus.selectionsAreConfirmed,
     };
