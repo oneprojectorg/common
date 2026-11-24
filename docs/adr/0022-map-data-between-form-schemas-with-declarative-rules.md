@@ -46,8 +46,8 @@ value expressions of the selection pipeline are the planned next step.
 
 - A mapping is data with three parts: a source schema (`from`), a target
   schema (`to`), and a list of fields. Each field is one rule: it copies one
-  source field (`from`) to one target field (`to`). There is one mapping for
-  each pair of schemas:
+  source field (`from`), or computes one value from source fields, to one
+  target field (`to`). There is one mapping for each pair of schemas:
 
   ```ts
   {
@@ -74,8 +74,8 @@ value expressions of the selection pipeline are the planned next step.
   property. The evaluator reads inherited properties and gives `null` for a
   missing field, so this check stops a mapping from reading, for example,
   `toString`.
-- The next step lets a field use a value expression of the selection
-  pipeline, for example `add`, in place of a source path. We will add the
+- A field can use a value expression of the selection pipeline in place of a
+  source path. `add` is the first (see the amendment below). We will add the
   operators one at a time.
 - A mapping names a schema with `{ type, phaseId }`, where `type` is
   `proposal` or `review`. The caller resolves a reference to a schema. The
@@ -95,8 +95,8 @@ value expressions of the selection pipeline are the planned next step.
 - Because rules are data, the system can check a rule against the two
   schemas and find all rules that read a field before a template changes.
   This check is deferred until rules are stored and edited.
-- A rule can only copy a value. It cannot write a literal or calculate a
-  value, for example a total of three cost fields. These need value
+- A rule can only copy a value or add source fields. It cannot write a
+  literal or calculate a value in another way. These need more value
   expressions. A rule that calculates across sources, for example an average
   of all reviews, needs a new decision.
 - When value expressions are added, one expression language serves the
@@ -127,3 +127,36 @@ value expressions of the selection pipeline are the planned next step.
   setup script sets them by hand; no editor writes them. Code reads them only
   through `getDevelopPrefillMappings`. The `{ type, phaseId }` reference stays
   until sources have a form schema ID.
+- **Expression rules (amended 2026-11-24):** a field's `from` can be a path or
+  one expression of the selection pipeline: `add` over field paths. The
+  evaluator of the pipeline computes it and does not change.
+
+  ```ts
+  {
+    from: {
+      operator: 'add',
+      operands: [
+        { field: 'answers.cost_design.amount' },
+        { field: 'answers.cost_construction.amount' },
+      ],
+    },
+    to: 'budget',
+  }
+  ```
+
+  - An absent operand is skipped. An input with no operand, or with a present
+    operand that is not a finite number, gives no value.
+  - An expression rule runs only with one source proposal and one input of
+    its source schema, for example one submitted review of that phase. With
+    more, only the copy rules of the mapping run. How several inputs combine
+    is deferred.
+  - The result is a plain number. The develop prefill makes a number in
+    `budget` money: the default currency, rounded to its minor unit. This
+    step is specific to `budget` on purpose. Value types in the evaluator are
+    deferred until a second use case needs them.
+  - Limits: the currency is the default, not the source's. Amounts in two
+    currencies are added as one number.
+  - When no fragment cloned from the source document fills a target field,
+    the server writes a mapped value that is not a string into its fragment,
+    as JSON text in one paragraph, which is how the editor's field components
+    store it. A string is not written, because it can be rich text.
