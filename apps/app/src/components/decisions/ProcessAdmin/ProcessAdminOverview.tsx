@@ -139,6 +139,7 @@ function ProcessAdminOverviewSuspense({
               slug={slug}
               phases={instance.phases}
               currentStateId={instance.currentStateId}
+              templates={instance.instanceData}
               isOpen={isOpen}
               isDraft={status === 'draft'}
             />
@@ -311,11 +312,12 @@ function ProcessAdminPhaseRail({
   slug,
   phases,
   currentStateId,
+  templates,
   isOpen,
   isDraft,
 }: Pick<
   ComponentProps<typeof ProcessAdminPhaseTimeline>,
-  'slug' | 'phases' | 'currentStateId'
+  'slug' | 'phases' | 'currentStateId' | 'templates'
 > & { isOpen: boolean; isDraft: boolean }) {
   const t = useTranslations('decisions');
   const tShared = useTranslations();
@@ -351,6 +353,7 @@ function ProcessAdminPhaseRail({
           slug={slug}
           phases={phases}
           currentStateId={currentStateId}
+          templates={templates}
           hasStarted={isOpen}
           isEditing={isEditing}
         />

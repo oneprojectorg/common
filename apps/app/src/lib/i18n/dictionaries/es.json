@@ -2071,7 +2071,16 @@
       "saveError": "No se guardó tu cambio.",
       "addBannerAction": "Añadir banner",
       "launchAction": "Lanzar proceso",
-      "editPhases": "Editar fases"
+      "editPhases": "Editar fases",
+      "phasePageTitle": "{phaseName} · {decisionName}",
+      "phaseNotFound": "Esta fase ya no existe",
+      "setupAction": "Configurar",
+      "setupPhaseLabel": "Configurar {phaseName}",
+      "setupBlurbCollect": "Las personas envían propuestas",
+      "setupBlurbReview": "Los revisores leen lo que llegó",
+      "setupBlurbDevelop": "Las propuestas preseleccionadas se desarrollan más",
+      "setupBlurbVote": "Las personas deciden entre ellas",
+      "setupBlurbResults": "Se publica el resultado"
     }
   },
   "loadingProgress": "Cargando...",

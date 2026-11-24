@@ -208,16 +208,22 @@ const failSave = () => act(() => updateInstance.fail());
 
 const phase = {
   id: 'row-submit',
+  slug: 'a1b2c3d4',
   phaseId: 'submit',
   name: 'Submit',
   startDate: '2026-01-01T00:00:00.000Z',
+  endDate: '2026-01-31T00:00:00.000Z',
 };
 const votePhase = {
   id: 'row-vote',
+  slug: 'e5f6a7b8',
   phaseId: 'vote',
   name: 'Vote',
   startDate: '2026-02-01T00:00:00.000Z',
+  endDate: '2026-02-28T00:00:00.000Z',
 };
+const editorHref = (phaseSlug: string) =>
+  `/en/decisions/${SLUG}/manage/phase/${phaseSlug}`;
 
 afterEach(() => {
   cleanup();
@@ -313,10 +319,10 @@ describe('ProcessAdminOverview', () => {
 
     expect(
       screen.getByRole('link', { name: /Submit/ }).getAttribute('href'),
-    ).toBe('#');
+    ).toBe(editorHref('a1b2c3d4'));
     expect(
       screen.getByRole('link', { name: /Vote/ }).getAttribute('href'),
-    ).toBe('#');
+    ).toBe(editorHref('e5f6a7b8'));
   });
 
   it('keeps the rail of a live process at rest', () => {
@@ -334,7 +340,7 @@ describe('ProcessAdminOverview', () => {
     await user.click(screen.getByRole('button', { name: 'Edit phases' }));
     expect(
       screen.getByRole('link', { name: /Submit/ }).getAttribute('href'),
-    ).toBe('#');
+    ).toBe(editorHref('a1b2c3d4'));
 
     await user.click(screen.getByRole('button', { name: 'Done' }));
     expect(screen.queryByRole('link', { name: /Submit/ })).toBeNull();

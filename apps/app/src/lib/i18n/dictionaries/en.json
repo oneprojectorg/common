@@ -2071,7 +2071,16 @@
       "saveError": "Your change was not saved.",
       "addBannerAction": "Add banner",
       "launchAction": "Launch process",
-      "editPhases": "Edit phases"
+      "editPhases": "Edit phases",
+      "phasePageTitle": "{phaseName} · {decisionName}",
+      "phaseNotFound": "This phase no longer exists",
+      "setupAction": "Setup",
+      "setupPhaseLabel": "Setup {phaseName}",
+      "setupBlurbCollect": "People send in proposals",
+      "setupBlurbReview": "Reviewers read what came in",
+      "setupBlurbDevelop": "Shortlisted proposals are developed further",
+      "setupBlurbVote": "People decide between them",
+      "setupBlurbResults": "The outcome is published"
     }
   },
   "loadingProgress": "Loading...",

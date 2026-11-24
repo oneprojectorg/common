@@ -2071,7 +2071,16 @@
       "saveError": "A módosítás nem lett mentve.",
       "addBannerAction": "Banner hozzáadása",
       "launchAction": "Folyamat indítása",
-      "editPhases": "Szerkesztés: fázisok"
+      "editPhases": "Szerkesztés: fázisok",
+      "phasePageTitle": "{phaseName} · {decisionName}",
+      "phaseNotFound": "Ez a fázis már nem létezik",
+      "setupAction": "Beállítás",
+      "setupPhaseLabel": "Beállítás: {phaseName}",
+      "setupBlurbCollect": "Az emberek javaslatokat küldenek be",
+      "setupBlurbReview": "A bírálók elolvassák a beérkezett anyagokat",
+      "setupBlurbDevelop": "A kiválasztott javaslatokat továbbfejlesztik",
+      "setupBlurbVote": "Az emberek döntenek közöttük",
+      "setupBlurbResults": "Az eredményt közzéteszik"
     }
   },
   "loadingProgress": "Betöltés...",
