@@ -388,7 +388,7 @@ async function saveInstanceData({
       if (merged.phases) {
         for (const phase of getPhasesWithChangedDates({
           existingPhases,
-          phases: merged.phases,
+          mergedPhases: merged.phases,
         })) {
           assertPhaseEndsOnOrAfterStart(phase);
         }
@@ -421,15 +421,15 @@ async function saveInstanceData({
 
 function getPhasesWithChangedDates({
   existingPhases,
-  phases,
+  mergedPhases,
 }: {
   existingPhases: PhaseInstanceData[];
-  phases: PhaseInstanceData[];
+  mergedPhases: PhaseInstanceData[];
 }): PhaseInstanceData[] {
   const existingById = new Map(
     existingPhases.map((phase) => [phase.phaseId, phase]),
   );
-  return phases.filter((phase) => {
+  return mergedPhases.filter((phase) => {
     const existing = existingById.get(phase.phaseId);
     return (
       existing?.startDate !== phase.startDate ||
