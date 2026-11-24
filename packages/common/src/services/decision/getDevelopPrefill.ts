@@ -33,6 +33,7 @@ import {
 import type { PhaseInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 import { assertInstancePhase } from './utils/instance';
+import { withBudgetCurrency } from './withBudgetCurrency';
 
 /**
  * A review's phase is its assignment's phase, so a review input names none. A
@@ -191,12 +192,34 @@ export const buildDevelopPrefill = async ({
     readContext: getProposalReadContext({ user, decisionRoles }),
   });
 
-  return mapToSchema({
-    mappings,
+  // Two sources with equal totals would fill one source's total, and how the
+  // totals of several sources combine is not decided yet.
+  const sourceCount = inputs.filter(
+    (input) => input.type === 'proposal',
+  ).length;
+
+  const rules = sourceCount > 1 ? getCopyRules(mappings) : mappings;
+  const result = mapToSchema({
+    mappings: rules,
+    inputs: mappingInputs,
+    targetSchema,
+  });
+
+  return withBudgetCurrency({
+    result,
+    mappings: rules,
     inputs: mappingInputs,
     targetSchema,
   });
 };
+
+const getCopyRules = (mappings: SchemaMapping[]): SchemaMapping[] =>
+  mappings.flatMap((mapping) => {
+    const fields = mapping.fields.filter(
+      (field) => typeof field.from === 'string',
+    );
+    return fields.length > 0 ? [{ ...mapping, fields }] : [];
+  });
 
 const assertValidRequest = (request: {
   inputs: DevelopPrefillInput[];

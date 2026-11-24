@@ -29,8 +29,13 @@ export const targetKeySchema = z
     { message: 'Must be one non-empty key with no dot and no prototype key' },
   );
 
+const addFieldsSchema = z.strictObject({
+  operator: z.literal('add'),
+  operands: z.array(z.strictObject({ field: fieldPathSchema })).min(1),
+});
+
 export const fieldMappingSchema = z.strictObject({
-  from: fieldPathSchema,
+  from: z.union([fieldPathSchema, addFieldsSchema]),
   to: targetKeySchema,
 });
 
