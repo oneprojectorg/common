@@ -62,11 +62,11 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       hideBudget && phase.settings
         ? { ...phase, settings: { ...phase.settings, budget: undefined } }
         : phase;
-    const phases = instance.phases.map(withoutBudget);
     const phasesWithRowIds = toPhasesWithRowIds({
       instance: cached,
       phases: rows,
     }).map(withoutBudget);
+    const phases = phasesWithRowIds.map(({ id: _, ...phase }) => phase);
 
     const manualSelectionStatus = await resolveManualSelectionStatus({
       instance,

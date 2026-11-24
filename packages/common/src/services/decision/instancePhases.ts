@@ -58,20 +58,6 @@ export const attachBlobPhases = <T extends InstanceWithData>({
   phases: [...getInstancePhases(instance.instanceData)],
 });
 
-// For a writer that already holds the instance's rows.
-export const attachPhaseRows = <T extends InstanceWithData>({
-  instance,
-  phases,
-}: {
-  instance: T;
-  phases: ProcessPhaseWithProfile[];
-}): InstanceWithPhases<T> =>
-  phases.length > 0
-    ? { ...instance, phases: phases.map(toInstanceDataPhase) }
-    : attachBlobPhases({ instance });
-
-export type PhaseWithRowId = PhaseInstanceData & { id: string | null };
-
 // `null` while the decision still reads instanceData.phases.
 export const toPhasesWithRowIds = ({
   instance,
@@ -79,13 +65,27 @@ export const toPhasesWithRowIds = ({
 }: {
   instance: InstanceWithData;
   phases: ProcessPhaseWithProfile[];
-}): PhaseWithRowId[] =>
+}): (PhaseInstanceData & { id: string | null })[] =>
   phases.length > 0
     ? phases.map((phase) => ({ ...toInstanceDataPhase(phase), id: phase.id }))
     : getInstancePhases(instance.instanceData).map((phase) => ({
         ...phase,
         id: null,
       }));
+
+// For a writer that already holds the instance's rows.
+export const attachPhaseRows = <T extends InstanceWithData>({
+  instance,
+  phases,
+}: {
+  instance: T;
+  phases: ProcessPhaseWithProfile[];
+}): InstanceWithPhases<T> => ({
+  ...instance,
+  phases: toPhasesWithRowIds({ instance, phases }).map(
+    ({ id: _, ...phase }) => phase,
+  ),
+});
 
 export const resolvePhasesForAll = async <T extends InstanceWithData>({
   instances,
