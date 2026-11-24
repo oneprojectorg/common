@@ -8,28 +8,27 @@ import {
 } from './lockProcessInstance';
 import {
   type ProcessPhaseWithProfile,
+  assertPastPhasesUnchanged,
   assertPhaseRowInvariants,
   listPhases,
   phaseIdOf,
   reconcilePhases,
+  toInstanceDataPhase,
 } from './phaseHelpers';
 import { getInstancePhases } from './schemas/instanceData';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
-type StoredPhases = Pick<LockedProcessInstance, 'status' | 'currentStateId'> & {
-  phases: ProcessPhaseWithProfile[];
-};
-
 /**
  * Runs a phase endpoint's row write in a transaction under the instance lock,
- * then clears its cache. See {@link writePhasesInTx}.
+ * reschedules the transitions of a decision past draft, then clears its cache.
+ * See {@link writePhasesInTx}.
  */
 export const writePhasesWithLock = async <T>({
   processInstanceId,
   write,
 }: {
   processInstanceId: string;
-  write: (tx: TransactionType, stored: StoredPhases) => Promise<T>;
+  write: (tx: TransactionType, before: ProcessPhaseWithProfile[]) => Promise<T>;
 }): Promise<{ result: T; phases: ProcessPhaseWithProfile[] }> => {
   const written = await db.transaction(async (tx) => {
     const locked = await lockProcessInstanceOrThrow({
@@ -37,7 +36,26 @@ export const writePhasesWithLock = async <T>({
       instanceId: processInstanceId,
     });
 
-    return writePhasesInTx({ tx, processInstanceId, locked, write });
+    const written = await writePhasesInTx({
+      tx,
+      processInstanceId,
+      locked,
+      write,
+    });
+
+    if (locked.status !== ProcessStatus.DRAFT) {
+      await updateTransitionsForProcess({
+        processInstance: {
+          id: processInstanceId,
+          instanceData: locked.instanceData,
+          currentStateId: locked.currentStateId,
+        },
+        phases: written.phases,
+        db: tx,
+      });
+    }
+
+    return written;
   });
 
   await invalidateDecisionInstance(processInstanceId);
@@ -46,23 +64,22 @@ export const writePhasesWithLock = async <T>({
 };
 
 /**
- * Runs a row write for an instance the caller has locked, checks and
- * renumbers the rows it leaves, and reschedules the transitions of a decision
- * past draft.
+ * Runs a row write for an instance the caller has locked, then checks and
+ * renumbers the rows it leaves. The caller syncs transitions.
  */
 export const writePhasesInTx = async <T>({
   tx,
   processInstanceId,
   locked,
   write,
-  syncTransitions = true,
+  nextStatus = locked.status,
 }: {
   tx: TransactionType;
   processInstanceId: string;
   locked: LockedProcessInstance;
-  write: (tx: TransactionType, stored: StoredPhases) => Promise<T>;
-  // False when the caller syncs transitions itself after the write.
-  syncTransitions?: boolean;
+  write: (tx: TransactionType, before: ProcessPhaseWithProfile[]) => Promise<T>;
+  // The status this save leaves, when it also changes the status.
+  nextStatus?: LockedProcessInstance['status'];
 }): Promise<{ result: T; phases: ProcessPhaseWithProfile[] }> => {
   const before = await listPhasesForWrite({
     tx,
@@ -70,17 +87,13 @@ export const writePhasesInTx = async <T>({
     instanceData: locked.instanceData,
   });
 
-  const result = await write(tx, {
-    phases: before,
-    status: locked.status,
-    currentStateId: locked.currentStateId,
-  });
+  const result = await write(tx, before);
 
   const listed = await listPhases({ db: tx, processInstanceId });
   assertPhaseRowInvariants({
     rows: listed,
     previousPhaseIds: before.map(phaseIdOf),
-    instance: locked,
+    instance: { ...locked, status: nextStatus },
   });
   const phases = await renumberPhases({
     tx,
@@ -88,15 +101,11 @@ export const writePhasesInTx = async <T>({
     previousRowIds: new Set(before.map(({ id }) => id)),
   });
 
-  if (syncTransitions && locked.status !== ProcessStatus.DRAFT) {
-    await updateTransitionsForProcess({
-      processInstance: {
-        id: processInstanceId,
-        instanceData: locked.instanceData,
-        currentStateId: locked.currentStateId,
-      },
-      phases,
-      db: tx,
+  if (locked.status !== ProcessStatus.DRAFT) {
+    assertPastPhasesUnchanged({
+      before: before.map(toInstanceDataPhase),
+      after: phases.map(toInstanceDataPhase),
+      currentStateId: locked.currentStateId,
     });
   }
 

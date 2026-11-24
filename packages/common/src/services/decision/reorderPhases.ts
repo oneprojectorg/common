@@ -15,8 +15,6 @@ export interface PhasePlacement {
   endDate?: string;
 }
 
-// TODO: refuse moving phases that have already run, once currentStateId
-// points at a phase row.
 export const reorderPhases = async ({
   user,
   processInstanceId,
@@ -46,7 +44,7 @@ export const reorderPhases = async ({
 
   const { phases: reordered } = await writePhasesWithLock({
     processInstanceId,
-    write: async (tx, { phases: stored }) => {
+    write: async (tx, stored) => {
       if (
         stored.length !== requestedIds.size ||
         !stored.every((phase) => requestedIds.has(phase.id))

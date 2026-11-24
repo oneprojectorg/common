@@ -20,15 +20,14 @@ import {
 import {
   TestPhoneAuthDataManager,
   advanceInstancePhase,
+  deleteProfilesWithPhaseProfiles,
 } from '@op/common/testing/helpers';
 import { mockCollab } from '@op/common/testing/mocks/collab';
-import { db, eq, inArray, or } from '@op/db/client';
+import { db, eq, inArray } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
   processInstances,
-  processPhases,
-  profiles,
   taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -285,14 +284,17 @@ export class SmsCommandFixture {
     phaseId?: string;
     attestation: string;
   }) {
+    // The phase list is the whole list: every phase is sent, so none is removed.
     await updateDecisionInstance({
       instanceId,
-      phases: [
-        {
-          phaseId,
-          rules: { voting: { submit: true, enrolment: { attestation } } },
-        },
-      ],
+      phases: votingSchema.phases.map(({ id }) =>
+        id === phaseId
+          ? {
+              phaseId,
+              rules: { voting: { submit: true, enrolment: { attestation } } },
+            }
+          : { phaseId: id },
+      ),
       user: userOf(owner),
     });
   }
@@ -385,25 +387,7 @@ export class SmsCommandFixture {
 
   private async cleanup() {
     if (this.profileIds.length > 0) {
-      // An instance's phase profiles outlive it unless deleted with it.
-      await db
-        .delete(profiles)
-        .where(
-          or(
-            inArray(profiles.id, this.profileIds),
-            inArray(
-              profiles.id,
-              db
-                .select({ id: processPhases.profileId })
-                .from(processPhases)
-                .innerJoin(
-                  processInstances,
-                  eq(processInstances.id, processPhases.processInstanceId),
-                )
-                .where(inArray(processInstances.profileId, this.profileIds)),
-            ),
-          ),
-        );
+      await deleteProfilesWithPhaseProfiles(this.profileIds);
     }
     if (this.termIds.length > 0) {
       await db

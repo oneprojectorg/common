@@ -2,6 +2,7 @@ import type { PhaseData } from '@op/common';
 import {
   TestDecisionsDataManager,
   dateAdvancementSchema,
+  loadPhaseRows,
 } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import { ProcessStatus, processPhases } from '@op/db/schema';
@@ -9,12 +10,14 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import {
+  DAY_MS,
   PHASE_NAME,
   createUnauthenticatedCaller,
-  loadPhaseRows,
   loadTransitionLinks,
+  setupDraftDecisionWithPastPhases,
   setupPhase,
   setupPublishedDateDecision,
+  setupPublishedDecisionAtThirdPhase,
 } from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
@@ -577,9 +580,7 @@ describe.concurrent('updatePhase', () => {
       throw new Error('Expected the template phase rows');
     }
 
-    const endDate = new Date(
-      Date.now() + 3 * 24 * 60 * 60 * 1000,
-    ).toISOString();
+    const endDate = new Date(Date.now() + 3 * DAY_MS).toISOString();
     await caller.decision.updatePhase({
       phaseId: initial.id,
       data: { endDate },
@@ -612,9 +613,7 @@ describe.concurrent('updatePhase', () => {
     if (!initial) {
       throw new Error('Expected the template phase rows');
     }
-    const endDate = new Date(
-      Date.now() + 3 * 24 * 60 * 60 * 1000,
-    ).toISOString();
+    const endDate = new Date(Date.now() + 3 * DAY_MS).toISOString();
 
     await caller.decision.updatePhase({
       phaseId: initial.id,
@@ -645,6 +644,145 @@ describe.concurrent('updatePhase', () => {
       data: initial.data,
     });
     expect(await loadTransitionLinks(instanceId)).toEqual(before);
+  });
+
+  it('refuses a new end date on a phase the decision has left', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller, rows } =
+      await setupPublishedDecisionAtThirdPhase(task, onTestFinished);
+    const linksBefore = await loadTransitionLinks(instanceId);
+
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: rows.review.id,
+        data: { endDate: new Date().toISOString() },
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: 'The past phase "Review" cannot be edited',
+      },
+    });
+
+    await expectPhase(rows.review, {
+      name: rows.review.name,
+      data: rows.review.data,
+    });
+    expect(await loadTransitionLinks(instanceId)).toEqual(linksBefore);
+  });
+
+  it.for([
+    { label: 'a new name', update: { name: 'Shortlist' } },
+    { label: 'a new description', update: { data: { description: 'New' } } },
+    { label: 'a new headline', update: { data: { headline: 'Hi' } } },
+  ])(
+    'refuses $label on a phase the decision has left',
+    async ({ update }, { task, onTestFinished }) => {
+      const { adminCaller, rows } = await setupPublishedDecisionAtThirdPhase(
+        task,
+        onTestFinished,
+      );
+
+      await expect(
+        adminCaller.decision.updatePhase({
+          phaseId: rows.review.id,
+          ...update,
+        }),
+      ).rejects.toMatchObject({
+        cause: {
+          name: 'ValidationError',
+          message: 'The past phase "Review" cannot be edited',
+        },
+      });
+
+      await expectPhase(rows.review, {
+        name: rows.review.name,
+        data: rows.review.data,
+      });
+    },
+  );
+
+  it('edits the text of the current and a later phase and the end date of the current one', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { adminCaller, rows } = await setupPublishedDecisionAtThirdPhase(
+      task,
+      onTestFinished,
+    );
+    const endDate = new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+
+    await adminCaller.decision.updatePhase({
+      phaseId: rows.voting.id,
+      name: 'Ballot',
+      data: { description: 'Pick one', endDate },
+    });
+    await adminCaller.decision.updatePhase({
+      phaseId: rows.results.id,
+      name: 'Outcome',
+      data: { headline: 'The winners' },
+    });
+
+    await expectPhase(rows.voting, {
+      name: 'Ballot',
+      data: { ...rows.voting.data, description: 'Pick one', endDate },
+    });
+    await expectPhase(rows.results, {
+      name: 'Outcome',
+      data: { ...rows.results.data, headline: 'The winners' },
+    });
+  });
+
+  it('refuses a new start date on the current phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { adminCaller, rows } = await setupPublishedDecisionAtThirdPhase(
+      task,
+      onTestFinished,
+    );
+
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: rows.voting.id,
+        data: { startDate: new Date(Date.now() - DAY_MS).toISOString() },
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: 'The start date of the current phase cannot be changed',
+      },
+    });
+
+    await expectPhase(rows.voting, {
+      name: rows.voting.name,
+      data: rows.voting.data,
+    });
+  });
+
+  it('edits a phase the decision has left while it is a draft', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { adminCaller, rows } = await setupDraftDecisionWithPastPhases(
+      task,
+      onTestFinished,
+    );
+
+    await adminCaller.decision.updatePhase({
+      phaseId: rows.review.id,
+      name: 'Shortlist',
+      data: { description: 'Pick the best' },
+    });
+
+    await expectPhase(rows.review, {
+      name: 'Shortlist',
+      data: { ...rows.review.data, description: 'Pick the best' },
+    });
   });
 
   it('refuses an update that leaves a published date-advanced phase with no end date', async ({

@@ -81,12 +81,10 @@ export async function updateTransitionsForProcess({
 
     // Partition expected transitions into updates and creates
     const toCreate: typeof expectedTransitions = [];
-    const toUpdate: {
-      id: string;
-      scheduledDate: string;
-      fromPhaseId: string | null;
-      toPhaseId: string | null;
-    }[] = [];
+    const toUpdate: (Pick<
+      (typeof expectedTransitions)[number],
+      'scheduledDate' | 'fromPhaseId' | 'toPhaseId'
+    > & { id: string })[] = [];
 
     for (const expected of expectedTransitions) {
       const existing = existingTransitions.find(

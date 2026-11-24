@@ -1,14 +1,16 @@
 import { revertPhase } from '@op/common';
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { TestDecisionsDataManager, loadPhaseRows } from '@op/common/testing';
 import { ProcessStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import {
+  DAY_MS,
   listPhaseIds,
   loadBlobPhases,
   loadInstanceData,
   loadTransitionLinks,
   setupPublishedDateDecision,
+  setupPublishedDecisionAtThirdPhase,
 } from '../../../test/helpers/phaseTestUtils';
 
 describe.concurrent('revertPhase', () => {
@@ -69,5 +71,43 @@ describe.concurrent('revertPhase', () => {
     expect(await loadTransitionLinks(instanceId)).toEqual(links);
     expect(await listPhaseIds(instanceId)).toHaveLength(2);
     expect(await loadBlobPhases(instanceId)).toEqual(blobPhases);
+  });
+
+  it('unlocks every field of the phase it reverts from and keeps the phases before the new current one locked', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller, rows } =
+      await setupPublishedDecisionAtThirdPhase(task, onTestFinished);
+
+    const result = await revertPhase({ instanceId, fromPhaseId: 'voting' });
+    expect(result.currentPhaseId).toBe('review');
+
+    // A new start date was refused while voting was the current phase.
+    const startDate = new Date(Date.now() + 2.5 * DAY_MS).toISOString();
+    await adminCaller.decision.updatePhase({
+      phaseId: rows.voting.id,
+      name: 'Ballot',
+      data: { description: 'Pick one', startDate },
+    });
+    const rowsBefore = await loadPhaseRows(instanceId);
+    expect(rowsBefore[2]).toMatchObject({
+      id: rows.voting.id,
+      name: 'Ballot',
+      data: { description: 'Pick one', startDate },
+    });
+
+    await expect(
+      adminCaller.decision.updatePhase({
+        phaseId: rows.submission.id,
+        data: { endDate: new Date(Date.now() + 20 * DAY_MS).toISOString() },
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: 'The past phase "Submission" cannot be edited',
+      },
+    });
+    expect(await loadPhaseRows(instanceId)).toEqual(rowsBefore);
   });
 });

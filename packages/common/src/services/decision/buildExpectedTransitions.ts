@@ -1,7 +1,7 @@
 import { CommonError, ValidationError } from '../../utils';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import type { ScheduledTransition } from './types';
-import { hasPhaseEnded } from './utils/phaseOrder';
+import { getPhaseName, hasPhaseEnded } from './utils/phaseOrder';
 
 /**
  * Builds expected transition records from a process instance's phase data.
@@ -46,7 +46,7 @@ export function buildExpectedTransitions(processInstance: {
     const scheduledDate = currentPhase.endDate;
 
     if (!scheduledDate) {
-      const phaseName = currentPhase.name?.trim() || currentPhase.phaseId;
+      const phaseName = getPhaseName(currentPhase);
       throw new ValidationError(
         `Phase "${phaseName}" must have an end date because it advances by date`,
         { phases: `Set an end date for "${phaseName}"` },

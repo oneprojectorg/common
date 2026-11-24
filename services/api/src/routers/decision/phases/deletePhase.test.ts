@@ -1,4 +1,4 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { TestDecisionsDataManager, loadPhaseRows } from '@op/common/testing';
 import { db } from '@op/db/client';
 import { ProcessStatus, decisionProcessTransitions } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest';
 import {
   PHASE_NAME,
   createUnauthenticatedCaller,
-  loadPhaseRows,
   loadTransitionLinks,
   setupPhase,
   setupPublishedDateDecision,
@@ -116,25 +115,27 @@ describe.concurrent('deletePhase', () => {
     ]);
   });
 
-  it('schedules no transition out of a phase the decision has left when an earlier phase is deleted', async ({
+  it('refuses to delete a phase the decision has left and keeps its transitions', async ({
     task,
     onTestFinished,
   }) => {
     const { instanceId, adminCaller, rows } =
       await setupPublishedDecisionAtThirdPhase(task, onTestFinished);
+    const rowsBefore = await loadPhaseRows(instanceId);
+    const linksBefore = await loadTransitionLinks(instanceId);
 
-    await adminCaller.decision.deletePhase({ phaseId: rows.review.id });
-
-    expect(
-      await loadTransitionLinks(instanceId, { pendingOnly: true }),
-    ).toMatchObject([
-      {
-        fromStateId: 'voting',
-        toStateId: 'results',
-        fromPhaseId: rows.voting.id,
-        toPhaseId: rows.results.id,
+    await expect(
+      adminCaller.decision.deletePhase({ phaseId: rows.review.id }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message:
+          'Phases up to the current phase cannot be removed, added or reordered',
       },
-    ]);
+    });
+
+    expect(await loadPhaseRows(instanceId)).toEqual(rowsBefore);
+    expect(await loadTransitionLinks(instanceId)).toEqual(linksBefore);
   });
 
   it('rejects a member without decisions ADMIN', async ({
