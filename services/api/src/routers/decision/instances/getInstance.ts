@@ -79,7 +79,7 @@ export const getInstanceRouter = router({
         ...instance,
         instanceData: instance.instanceData,
         process: instance.process,
-        phases: instance.phasesWithRowIds,
+        phases: instance.phasesWithIds,
       });
     }),
 });

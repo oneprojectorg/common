@@ -9,7 +9,7 @@ vi.mock('@op/db/client', () => ({
   inArray: () => undefined,
 }));
 
-const { attachPhaseRows, toPhasesWithRowIds, withoutRowId } =
+const { attachPhaseRows, toPhases, toPhaseInstanceData } =
   await import('./instancePhases');
 
 const blobPhases = [
@@ -22,13 +22,13 @@ const instance = {
   instanceData: { phases: blobPhases },
 };
 
-const rows: ProcessPhaseWithProfile[] = [
+const storedPhases: ProcessPhaseWithProfile[] = [
   {
     id: '00000000-0000-4000-8000-000000000001',
     profileId: 'profile-1',
     sortOrder: 0,
     data: { phaseId: 'submission', startDate: '2026-02-01' },
-    name: 'Row submission',
+    name: 'Stored submission',
     slug: 'submission-slug',
   },
   {
@@ -36,56 +36,60 @@ const rows: ProcessPhaseWithProfile[] = [
     profileId: 'profile-2',
     sortOrder: 1,
     data: { description: 'No stored phaseId' },
-    name: 'Row review',
+    name: 'Stored review',
     slug: 'review-slug',
   },
 ];
 
-describe('toPhasesWithRowIds', () => {
-  it('builds each phase from its row and keeps the row id, in row order', () => {
-    expect(toPhasesWithRowIds({ instance, phases: rows })).toEqual([
+describe('toPhases', () => {
+  it('builds each phase from its stored phase and keeps its id, in order', () => {
+    expect(toPhases({ instance, storedPhases })).toEqual([
       {
         id: '00000000-0000-4000-8000-000000000001',
         phaseId: 'submission',
-        name: 'Row submission',
+        name: 'Stored submission',
         startDate: '2026-02-01',
       },
       {
         id: '00000000-0000-4000-8000-000000000002',
         phaseId: 'review-slug',
-        name: 'Row review',
+        name: 'Stored review',
         description: 'No stored phaseId',
       },
     ]);
   });
 
-  it('falls back to the blob phases with a null row id when there are no rows', () => {
-    expect(toPhasesWithRowIds({ instance, phases: [] })).toEqual(
+  it('falls back to the blob phases with a null id when there are no stored phases', () => {
+    expect(toPhases({ instance, storedPhases: [] })).toEqual(
       blobPhases.map((phase) => ({ ...phase, id: null })),
     );
   });
 
-  it('returns no phases when there are no rows and no blob phases', () => {
+  it('returns no phases when there are no stored or blob phases', () => {
     expect(
-      toPhasesWithRowIds({
+      toPhases({
         instance: { id: 'instance-2', instanceData: {} },
-        phases: [],
+        storedPhases: [],
       }),
     ).toEqual([]);
   });
 });
 
-describe('withoutRowId', () => {
-  it('drops only the row id', () => {
+describe('toPhaseInstanceData', () => {
+  it('drops only the id', () => {
     expect(
-      withoutRowId({ id: 'row-1', phaseId: 'submission', name: 'Submission' }),
+      toPhaseInstanceData({
+        id: 'phase-1',
+        phaseId: 'submission',
+        name: 'Submission',
+      }),
     ).toEqual({ phaseId: 'submission', name: 'Submission' });
   });
 });
 
 describe('attachPhaseRows', () => {
-  it('attaches the row phases without row ids', () => {
-    const result = attachPhaseRows({ instance, phases: rows });
+  it('attaches the stored phases without ids', () => {
+    const result = attachPhaseRows({ instance, storedPhases });
 
     expect(result.phases.map(({ phaseId }) => phaseId)).toEqual([
       'submission',
@@ -95,8 +99,8 @@ describe('attachPhaseRows', () => {
     expect(result.id).toBe('instance-1');
   });
 
-  it('attaches the blob phases without row ids when there are no rows', () => {
-    expect(attachPhaseRows({ instance, phases: [] }).phases).toEqual(
+  it('attaches the blob phases without ids when there are no stored phases', () => {
+    expect(attachPhaseRows({ instance, storedPhases: [] }).phases).toEqual(
       blobPhases,
     );
   });

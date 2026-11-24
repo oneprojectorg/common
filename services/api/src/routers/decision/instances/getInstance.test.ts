@@ -184,7 +184,7 @@ describe.concurrent('getInstance', () => {
     ).rejects.toMatchObject({ cause: { statusCode: 403 } });
   });
 
-  it('returns each phase with its row id, in order', async ({
+  it('returns each phase with its id, in order', async ({
     task,
     onTestFinished,
   }) => {
@@ -194,17 +194,17 @@ describe.concurrent('getInstance', () => {
       grantAccess: true,
     });
     const instanceId = setup.instance.instance.id;
-    const rows = await db.query.processPhases.findMany({
+    const storedPhases = await db.query.processPhases.findMany({
       where: { processInstanceId: instanceId },
       columns: { id: true },
       with: { profile: { columns: { name: true } } },
       orderBy: { sortOrder: 'asc' },
     });
     await Promise.all(
-      rows.map(({ id }, index) =>
+      storedPhases.map(({ id }, index) =>
         db
           .update(processPhases)
-          .set({ sortOrder: rows.length - 1 - index })
+          .set({ sortOrder: storedPhases.length - 1 - index })
           .where(eq(processPhases.id, id)),
       ),
     );
@@ -212,14 +212,14 @@ describe.concurrent('getInstance', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const result = await caller.decision.getInstance({ instanceId });
 
-    expect(rows.length).toBeGreaterThan(1);
+    expect(storedPhases.length).toBeGreaterThan(1);
     expect(result.phases.map(({ id, name }) => [id, name])).toEqual(
-      [...rows].reverse().map(({ id, profile }) => [id, profile.name]),
+      [...storedPhases].reverse().map(({ id, profile }) => [id, profile.name]),
     );
     expect(result.instanceData.phases?.[0]).not.toHaveProperty('id');
   });
 
-  it('returns a null row id for phases a decision has no rows for yet', async ({
+  it('returns a null id for phases a decision has not stored yet', async ({
     task,
     onTestFinished,
   }) => {

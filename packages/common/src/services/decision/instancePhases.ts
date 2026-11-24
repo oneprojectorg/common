@@ -58,16 +58,21 @@ export const attachBlobPhases = <T extends InstanceWithData>({
   phases: [...getInstancePhases(instance.instanceData)],
 });
 
-// `null` while the decision still reads instanceData.phases.
-export const toPhasesWithRowIds = ({
+// `id` is `null` while the decision still reads instanceData.phases.
+export type Phase = PhaseInstanceData & { id: string | null };
+
+export const toPhases = ({
   instance,
-  phases,
+  storedPhases,
 }: {
   instance: InstanceWithData;
-  phases: ProcessPhaseWithProfile[];
-}): (PhaseInstanceData & { id: string | null })[] =>
-  phases.length > 0
-    ? phases.map((phase) => ({ ...toInstanceDataPhase(phase), id: phase.id }))
+  storedPhases: ProcessPhaseWithProfile[];
+}): Phase[] =>
+  storedPhases.length > 0
+    ? storedPhases.map((phase) => ({
+        ...toInstanceDataPhase(phase),
+        id: phase.id,
+      }))
     : getInstancePhases(instance.instanceData).map((phase) => ({
         ...phase,
         id: null,
@@ -76,19 +81,19 @@ export const toPhasesWithRowIds = ({
 // For a writer that already holds the instance's rows.
 export const attachPhaseRows = <T extends InstanceWithData>({
   instance,
-  phases,
+  storedPhases,
 }: {
   instance: T;
-  phases: ProcessPhaseWithProfile[];
+  storedPhases: ProcessPhaseWithProfile[];
 }): InstanceWithPhases<T> => ({
   ...instance,
-  phases: toPhasesWithRowIds({ instance, phases }).map(withoutRowId),
+  phases: toPhases({ instance, storedPhases }).map(toPhaseInstanceData),
 });
 
-export const withoutRowId = ({
+export const toPhaseInstanceData = ({
   id: _,
   ...phase
-}: PhaseInstanceData & { id: string | null }): PhaseInstanceData => phase;
+}: Phase): PhaseInstanceData => phase;
 
 export const resolvePhasesForAll = async <T extends InstanceWithData>({
   instances,
@@ -120,7 +125,7 @@ export const resolveProfilePhases = async <
   return {
     ...profile,
     processInstance: phases
-      ? attachPhaseRows({ instance, phases })
+      ? attachPhaseRows({ instance, storedPhases: phases })
       : await resolvePhases({ instance, db }),
   };
 };

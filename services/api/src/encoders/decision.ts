@@ -392,15 +392,15 @@ export const processInstanceWithSchemaEncoder = z.preprocess(
   processInstanceWithSchemaEncoderBase,
 );
 
-/** A phase with the row uuid the phase endpoints take; `null` before the decision has rows. */
-const instancePhaseWithRowIdEncoder = instancePhaseDataEncoder.extend({
+/** A phase with the id the phase endpoints take; `null` while the decision still reads instanceData.phases. */
+const phaseEncoder = instancePhaseDataEncoder.extend({
   id: z.uuid().nullable(),
 });
 
 export const processInstanceWithPhasesEncoder = z.preprocess(
   withPhasesInInstanceData,
   processInstanceWithSchemaEncoderBase.extend({
-    phases: z.array(instancePhaseWithRowIdEncoder),
+    phases: z.array(phaseEncoder),
   }),
 );
 
