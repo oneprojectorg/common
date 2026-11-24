@@ -31,6 +31,7 @@ export {
   isDevelopPhase,
   isRankedVoting,
   isReviewPhase,
+  isSubmitPhase,
   isVotingPhase,
   resolveReviewSettings,
   type ReviewSettings,
@@ -47,6 +48,7 @@ export {
 export {
   getPhaseProposalTemplate,
   getPhaseRubricTemplate,
+  isPhaseReady,
   resolvePhaseTemplate,
 } from './services/decision/utils/phaseTemplates';
 export {

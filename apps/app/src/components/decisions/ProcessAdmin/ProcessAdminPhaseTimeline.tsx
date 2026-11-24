@@ -1,16 +1,13 @@
 'use client';
 
 import type { DecisionPhase } from '@op/api/encoders';
+import { isPhaseReady } from '@op/common/client';
 import { PhaseCard, type PhaseCardState } from '@op/sense/PhaseCard';
 import { useLocale } from 'next-intl';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
-import {
-  type PhaseTemplates,
-  getSetupBlurbKey,
-  isPhaseReady,
-} from './phaseSetup';
+import { type PhaseTemplates, getSetupBlurbKey } from './phaseSetup';
 
 export function ProcessAdminPhaseTimeline({
   slug,
