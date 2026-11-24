@@ -326,12 +326,13 @@ function ProcessAdminPhaseRail({
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-start justify-between gap-3">
         <Header2 className="text-label">{t('processOverviewHeading')}</Header2>
         {!isDraft && phases.length > 0 ? (
           <Button
-            variant="ghost"
-            size="sm"
+            variant="link"
+            size="inline"
+            className="text-label"
             onClick={() => setIsEditingLaunched((editing) => !editing)}
             aria-label={
               isEditingLaunched ? undefined : t('processAdmin.editPhases')
@@ -341,7 +342,11 @@ function ProcessAdminPhaseRail({
               tShared('Done')
             ) : (
               <>
-                <LuPencil data-icon="inline-start" aria-hidden />
+                <LuPencil
+                  data-icon="inline-start"
+                  className="size-3.5"
+                  aria-hidden
+                />
                 {tShared('Edit')}
               </>
             )}

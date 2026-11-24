@@ -42,7 +42,7 @@ export function ProcessAdminPhaseTimeline({
   const leadIndex = needsSetup.indexOf(true);
 
   return (
-    <ol className="flex flex-col gap-6">
+    <ol className="flex flex-col gap-4">
       {phases.map((phase, index) => {
         const state = getPhaseState({ index, currentIndex, hasStarted });
         const name = phase.name ?? '';
