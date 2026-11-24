@@ -153,9 +153,11 @@ value expressions of the selection pipeline are the planned next step.
   }
   ```
 
-  - The evaluator gets a registry of value types. A value type has two
-    operations: `parse` accepts only a value of the type, and `add` combines
-    two values or gives no value. Money is the first type: `{ amount,
+  - The evaluator gets a registry of value types. A value type must have
+    `parse`, which accepts only a value of the type. An operation such as
+    `add` is an optional method that combines two values or gives no value;
+    the evaluator finds it by the operator name, and a type without the
+    operation gives no value. Money is the first type: `{ amount,
     currency }` with no other key and a finite amount; two currencies cannot
     be added. The evaluator has no code for one type.
   - The type of an operand comes from its value: the one type whose `parse`
