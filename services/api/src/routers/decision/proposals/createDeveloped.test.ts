@@ -1164,10 +1164,10 @@ describe.concurrent('createDevelopedProposal', () => {
         await createDevelopPhaseSetup({ testData, sourceCount });
       await configureCostTotal(instanceId);
       const caller = await createAuthenticatedCaller(setup.userEmail);
-      const reviewers = [
+      const reviewers: [string, string] = [
         setup.organization.profileId,
         setup.instance.profileId,
-      ] as const;
+      ];
       const createDraft = async (sourceProposalIds: string[]) => {
         const draft = await caller.decision.createDevelopedProposal({
           processInstanceId: instanceId,

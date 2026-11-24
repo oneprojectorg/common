@@ -22,7 +22,10 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_MONEY_CURRENCY } from '../../money';
 import type { SchemaMapping } from '../../schemaMapping';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
-import { getDevelopPrefill } from './getDevelopPrefill';
+import {
+  type DevelopPrefillInput,
+  getDevelopPrefill,
+} from './getDevelopPrefill';
 import { parseProposalData } from './proposalDataSchema';
 import type { DecisionSchemaDefinition } from './schemas/types';
 
@@ -928,8 +931,8 @@ describe.concurrent('getDevelopPrefill', () => {
         instanceId,
         inputs: [
           { type: 'proposal', phaseId: SUBMISSION, id: garden.id },
-          ...reviews.map((review) => ({
-            type: 'review' as const,
+          ...reviews.map((review): DevelopPrefillInput => ({
+            type: 'review',
             id: review.id,
           })),
         ],
@@ -972,8 +975,8 @@ describe.concurrent('getDevelopPrefill', () => {
         instanceId,
         inputs: [
           { type: 'proposal', phaseId: SUBMISSION, id: garden.id },
-          ...reviews.map((review) => ({
-            type: 'review' as const,
+          ...reviews.map((review): DevelopPrefillInput => ({
+            type: 'review',
             id: review.id,
           })),
         ],
@@ -1013,8 +1016,8 @@ describe.concurrent('getDevelopPrefill', () => {
         inputs: [
           { type: 'proposal', phaseId: SUBMISSION, id: garden.id },
           { type: 'proposal', phaseId: SUBMISSION, id: benches.id },
-          ...reviews.map((review) => ({
-            type: 'review' as const,
+          ...reviews.map((review): DevelopPrefillInput => ({
+            type: 'review',
             id: review.id,
           })),
         ],
