@@ -44,13 +44,13 @@ pull request.
 
 ## Status
 
-| Status | Meaning |
-| --- | --- |
-| `Proposed` | Open for discussion. Not in force. |
-| `Accepted` | In force. |
-| `Rejected` | Declined. Kept so nobody reopens the question blind. |
-| `Deprecated` | No longer relevant. Nothing replaced it. |
-| `Superseded by ADR-NNNN` | Replaced. Points at the replacement. |
+| Status                   | Meaning                                              |
+| ------------------------ | ---------------------------------------------------- |
+| `Proposed`               | Open for discussion. Not in force.                   |
+| `Accepted`               | In force.                                            |
+| `Rejected`               | Declined. Kept so nobody reopens the question blind. |
+| `Deprecated`             | No longer relevant. Nothing replaced it.             |
+| `Superseded by ADR-NNNN` | Replaced. Points at the replacement.                 |
 
 Set Accepted when the ADR merges. Use Proposed only to get discussion without
 commitment; whoever merges it then sets Accepted.
@@ -87,3 +87,4 @@ what it decided.
 - [0020. Decide phase transitions with a selection pipeline over aggregated facts](./0020-decide-phase-transitions-with-a-selection-pipeline-over-aggregated-facts.md)
 - [0021. Give every decision and proposal its own profile and grant roles on it](./0021-give-every-decision-and-proposal-its-own-profile-and-grant-roles-on-it.md)
 - [0022. Map data between form schemas with declarative rules](./0022-map-data-between-form-schemas-with-declarative-rules.md)
+- [0023. Store notifications as outbox, activity, and per-recipient rows](./0023-store-notifications-behind-a-transactional-outbox.md)
