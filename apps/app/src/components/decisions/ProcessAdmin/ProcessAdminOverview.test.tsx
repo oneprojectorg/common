@@ -311,8 +311,12 @@ describe('ProcessAdminOverview', () => {
     seed({ status: ProcessStatus.DRAFT, phases: [phase, votePhase] });
     renderOverview();
 
-    expect(screen.getByRole('link', { name: /Submit/ })).toBeTruthy();
-    expect(screen.getByRole('link', { name: /Vote/ })).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: /Submit/ }).getAttribute('href'),
+    ).toBe('#');
+    expect(
+      screen.getByRole('link', { name: /Vote/ }).getAttribute('href'),
+    ).toBe('#');
   });
 
   it('keeps the rail of a live process at rest', () => {
@@ -335,6 +339,13 @@ describe('ProcessAdminOverview', () => {
     await user.click(screen.getByRole('button', { name: 'Done' }));
     expect(screen.queryByRole('link', { name: /Submit/ })).toBeNull();
     expect(screen.getByRole('button', { name: 'Edit phases' })).toBeTruthy();
+  });
+
+  it('gives a live process with no phases no Edit button', () => {
+    seed({ phases: [] });
+    renderOverview(true);
+
+    expect(screen.queryByRole('button', { name: 'Edit phases' })).toBeNull();
   });
 
   it('gives a draft no Edit button, as its rail is always editing', () => {

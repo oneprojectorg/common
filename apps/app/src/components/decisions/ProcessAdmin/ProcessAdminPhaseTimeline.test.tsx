@@ -95,6 +95,26 @@ describe('ProcessAdminPhaseTimeline', () => {
     expect(links.map((link) => link.getAttribute('href'))).toEqual(['#', '#']);
   });
 
+  it('links every phase to its editor on a draft that has not started', () => {
+    renderTimeline({
+      currentStateId: 'submit',
+      hasStarted: false,
+      isEditing: true,
+    });
+
+    expect(
+      screen.getAllByRole('link').map((link) => link.getAttribute('href')),
+    ).toEqual(['#', '#']);
+  });
+
+  it('links the current phase to its editor instead of the current page while editing', () => {
+    renderTimeline({ currentStateId: 'vote', isEditing: true });
+
+    expect(
+      screen.getByRole('link', { name: /Vote/ }).getAttribute('href'),
+    ).toBe('#');
+  });
+
   it('names each editor link from the phase it shows', () => {
     renderTimeline({ currentStateId: 'vote', isEditing: true });
 
