@@ -21,8 +21,6 @@ export const handleProposalCommentPosted = inngest.createFunction(
     const { postId, proposalId, authorProfileId } =
       proposalCommentPosted.schema.parse(event.data);
 
-    // The relay sends with the outbox row id as the event id, which is what
-    // makes every write below idempotent (ADR 0023).
     const outboxId = event.id;
     if (!outboxId) {
       logger.error('proposalComment/posted event has no id; skipping', {
@@ -47,8 +45,6 @@ export const handleProposalCommentPosted = inngest.createFunction(
 
     const { activity, context } = recorded;
 
-    // Don't notify the author about their own comment. The activity row
-    // above still feeds the proposal's feed.
     if (
       !context.submittedBy ||
       context.submittedByProfileId === authorProfileId
