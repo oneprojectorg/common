@@ -1,6 +1,10 @@
 import { logger } from '@op/logging';
 import safeRegex from 'safe-regex2';
 
+import {
+  type ValueType,
+  valueTypeOperators,
+} from '../../../valueTypes/valueType';
 import type {
   ArithmeticExpression,
   ComparisonExpression,
@@ -37,7 +41,7 @@ export function evaluateExpression(
 
   // Arithmetic
   if ('operator' in expr && 'operands' in expr) {
-    return evaluateArithmetic(expr as ArithmeticExpression, context);
+    return evaluateOperation(expr as ArithmeticExpression, context);
   }
 
   // Function call
@@ -162,18 +166,42 @@ function evaluateLogical(
 }
 
 /**
- * Evaluate arithmetic expressions
+ * Evaluates the operands one time, then routes: numbers, or values of a
+ * registered type.
  */
-function evaluateArithmetic(
+function evaluateOperation(
   expr: ArithmeticExpression,
   context: ExpressionContext,
-): number {
-  const values = expr.operands.map((op) => {
-    const val = evaluateExpression(op, context);
-    return typeof val === 'number' ? val : 0;
-  });
+): unknown {
+  const operands: unknown[] = expr.operands.map((op) =>
+    evaluateExpression(op, context),
+  );
+  return context.valueTypes &&
+    !operands.every((operand) => typeof operand === 'number')
+    ? evaluateTypedValues({
+        operator: expr.operator,
+        operands,
+        valueTypes: context.valueTypes,
+      })
+    : evaluateArithmetic({
+        operator: expr.operator,
+        values: operands.map((operand) =>
+          typeof operand === 'number' ? operand : 0,
+        ),
+      });
+}
 
-  switch (expr.operator) {
+/**
+ * Evaluate arithmetic expressions
+ */
+function evaluateArithmetic({
+  operator,
+  values,
+}: {
+  operator: ArithmeticExpression['operator'];
+  values: number[];
+}): number {
+  switch (operator) {
     case 'add':
       return values.reduce((a, b) => a + b, 0);
     case 'subtract':
@@ -187,8 +215,53 @@ function evaluateArithmetic(
     case 'power':
       return values.reduce((a, b) => Math.pow(a, b));
     default:
-      throw new Error(`Unknown arithmetic operator: ${expr.operator}`);
+      throw new Error(`Unknown arithmetic operator: ${operator}`);
   }
+}
+
+/**
+ * Null unless exactly one value type accepts every operand that is not null
+ * and has the operation, and the operation gives a value at each step. A
+ * missing operand is skipped.
+ */
+function evaluateTypedValues({
+  operator,
+  operands,
+  valueTypes,
+}: {
+  operator: ArithmeticExpression['operator'];
+  operands: unknown[];
+  valueTypes: readonly ValueType<unknown>[];
+}): unknown {
+  const present = operands.filter((operand) => operand != null);
+  const matches = valueTypes.flatMap((type) => {
+    const values = present.map((operand) => type.parse(operand));
+    return values.every((value) => value !== undefined)
+      ? [{ type, values }]
+      : [];
+  });
+  const [match, ...otherMatches] = matches;
+  if (!match || otherMatches.length > 0) {
+    return null;
+  }
+
+  const operationName = valueTypeOperators.find((name) => name === operator);
+  const operation = operationName
+    ? match.type[operationName]?.bind(match.type)
+    : undefined;
+  const [first, ...rest] = match.values;
+  if (!operation || first === undefined) {
+    return null;
+  }
+  let result = first;
+  for (const value of rest) {
+    const next = operation(result, value);
+    if (next === undefined) {
+      return null;
+    }
+    result = next;
+  }
+  return result;
 }
 
 /**
