@@ -1,5 +1,6 @@
 import { TestDecisionsDataManager } from '@op/common/testing';
-import { db } from '@op/db/client';
+import { db, eq } from '@op/db/client';
+import { processPhases } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -193,21 +194,27 @@ describe.concurrent('getInstance', () => {
       grantAccess: true,
     });
     const instanceId = setup.instance.instance.id;
+    const rows = await db.query.processPhases.findMany({
+      where: { processInstanceId: instanceId },
+      columns: { id: true },
+      with: { profile: { columns: { name: true } } },
+      orderBy: { sortOrder: 'asc' },
+    });
+    await Promise.all(
+      rows.map(({ id }, index) =>
+        db
+          .update(processPhases)
+          .set({ sortOrder: rows.length - 1 - index })
+          .where(eq(processPhases.id, id)),
+      ),
+    );
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
-    const [result, rows] = await Promise.all([
-      caller.decision.getInstance({ instanceId }),
-      db.query.processPhases.findMany({
-        where: { processInstanceId: instanceId },
-        columns: { id: true },
-        with: { profile: { columns: { name: true } } },
-        orderBy: { sortOrder: 'asc' },
-      }),
-    ]);
+    const result = await caller.decision.getInstance({ instanceId });
 
-    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.length).toBeGreaterThan(1);
     expect(result.phases.map(({ id, name }) => [id, name])).toEqual(
-      rows.map(({ id, profile }) => [id, profile.name]),
+      [...rows].reverse().map(({ id, profile }) => [id, profile.name]),
     );
     expect(result.instanceData.phases?.[0]).not.toHaveProperty('id');
   });
@@ -228,7 +235,12 @@ describe.concurrent('getInstance', () => {
     const result = await caller.decision.getInstance({ instanceId });
 
     expect(result.phases.length).toBeGreaterThan(0);
-    expect(result.phases.every(({ id }) => id === null)).toBe(true);
+    expect(result.phases.map(({ id, phaseId }) => [id, phaseId])).toEqual(
+      setup.instance.instance.instanceData.phases.map(({ phaseId }) => [
+        null,
+        phaseId,
+      ]),
+    );
   });
 
   it('returns a wizard-created instance that has no process', async ({
