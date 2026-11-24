@@ -25,13 +25,40 @@ interface PhaseCardProps {
   onAdvance?: () => void;
   /** Destination for the current card — the whole row links here. */
   href?: string;
+  /**
+   * Opens this phase's editor. When set, the card takes the editing treatment:
+   * the whole card is a button, or it carries a Setup button when `needsSetup`.
+   */
+  onOpen?: () => void;
+  /** Accessible name of the open control, e.g. "Set up Review". */
+  openLabel?: string;
+  /** The phase is missing what it needs to run. With `onOpen`, the card shows `blurb` and a Setup button. */
+  needsSetup?: boolean;
+  setupLabel?: string;
+  /** Shown in place of the dates on a card that needs setup. */
+  blurb?: string;
+  /** The first phase that needs setup: its Setup button takes the primary style. */
+  isLead?: boolean;
 }
 
 /**
- * One phase row in the decision Overview timeline. Renders a `div` — the
- * consumer owns the `<ol>`, each `<li>`, and the state derivation.
+ * One phase row in a phase timeline. Renders a `div`, or a button for a ready
+ * card in the editing treatment; the consumer owns the `<ol>`, each `<li>`,
+ * and the state derivation.
+ *
+ * Two treatments share one set of props. The resting treatment (the decision
+ * Overview and the process admin rail) follows `state`. The editing treatment,
+ * chosen by passing `onOpen`, opens the phase's editor.
  */
 function PhaseCard(props: PhaseCardProps) {
+  if (props.onOpen) {
+    return props.needsSetup && props.state !== 'current' ? (
+      <SetupPhaseCard {...props} onOpen={props.onOpen} />
+    ) : (
+      <EditablePhaseCard {...props} onOpen={props.onOpen} />
+    );
+  }
+
   switch (props.state) {
     case 'completed':
       return <CompletedPhaseCard {...props} />;
@@ -191,6 +218,94 @@ function UpcomingPhaseCard({
   );
 }
 
+type EditingPhaseCardProps = PhaseContentProps &
+  Pick<
+    PhaseCardProps,
+    | 'openLabel'
+    | 'isNowOpen'
+    | 'nowOpenLabel'
+    | 'setupLabel'
+    | 'blurb'
+    | 'isLead'
+  > & { onOpen: () => void };
+
+/** Editing, ready: the whole card opens the phase's editor. */
+function EditablePhaseCard({
+  name,
+  startDate,
+  endDate,
+  locale,
+  className,
+  isNowOpen,
+  nowOpenLabel = 'Now open!',
+  openLabel,
+  onOpen,
+}: EditingPhaseCardProps) {
+  return (
+    <Button
+      variant="bare"
+      onClick={() => onOpen()}
+      aria-label={openLabel}
+      data-slot="phase-card-editable"
+      className={cn(
+        'flex w-full items-center justify-between gap-4 rounded-lg p-4 text-start whitespace-normal ring-1 ring-border ring-inset hover:bg-muted',
+        className,
+      )}
+    >
+      <span className="flex min-w-0 flex-col gap-2">
+        {isNowOpen ? <Badge variant="outline">{nowOpenLabel}</Badge> : null}
+        <span className="flex min-w-0 flex-col">
+          <PhaseName name={name} as="span" />
+          <span className="min-h-5 text-sm text-muted-foreground">
+            {formatDateRange(startDate, endDate, locale)}
+          </span>
+        </span>
+      </span>
+      <span
+        aria-hidden
+        className="flex size-8 shrink-0 items-center justify-center"
+      >
+        <LuArrowRight className="size-4 rtl:-scale-x-100" />
+      </span>
+    </Button>
+  );
+}
+
+/** Editing, not ready: name over a blurb, with a Setup button. */
+function SetupPhaseCard({
+  name,
+  className,
+  openLabel,
+  onOpen,
+  setupLabel = 'Setup',
+  blurb,
+  isLead,
+}: EditingPhaseCardProps) {
+  return (
+    <div
+      data-slot="phase-card-setup"
+      className={cn(
+        'flex items-center justify-between gap-4 rounded-lg p-4 ring-1 ring-border ring-inset',
+        className,
+      )}
+    >
+      <div className="flex min-w-0 flex-col">
+        <PhaseName name={name} />
+        <span className="min-h-5 text-sm text-muted-foreground">{blurb}</span>
+      </div>
+      <Button
+        size="sm"
+        variant={isLead ? 'default' : 'outline'}
+        onClick={() => onOpen()}
+        aria-label={openLabel}
+        className="shrink-0"
+      >
+        {setupLabel}
+      </Button>
+    </div>
+  );
+}
+
 function PhaseDates({
   startDate,
   endDate,
@@ -213,11 +328,17 @@ function PhaseDates({
   );
 }
 
-function PhaseName({ name }: { name: string }) {
+function PhaseName({
+  name,
+  as: Tag = 'p',
+}: {
+  name: string;
+  as?: 'p' | 'span';
+}) {
   return (
-    <p className="font-serif text-title">
+    <Tag className="block font-serif text-title">
       <bdi>{name}</bdi>
-    </p>
+    </Tag>
   );
 }
 

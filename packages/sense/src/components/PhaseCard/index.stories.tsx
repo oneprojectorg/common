@@ -115,3 +115,71 @@ export const Advanceable: Story = {
     </Row>
   ),
 };
+
+// Editing rail: each ready card opens its phase editor; unfinished ones ask
+// for setup, the first of them with the primary button.
+export const Editing: Story = {
+  render: () => (
+    <ol className="flex w-96 flex-col gap-2">
+      <li>
+        <PhaseCard
+          state="completed"
+          name="Submissions"
+          startDate="2026-06-01"
+          endDate="2026-06-14"
+          onOpen={() => {}}
+          openLabel="Set up Submissions"
+        />
+      </li>
+      <li>
+        <PhaseCard
+          state="current"
+          name="Review"
+          startDate="2026-06-15"
+          endDate="2026-06-28"
+          isNowOpen
+          onOpen={() => {}}
+          openLabel="Set up Review"
+        />
+      </li>
+      <li>
+        <PhaseCard
+          state="upcoming"
+          name="Voting"
+          needsSetup
+          isLead
+          blurb="Members vote on the shortlisted proposals."
+          onOpen={() => {}}
+          openLabel="Set up Voting"
+        />
+      </li>
+      <li>
+        <PhaseCard
+          state="upcoming"
+          name="Results"
+          needsSetup
+          blurb="Share the outcome with everyone."
+          onOpen={() => {}}
+          openLabel="Set up Results"
+        />
+      </li>
+    </ol>
+  ),
+};
+
+// Setup: a phase still missing what it needs to run.
+export const Setup: Story = {
+  render: () => (
+    <Row>
+      <PhaseCard
+        state="upcoming"
+        name="Voting"
+        needsSetup
+        isLead
+        blurb="Members vote on the shortlisted proposals."
+        onOpen={() => {}}
+        openLabel="Set up Voting"
+      />
+    </Row>
+  ),
+};
