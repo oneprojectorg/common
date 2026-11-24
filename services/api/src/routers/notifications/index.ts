@@ -26,7 +26,10 @@ export const notificationsRouter = router({
         cursor: input.cursor,
       });
 
-      return { items: items.map((item) => notificationEncoder.parse(item)), next };
+      return {
+        items: items.map((item) => notificationEncoder.parse(item)),
+        next,
+      };
     }),
 
   unreadCount: networkAuthenticatedProcedure()
