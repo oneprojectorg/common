@@ -307,6 +307,21 @@ describe('ProcessAdminOverview', () => {
     expect(screen.getByRole('link', { name: /Vote/ })).toBeTruthy();
   });
 
+  it('shows the phases of a draft as editable cards', () => {
+    seed({ status: ProcessStatus.DRAFT, phases: [phase, votePhase] });
+    renderOverview();
+
+    expect(screen.getByRole('link', { name: /Submit/ })).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Vote/ })).toBeTruthy();
+  });
+
+  it('keeps the rail of a live process at rest', () => {
+    seed({ phases: [phase, votePhase], currentStateId: 'vote' });
+    renderOverview(true);
+
+    expect(screen.queryByRole('link', { name: /Submit/ })).toBeNull();
+  });
+
   it('links to the proposals once the process is open', () => {
     seed({ phases: [phase] });
     renderOverview(true);

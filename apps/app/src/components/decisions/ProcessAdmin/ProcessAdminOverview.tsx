@@ -138,6 +138,7 @@ function ProcessAdminOverviewSuspense({
               phases={instance.phases}
               currentStateId={instance.currentStateId}
               isOpen={isOpen}
+              isEditing={status === 'draft'}
             />
             {instance.profileId ? (
               <APIErrorBoundary
@@ -309,9 +310,10 @@ function ProcessAdminPhaseRail({
   phases,
   currentStateId,
   isOpen,
+  isEditing,
 }: Pick<
   ComponentProps<typeof ProcessAdminPhaseTimeline>,
-  'slug' | 'phases' | 'currentStateId'
+  'slug' | 'phases' | 'currentStateId' | 'isEditing'
 > & { isOpen: boolean }) {
   const t = useTranslations('decisions');
 
@@ -324,6 +326,7 @@ function ProcessAdminPhaseRail({
           phases={phases}
           currentStateId={currentStateId}
           hasStarted={isOpen}
+          isEditing={isEditing}
         />
       ) : (
         <AdminEmptyState
