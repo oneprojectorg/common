@@ -1,31 +1,49 @@
 import { describe, expect, it } from 'vitest';
 
 import { toTimelinePhases } from './toTimelinePhases';
-import type { ProcessAdminPhase } from './types';
 
-const phase = (overrides: Partial<ProcessAdminPhase>): ProcessAdminPhase => ({
-  id: 'a',
-  isCurrent: false,
-  sortOrder: 0,
+const submit = {
+  id: 'row-submit',
+  phaseId: 'submit',
   name: 'Submit',
-  ...overrides,
-});
+};
+const vote = {
+  id: 'row-vote',
+  phaseId: 'vote',
+  name: 'Vote',
+};
 
 describe('toTimelinePhases', () => {
-  it('names the current phase for the timeline', () => {
-    const { currentPhaseId } = toTimelinePhases([
-      phase({ id: 'a' }),
-      phase({ id: 'b', sortOrder: 1, isCurrent: true }),
-    ]);
+  it('keys each phase by its row id in stored order', () => {
+    const { phases } = toTimelinePhases({
+      phases: [submit, vote],
+      currentStateId: null,
+    });
 
-    expect(currentPhaseId).toBe('b');
+    expect(phases.map(({ id }) => id)).toEqual(['row-submit', 'row-vote']);
+  });
+
+  it('names the current phase by its row id', () => {
+    const { currentPhaseId } = toTimelinePhases({
+      phases: [submit, vote],
+      currentStateId: 'vote',
+    });
+
+    expect(currentPhaseId).toBe('row-vote');
+  });
+
+  it('passes an empty current id when no phase is current', () => {
+    expect(
+      toTimelinePhases({ phases: [submit, vote], currentStateId: null })
+        .currentPhaseId,
+    ).toBe('');
   });
 
   it('keys a phase with no row id by its position, current included', () => {
-    const timeline = toTimelinePhases([
-      phase({ id: null }),
-      phase({ id: null, sortOrder: 1, isCurrent: true }),
-    ]);
+    const timeline = toTimelinePhases({
+      phases: [submit, vote].map((phase) => ({ ...phase, id: null })),
+      currentStateId: 'vote',
+    });
 
     expect(timeline.phases.map(({ id }) => id)).toEqual([
       'unstored-0',
@@ -34,29 +52,32 @@ describe('toTimelinePhases', () => {
     expect(timeline.currentPhaseId).toBe('unstored-1');
   });
 
-  it('passes an empty current id when no phase is current', () => {
-    expect(toTimelinePhases([phase({})]).currentPhaseId).toBe('');
-  });
-
   it('returns no phases for an empty list', () => {
-    expect(toTimelinePhases([])).toEqual({ phases: [], currentPhaseId: '' });
+    expect(toTimelinePhases({ phases: [], currentStateId: 'x' })).toEqual({
+      phases: [],
+      currentPhaseId: '',
+    });
   });
 
   it('maps dates, description, advancement and the proposals toggle', () => {
-    const [first] = toTimelinePhases([
-      phase({
-        description: 'Send an idea',
-        startDate: '2026-01-01T00:00:00.000Z',
-        endDate: '2026-02-01T00:00:00.000Z',
-        rules: {
-          proposals: { submit: true },
-          advancement: { method: 'manual' },
+    const [first] = toTimelinePhases({
+      phases: [
+        {
+          ...submit,
+          description: 'Send an idea',
+          startDate: '2026-01-01T00:00:00.000Z',
+          endDate: '2026-02-01T00:00:00.000Z',
+          rules: {
+            proposals: { submit: true },
+            advancement: { method: 'manual' },
+          },
         },
-      }),
-    ]).phases;
+      ],
+      currentStateId: null,
+    }).phases;
 
     expect(first).toEqual({
-      id: 'a',
+      id: 'row-submit',
       name: 'Submit',
       description: 'Send an idea',
       phase: {
@@ -68,22 +89,38 @@ describe('toTimelinePhases', () => {
     });
   });
 
+  it('defaults a missing name to empty', () => {
+    const [first] = toTimelinePhases({
+      phases: [{ id: 'row-vote', phaseId: 'vote' }],
+      currentStateId: null,
+    }).phases;
+
+    expect(first?.name).toBe('');
+  });
+
   it('closes proposals when the phase does not take them', () => {
-    const [first] = toTimelinePhases([
-      phase({
-        rules: {
-          proposals: { submit: false },
-          advancement: { method: 'date' },
+    const [first] = toTimelinePhases({
+      phases: [
+        {
+          ...submit,
+          rules: {
+            proposals: { submit: false },
+            advancement: { method: 'date' },
+          },
         },
-      }),
-    ]).phases;
+      ],
+      currentStateId: null,
+    }).phases;
 
     expect(first?.config?.allowProposals).toBe(false);
     expect(first?.advancementMethod).toBe('date');
   });
 
   it('leaves the toggle and advancement unset for a phase without rules', () => {
-    const [first] = toTimelinePhases([phase({})]).phases;
+    const [first] = toTimelinePhases({
+      phases: [submit],
+      currentStateId: null,
+    }).phases;
 
     expect(first?.config?.allowProposals).toBeUndefined();
     expect(first?.advancementMethod).toBeUndefined();

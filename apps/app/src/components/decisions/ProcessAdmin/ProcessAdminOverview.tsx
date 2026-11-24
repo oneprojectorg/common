@@ -5,7 +5,7 @@ import { getPublicUrl } from '@/utils';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { trpc } from '@op/api/client';
-import type { ProcessInstance } from '@op/api/encoders';
+import type { ProcessInstance, ProcessPhase } from '@op/api/encoders';
 import {
   Empty,
   EmptyDescription,
@@ -43,9 +43,7 @@ import {
   STATUS_BADGE_VARIANT,
   getProcessAdminStatus,
 } from './processAdminStatus';
-import { toProcessAdminPhases } from './toProcessAdminPhases';
 import { toTimelinePhases } from './toTimelinePhases';
-import type { ProcessAdminPhase } from './types';
 
 interface ProcessAdminOverviewProps {
   slug: string;
@@ -133,7 +131,7 @@ function ProcessAdminOverviewSuspense({
             <ProcessAdminPhaseRail
               slug={slug}
               instanceId={instance.id}
-              phases={toProcessAdminPhases({
+              {...toTimelinePhases({
                 phases: instance.phases,
                 currentStateId: instance.currentStateId,
               })}
@@ -308,23 +306,24 @@ function ProcessAdminPhaseRail({
   slug,
   instanceId,
   phases,
+  currentPhaseId,
   isOpen,
 }: {
   slug: string;
   instanceId: string;
-  phases: ProcessAdminPhase[];
+  phases: ProcessPhase[];
+  currentPhaseId: string;
   isOpen: boolean;
 }) {
   const t = useTranslations('decisions');
-  const timeline = toTimelinePhases(phases);
 
   return (
     <section className="flex flex-col gap-4">
       <Header2 className="text-label">{t('processOverviewHeading')}</Header2>
-      {timeline.phases.length > 0 ? (
+      {phases.length > 0 ? (
         <DecisionPhaseTimeline
-          phases={timeline.phases}
-          currentPhaseId={timeline.currentPhaseId}
+          phases={phases}
+          currentPhaseId={currentPhaseId}
           hasStarted={isOpen}
           instanceId={instanceId}
           isAdmin={false}
