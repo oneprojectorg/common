@@ -1,6 +1,7 @@
 import {
   type FragmentCopy,
-  encodeFragmentCopies,
+  type FragmentTextWrite,
+  encodeFragments,
   getTipTapClient,
 } from '@op/collab';
 import { db } from '@op/db/client';
@@ -104,6 +105,8 @@ export async function getDevelopedEntryPrefill({
     return null;
   }
 
+  const proposalData = toSystemFields(data);
+
   let documentUpdate: Uint8Array<ArrayBuffer> | null = null;
   try {
     documentUpdate = await getEntryDocumentUpdate({
@@ -113,16 +116,17 @@ export async function getDevelopedEntryPrefill({
         developPhaseId: developPhase.phaseId,
         targetKeys: Object.keys(data),
       }),
+      texts: getFragmentTexts({ data, proposalData }),
       sourceProposalIds,
     });
   } catch (error) {
-    logger.warn('Could not copy the develop sources into the entry document', {
+    logger.warn('Could not build the entry document from the develop sources', {
       ...context,
       error,
     });
   }
 
-  return { proposalData: toSystemFields(data), documentUpdate };
+  return { proposalData, documentUpdate };
 }
 
 async function getSubmittedReviewInputs({
@@ -230,18 +234,62 @@ function getFragmentRules({
 }
 
 /**
+ * A string can be rich text, which one paragraph would misrepresent, so only
+ * the other values are written, in the JSON the field components store.
+ * A system field writes its stored value, so the document and the data agree.
+ */
+function getFragmentTexts({
+  data,
+  proposalData,
+}: {
+  data: Record<string, unknown>;
+  proposalData: ProposalDataInput;
+}): FragmentTextWrite[] {
+  const storedSystemValues = new Map<string, unknown>([
+    ['title', proposalData.title],
+    ['category', proposalData.category],
+    ['budget', proposalData.budget],
+    ['location', proposalData.location],
+  ]);
+
+  return Object.entries(data).flatMap(([to, value]) => {
+    if (value == null || typeof value === 'string') {
+      return [];
+    }
+    const written = storedSystemValues.has(to)
+      ? storedSystemValues.get(to)
+      : value;
+    return written == null ? [] : [{ to, text: JSON.stringify(written) }];
+  });
+}
+
+/** A target that a fragment rule copies keeps the copy over its written text. */
+async function getEntryDocumentUpdate({
+  fields,
+  texts,
+  sourceProposalIds,
+}: {
+  fields: Array<{ from: string; to: string }>;
+  texts: FragmentTextWrite[];
+  sourceProposalIds: string[];
+}): Promise<Uint8Array<ArrayBuffer> | null> {
+  const copies = await getFragmentCopies({ fields, sourceProposalIds });
+  return encodeFragments({ copies, texts });
+}
+
+/**
  * Each source document is fetched once. The mapped data holds a key only when
  * the sources agreed, so the first source that has the fragment fills it.
  */
-async function getEntryDocumentUpdate({
+async function getFragmentCopies({
   fields,
   sourceProposalIds,
 }: {
   fields: Array<{ from: string; to: string }>;
   sourceProposalIds: string[];
-}): Promise<Uint8Array<ArrayBuffer> | null> {
+}): Promise<FragmentCopy[]> {
   if (fields.length === 0) {
-    return null;
+    return [];
   }
 
   const rows = await db.query.proposals.findMany({
@@ -274,11 +322,9 @@ async function getEntryDocumentUpdate({
     }),
   );
 
-  const copies: FragmentCopy[] = fields.flatMap(({ from, to }) =>
+  return fields.flatMap(({ from, to }) =>
     sourceUpdates.flatMap((sourceUpdate) =>
       sourceUpdate ? [{ sourceUpdate, from, to }] : [],
     ),
   );
-
-  return encodeFragmentCopies(copies);
 }
