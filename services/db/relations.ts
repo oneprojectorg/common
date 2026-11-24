@@ -1149,4 +1149,64 @@ export const relations = defineRelations(schema, (r) => ({
       alias: 'moderationFlag_flaggedBy',
     }),
   },
+
+  /**
+   * Notification relations (ADR 0023)
+   *
+   * `outboxId` on activities is a plain uuid, not a foreign key, so the
+   * outbox has no relation here. Scope columns are nullable, so their
+   * relations stay optional.
+   */
+  activities: {
+    actorProfile: r.one.profiles({
+      from: r.activities.actorProfileId,
+      to: r.profiles.id,
+      alias: 'activity_actorProfile',
+    }),
+    organization: r.one.organizations({
+      from: r.activities.organizationId,
+      to: r.organizations.id,
+    }),
+    processInstance: r.one.processInstances({
+      from: r.activities.processInstanceId,
+      to: r.processInstances.id,
+    }),
+    proposal: r.one.proposals({
+      from: r.activities.proposalId,
+      to: r.proposals.id,
+    }),
+    post: r.one.posts({
+      from: r.activities.postId,
+      to: r.posts.id,
+    }),
+    notifications: r.many.notifications({
+      from: r.activities.id,
+      to: r.notifications.activityId,
+    }),
+  },
+
+  notifications: {
+    activity: r.one.activities({
+      from: r.notifications.activityId,
+      to: r.activities.id,
+      optional: false,
+    }),
+    user: r.one.authUsers({
+      from: r.notifications.userId,
+      to: r.authUsers.id,
+      optional: false,
+    }),
+    deliveries: r.many.notificationDeliveries({
+      from: r.notifications.id,
+      to: r.notificationDeliveries.notificationId,
+    }),
+  },
+
+  notificationDeliveries: {
+    notification: r.one.notifications({
+      from: r.notificationDeliveries.notificationId,
+      to: r.notifications.id,
+      optional: false,
+    }),
+  },
 }));
