@@ -112,27 +112,6 @@ vi.mock('@op/api/client', () => ({
   },
 }));
 
-// The timeline owns the phase-advance mutation; this test only needs to know
-// whether it rendered and what it was told.
-vi.mock('../DecisionPhaseTimeline', () => ({
-  DecisionPhaseTimeline: ({
-    hasStarted,
-    currentPhaseId,
-    phases,
-  }: {
-    hasStarted: boolean;
-    currentPhaseId: string;
-    phases: { name: string }[];
-  }) => (
-    <div
-      data-testid="phase-timeline"
-      data-started={String(hasStarted)}
-      data-current={currentPhaseId}
-      data-names={phases.map((phase) => phase.name).join(',')}
-    />
-  ),
-}));
-
 // The i18n Link prefetches through the app router and an IntersectionObserver,
 // neither of which a unit test has.
 vi.mock('next/navigation', async (importOriginal) => ({
@@ -255,7 +234,6 @@ describe('ProcessAdminOverview', () => {
     expect(screen.getByText('No phases yet')).toBeTruthy();
     expect(screen.getByText('No pinned resources')).toBeTruthy();
     expect(screen.getByText('No description yet')).toBeTruthy();
-    expect(screen.queryByTestId('phase-timeline')).toBeNull();
   });
 
   it('lists the pinned resources in place of their empty state', () => {
@@ -307,9 +285,10 @@ describe('ProcessAdminOverview', () => {
     seed({ phases: [phase, votePhase], currentStateId: 'vote' });
     renderOverview(true);
 
-    const timeline = screen.getByTestId('phase-timeline');
-    expect(timeline.dataset.started).toBe('true');
-    expect(timeline.dataset.current).toBe('row-vote');
+    expect(screen.getByText('Submit')).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: /Vote/ }).getAttribute('href'),
+    ).toBe(`/decisions/${SLUG}/current`);
     expect(screen.queryByText('No phases yet')).toBeNull();
   });
 
@@ -323,9 +302,9 @@ describe('ProcessAdminOverview', () => {
     });
     rerender(overview(true));
 
-    const timeline = screen.getByTestId('phase-timeline');
-    expect(timeline.dataset.names).toBe('Ideas,Vote');
-    expect(timeline.dataset.current).toBe('row-vote');
+    expect(screen.getByText('Ideas')).toBeTruthy();
+    expect(screen.queryByText('Submit')).toBeNull();
+    expect(screen.getByRole('link', { name: /Vote/ })).toBeTruthy();
   });
 
   it('links to the proposals once the process is open', () => {
@@ -344,7 +323,8 @@ describe('ProcessAdminOverview', () => {
     renderOverview(false);
 
     expect(screen.queryByRole('link', { name: 'Browse proposals' })).toBeNull();
-    expect(screen.getByTestId('phase-timeline').dataset.started).toBe('false');
+    expect(screen.getByText('Submit')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /Submit/ })).toBeNull();
   });
 
   it.each([

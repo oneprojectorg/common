@@ -5,7 +5,7 @@ import { getPublicUrl } from '@/utils';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { getAvatarImageProps } from '@/utils/getAvatarImageProps';
 import { trpc } from '@op/api/client';
-import type { ProcessInstance, ProcessPhase } from '@op/api/encoders';
+import type { ProcessInstance } from '@op/api/encoders';
 import {
   Empty,
   EmptyDescription,
@@ -17,7 +17,13 @@ import { Header2 } from '@op/sense/Header';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { useRouter } from 'next/navigation';
-import { Suspense, useEffect, useRef, type ReactNode } from 'react';
+import {
+  Suspense,
+  useEffect,
+  useRef,
+  type ComponentProps,
+  type ReactNode,
+} from 'react';
 import { LuArrowLeft, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -28,7 +34,6 @@ import { ButtonLink } from '@/components/ButtonLink';
 import { DecisionHero } from '../DecisionHero';
 import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { OverviewAbout } from '../DecisionOverview';
-import { DecisionPhaseTimeline } from '../DecisionPhaseTimeline';
 import {
   OverviewPinnedResourcesSuspense,
   PinnedResourcesError,
@@ -37,13 +42,13 @@ import {
 import { ProcessAdminBanner } from './ProcessAdminBanner';
 import { ProcessAdminLaunchButton } from './ProcessAdminLaunchButton';
 import { ProcessAdminOverviewSkeleton } from './ProcessAdminOverviewSkeleton';
+import { ProcessAdminPhaseTimeline } from './ProcessAdminPhaseTimeline';
 import { ProcessAdminTitle } from './ProcessAdminTitle';
 import {
   type ProcessAdminStatus,
   STATUS_BADGE_VARIANT,
   getProcessAdminStatus,
 } from './processAdminStatus';
-import { toTimelinePhases } from './toTimelinePhases';
 
 interface ProcessAdminOverviewProps {
   slug: string;
@@ -130,11 +135,8 @@ function ProcessAdminOverviewSuspense({
           <div className="flex min-w-0 flex-1 flex-col gap-10">
             <ProcessAdminPhaseRail
               slug={slug}
-              instanceId={instance.id}
-              {...toTimelinePhases({
-                phases: instance.phases,
-                currentStateId: instance.currentStateId,
-              })}
+              phases={instance.phases}
+              currentStateId={instance.currentStateId}
               isOpen={isOpen}
             />
             {instance.profileId ? (
@@ -304,30 +306,24 @@ function ProcessAdminHero({
 
 function ProcessAdminPhaseRail({
   slug,
-  instanceId,
   phases,
-  currentPhaseId,
+  currentStateId,
   isOpen,
-}: {
-  slug: string;
-  instanceId: string;
-  phases: ProcessPhase[];
-  currentPhaseId: string;
-  isOpen: boolean;
-}) {
+}: Pick<
+  ComponentProps<typeof ProcessAdminPhaseTimeline>,
+  'slug' | 'phases' | 'currentStateId'
+> & { isOpen: boolean }) {
   const t = useTranslations('decisions');
 
   return (
     <section className="flex flex-col gap-4">
       <Header2 className="text-label">{t('processOverviewHeading')}</Header2>
       {phases.length > 0 ? (
-        <DecisionPhaseTimeline
+        <ProcessAdminPhaseTimeline
+          slug={slug}
           phases={phases}
-          currentPhaseId={currentPhaseId}
+          currentStateId={currentStateId}
           hasStarted={isOpen}
-          instanceId={instanceId}
-          isAdmin={false}
-          decisionSlug={slug}
         />
       ) : (
         <AdminEmptyState
