@@ -52,6 +52,22 @@ describe('toTimelinePhases', () => {
     expect(timeline.currentPhaseId).toBe('unstored-1');
   });
 
+  it('keys only the phases with no row id by their position', () => {
+    const { phases } = toTimelinePhases({
+      phases: [submit, { ...vote, id: null }],
+      currentStateId: null,
+    });
+
+    expect(phases.map(({ id }) => id)).toEqual(['row-submit', 'unstored-1']);
+  });
+
+  it('passes an empty current id when the current state matches no phase', () => {
+    expect(
+      toTimelinePhases({ phases: [submit, vote], currentStateId: 'gone' })
+        .currentPhaseId,
+    ).toBe('');
+  });
+
   it('returns no phases for an empty list', () => {
     expect(toTimelinePhases({ phases: [], currentStateId: 'x' })).toEqual({
       phases: [],
