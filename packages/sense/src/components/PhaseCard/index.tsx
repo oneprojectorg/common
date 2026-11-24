@@ -53,6 +53,8 @@ interface PhaseCardProps {
   isLead?: boolean;
 }
 
+type EditingPhaseCardProps = PhaseCardProps & { editLink: ReactElement };
+
 /**
  * One phase row in a phase timeline. Renders a `div`, or the `editLink`
  * element for a ready card in the editing treatment; the consumer owns the
@@ -143,7 +145,7 @@ function CurrentPhaseCard({
       <a
         href={href}
         data-slot="phase-card-current"
-        className="group flex items-center justify-between gap-4 rounded-lg bg-teal-50 p-4 text-teal-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        className="group flex items-center justify-between gap-4 rounded-lg bg-teal-50 p-4 text-teal-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none"
       >
         <div className="flex min-w-0 flex-col gap-2">
           {isNowOpen ? (
@@ -163,7 +165,7 @@ function CurrentPhaseCard({
         <span
           aria-hidden
           data-slot="phase-card-arrow"
-          className="flex size-8 shrink-0 items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+          className="flex size-8 shrink-0 items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
         >
           <LuArrowRight className="size-4 rtl:-scale-x-100" />
         </span>
@@ -231,8 +233,6 @@ function UpcomingPhaseCard({
   );
 }
 
-type EditingPhaseCardProps = PhaseCardProps & { editLink: ReactElement };
-
 const editingCardClassName =
   'flex items-center justify-between gap-4 rounded-lg p-4 ring-1 ring-border ring-inset';
 
@@ -254,7 +254,7 @@ function EditablePhaseCard({
       'data-slot': 'phase-card-editable',
       className: cn(
         editingCardClassName,
-        'transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+        'transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none',
         className,
       ),
       children: (
