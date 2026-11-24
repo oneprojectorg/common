@@ -181,7 +181,6 @@ const configurePrefill = async ({
 
 const usd = (amount: number) => ({ amount, currency: 'USD' });
 
-/** Adds three review cost fields of phase "initial" into the entry budget. */
 const configureCostTotal = async (instanceId: string) => {
   const entryRow = await insertFormSchema({
     processInstanceId: instanceId,

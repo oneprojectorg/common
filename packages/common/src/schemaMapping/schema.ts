@@ -29,7 +29,6 @@ export const targetKeySchema = z
     { message: 'Must be one non-empty key with no dot and no prototype key' },
   );
 
-// The one expression of the selection pipeline a rule accepts so far.
 const addFieldsExpressionSchema = z.strictObject({
   operator: z.literal('add'),
   operands: z.array(z.strictObject({ field: fieldPathSchema })).min(1),

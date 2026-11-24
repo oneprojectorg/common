@@ -129,7 +129,6 @@ export async function getDevelopedEntryPrefill({
   };
 }
 
-/** The submitted reviews of the sources in each phase a review mapping reads. */
 async function getSubmittedReviewInputs({
   instanceId,
   mappings,
@@ -219,7 +218,7 @@ export async function seedDevelopedEntryDocument({
   }
 }
 
-/** A rule with a nested source path or an expression has no fragment of its own; it is left out. */
+/** A rule with a nested source path or an expression has no fragment to copy. */
 function getFragmentRules({
   mappings,
   sourcePhaseId,
