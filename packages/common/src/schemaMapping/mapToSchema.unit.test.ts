@@ -292,18 +292,7 @@ describe('mapToSchema with an add rule', () => {
     expect(result).toEqual({ data: {} });
   });
 
-  it('known limit: counts an amount that is not a number as 0', () => {
-    const result = mapCosts([
-      costs({
-        design: { amount: '1,000', currency: 'USD' },
-        construction: usd(100),
-      }),
-    ]);
-
-    expect(result.data).toEqual({ budget: 100 });
-  });
-
-  it('known limit: adds in floating point, so 50322.58 + 289354.84 + 50322.58 is not 390000', () => {
+  it('adds exactly, in the operand order of the rule', () => {
     const result = mapCosts([
       costs({
         design: usd(50322.58),
@@ -312,7 +301,54 @@ describe('mapToSchema with an add rule', () => {
       }),
     ]);
 
-    expect(result.data).toEqual({ budget: 390000.00000000006 });
+    expect(result.data).toEqual({ budget: 390000 });
+  });
+
+  it('leaves the field empty for an amount that is not a number', () => {
+    const result = mapCosts([
+      costs({
+        design: { amount: '1,000', currency: 'USD' },
+        construction: usd(100),
+      }),
+    ]);
+
+    expect(result).toEqual({ data: {} });
+  });
+
+  it('leaves the field empty for a money object in place of an amount', () => {
+    const result = mapToSchema({
+      mappings: [
+        {
+          from: reviewRef,
+          to: targetRef,
+          fields: [
+            {
+              from: {
+                operator: 'add',
+                operands: [
+                  { field: 'answers.cost_design' },
+                  { field: 'answers.cost_construction.amount' },
+                ],
+              },
+              to: 'budget',
+            },
+          ],
+        },
+      ],
+      inputs: [costs({ design: usd(100), construction: usd(200) })],
+      targetSchema: targetRef,
+    });
+
+    expect(result).toEqual({ data: {} });
+  });
+
+  it('leaves the field empty when one review has a bad amount and another a valid total', () => {
+    const result = mapCosts([
+      costs({ design: { amount: '$500', currency: 'USD' } }),
+      costs({ design: usd(500) }),
+    ]);
+
+    expect(result).toEqual({ data: {} });
   });
 
   it('known limit: adds the amounts of two currencies as one number', () => {

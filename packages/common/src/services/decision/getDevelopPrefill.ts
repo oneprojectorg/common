@@ -207,7 +207,10 @@ export const buildDevelopPrefill = async ({
   return { data: withMoneyBudget(data) };
 };
 
-/** An `add` rule gives the budget as a bare number. */
+/**
+ * Specific to `budget` on purpose: it makes the bare number of an `add` rule
+ * money. A general alternative, value types in the evaluator, is considered.
+ */
 const withMoneyBudget = (
   data: Record<string, unknown>,
 ): Record<string, unknown> => {

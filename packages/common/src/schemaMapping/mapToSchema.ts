@@ -1,5 +1,7 @@
+import { logger } from '@op/logging';
 import { isDeepStrictEqual } from 'node:util';
 
+import { sumAmounts } from '../services/decision/fieldUnit';
 import { evaluateExpression } from '../services/decision/selectionPipeline/expressionEvaluator';
 import { readOwnField } from './fieldPath';
 import type {
@@ -9,6 +11,9 @@ import type {
   SchemaMapping,
   SchemaRef,
 } from './schema';
+
+// An input whose value cannot be mapped; it leaves the field empty for all inputs.
+const BLOCKED = Symbol('blocked');
 
 /**
  * Copies each field of each mapping from each input of the mapping's source
@@ -39,6 +44,12 @@ export const mapToSchema = ({
         if (value === undefined) {
           continue;
         }
+        if (value === BLOCKED) {
+          logger.warn('A mapping rule read a value that is not a number', {
+            targetPhaseId: targetSchema.phaseId,
+            field: field.to,
+          });
+        }
         const values = valuesByField.get(field.to) ?? [];
         values.push(value);
         valuesByField.set(field.to, values);
@@ -51,6 +62,7 @@ export const mapToSchema = ({
   const data = Object.fromEntries(
     [...valuesByField].flatMap<[string, unknown]>(
       ([field, [first, ...rest]]) =>
+        first !== BLOCKED &&
         rest.every((value) => isDeepStrictEqual(first, value))
           ? [[field, structuredClone(first)]]
           : [],
@@ -78,15 +90,17 @@ const evaluateRule = ({
   if (typeof from === 'string') {
     return evaluateSourceField({ data, path: from });
   }
-  // The evaluator reads a missing operand as 0, so an input without any
-  // operand would give a total of 0.
-  const hasOperand = from.operands.some(
-    ({ field }) => evaluateSourceField({ data, path: field }) !== undefined,
-  );
-  if (!hasOperand) {
+  const values = from.operands
+    .map(({ field }) => evaluateSourceField({ data, path: field }))
+    .filter((value) => value !== undefined);
+  if (values.length === 0) {
     return undefined;
   }
-  return evaluateExpression(from, { record: data, variables: {}, outputs: {} });
+  const numbers = values.flatMap((value) =>
+    typeof value === 'number' && Number.isFinite(value) ? [value] : [],
+  );
+  // Never a partial total; and the sum is exact, so equal totals compare equal.
+  return numbers.length === values.length ? sumAmounts(numbers) : BLOCKED;
 };
 
 const evaluateSourceField = ({
