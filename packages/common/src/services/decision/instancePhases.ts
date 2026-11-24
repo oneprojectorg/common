@@ -82,10 +82,13 @@ export const attachPhaseRows = <T extends InstanceWithData>({
   phases: ProcessPhaseWithProfile[];
 }): InstanceWithPhases<T> => ({
   ...instance,
-  phases: toPhasesWithRowIds({ instance, phases }).map(
-    ({ id: _, ...phase }) => phase,
-  ),
+  phases: toPhasesWithRowIds({ instance, phases }).map(withoutRowId),
 });
+
+export const withoutRowId = ({
+  id: _,
+  ...phase
+}: PhaseInstanceData & { id: string | null }): PhaseInstanceData => phase;
 
 export const resolvePhasesForAll = async <T extends InstanceWithData>({
   instances,

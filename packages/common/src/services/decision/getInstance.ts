@@ -6,7 +6,7 @@ import { permission } from 'access-zones';
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { getCachedInstance } from './getCachedInstance';
-import { attachPhaseRows, toPhasesWithRowIds } from './instancePhases';
+import { toPhasesWithRowIds, withoutRowId } from './instancePhases';
 import { listPhases } from './phaseHelpers';
 import { resolveInstanceAccess } from './resolveInstanceAccess';
 import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
@@ -39,7 +39,14 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
         orgFallbackPermissions: { decisions: permission.READ },
       }),
     ]);
-    const instance = attachPhaseRows({ instance: cached, phases: rows });
+    const allPhasesWithRowIds = toPhasesWithRowIds({
+      instance: cached,
+      phases: rows,
+    });
+    const instance = {
+      ...cached,
+      phases: allPhasesWithRowIds.map(withoutRowId),
+    };
 
     // Resolve access capabilities for the current user.
     // profileId is guaranteed non-null here: assertInstanceProfileAccess throws above if null.
@@ -62,11 +69,8 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       hideBudget && phase.settings
         ? { ...phase, settings: { ...phase.settings, budget: undefined } }
         : phase;
-    const phasesWithRowIds = toPhasesWithRowIds({
-      instance: cached,
-      phases: rows,
-    }).map(withoutBudget);
-    const phases = phasesWithRowIds.map(({ id: _, ...phase }) => phase);
+    const phasesWithRowIds = allPhasesWithRowIds.map(withoutBudget);
+    const phases = phasesWithRowIds.map(withoutRowId);
 
     const manualSelectionStatus = await resolveManualSelectionStatus({
       instance,
