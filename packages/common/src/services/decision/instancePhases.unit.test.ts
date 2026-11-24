@@ -42,16 +42,18 @@ const storedPhases: ProcessPhaseWithProfile[] = [
 ];
 
 describe('toPhases', () => {
-  it('builds each phase from its stored phase and keeps its id, in order', () => {
+  it('builds each phase from its stored phase and keeps its id and slug, in order', () => {
     expect(toPhases({ instance, storedPhases })).toEqual([
       {
         id: '00000000-0000-4000-8000-000000000001',
+        slug: 'submission-slug',
         phaseId: 'submission',
         name: 'Stored submission',
         startDate: '2026-02-01',
       },
       {
         id: '00000000-0000-4000-8000-000000000002',
+        slug: 'review-slug',
         phaseId: 'review-slug',
         name: 'Stored review',
         description: 'No stored phaseId',
@@ -59,9 +61,9 @@ describe('toPhases', () => {
     ]);
   });
 
-  it('falls back to the blob phases with a null id when there are no stored phases', () => {
+  it('falls back to the blob phases with a null id and slug when there are no stored phases', () => {
     expect(toPhases({ instance, storedPhases: [] })).toEqual(
-      blobPhases.map((phase) => ({ ...phase, id: null })),
+      blobPhases.map((phase) => ({ ...phase, id: null, slug: null })),
     );
   });
 
@@ -76,10 +78,11 @@ describe('toPhases', () => {
 });
 
 describe('toPhaseInstanceData', () => {
-  it('drops only the id', () => {
+  it('drops only the id and slug', () => {
     expect(
       toPhaseInstanceData({
         id: 'phase-1',
+        slug: 'a1b2c3d4',
         phaseId: 'submission',
         name: 'Submission',
       }),
@@ -95,7 +98,9 @@ describe('attachPhaseRows', () => {
       'submission',
       'review-slug',
     ]);
-    expect(result.phases.every((phase) => !('id' in phase))).toBe(true);
+    expect(
+      result.phases.every((phase) => !('id' in phase) && !('slug' in phase)),
+    ).toBe(true);
     expect(result.id).toBe('instance-1');
   });
 

@@ -612,6 +612,7 @@ const phaseEncoder = phaseDataEncoder.extend({
   phaseId: z.string(),
   name: z.string().optional(),
   id: z.uuid().nullable(),
+  slug: z.string().nullable(),
 });
 
 export const processInstanceWithPhasesEncoder = z.preprocess(

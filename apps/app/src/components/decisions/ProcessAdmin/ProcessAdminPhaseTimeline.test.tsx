@@ -11,6 +11,7 @@ const SLUG = 'community-fund';
 
 const submit = {
   id: 'row-submit',
+  slug: 'a1b2c3d4',
   phaseId: 'submit',
   name: 'Submit',
   startDate: '2026-01-01T00:00:00.000Z',
@@ -19,6 +20,7 @@ const submit = {
 };
 const vote = {
   id: 'row-vote',
+  slug: 'e5f6a7b8',
   phaseId: 'vote',
   name: 'Vote',
   startDate: '2026-02-01T00:00:00.000Z',
@@ -124,7 +126,11 @@ describe('ProcessAdminPhaseTimeline', () => {
 
   it('renders phases that have no row id yet', () => {
     renderTimeline({
-      phases: [submit, vote].map((phase) => ({ ...phase, id: null })),
+      phases: [submit, vote].map((phase) => ({
+        ...phase,
+        id: null,
+        slug: null,
+      })),
     });
 
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
