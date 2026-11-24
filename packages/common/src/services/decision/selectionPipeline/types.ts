@@ -1,5 +1,7 @@
 import type { Proposal } from '@op/db/schema';
 
+import type { ValueType } from '../../../valueTypes/valueType';
+
 /**
  * Top-level selection pipeline definition
  */
@@ -240,6 +242,8 @@ export interface ExpressionContext {
   record: unknown;
   variables: Record<string, unknown>;
   outputs: Record<string, unknown>;
+  /** The types `add` combines when its operands are not all numbers. Omit for numbers only. */
+  valueTypes?: readonly ValueType<unknown>[];
 }
 
 /** Runtime context passed to every pipeline block during evaluation. */

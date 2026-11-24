@@ -189,7 +189,8 @@ function toSystemFields(data: Record<string, unknown>): ProposalDataInput {
   return {
     ...(title ? { title } : {}),
     ...(category.length > 0 ? { category } : {}),
-    ...(budget ? { budget } : {}),
+    // A total of 0 or less is no estimate; the person enters the budget.
+    ...(budget && budget.amount > 0 ? { budget } : {}),
     ...(location ? { location } : {}),
   };
 }
@@ -216,7 +217,7 @@ export async function seedDevelopedEntryDocument({
   }
 }
 
-/** A rule with a nested source path or a sum has no fragment of its own; it is left out. */
+/** A rule with a nested source path or an expression has no fragment of its own; it is left out. */
 function getFragmentRules({
   mappings,
   sourcePhaseId,

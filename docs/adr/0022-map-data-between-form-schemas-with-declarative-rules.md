@@ -127,11 +127,11 @@ value expressions of the selection pipeline are the planned next step.
   setup script sets them by hand; no editor writes them. Code reads them only
   through `getDevelopPrefillMappings`. The `{ type, phaseId }` reference stays
   until sources have a form schema ID.
-- **Sum of money fields (amended 2026-11-23):** an entry's budget must start
-  from the cost total of a review of an earlier phase, and a copy rule cannot
-  add values. A field's `from` can now be `{ "moneySum": [<paths>] }` in place
-  of a path. It is the first value expression. It reads only money values
-  `{ amount, currency }` and writes the whole money object:
+- **Sum of fields (amended 2026-11-23):** an entry's budget must start from
+  the cost total of a review of an earlier phase, and a copy rule cannot add
+  values. A field's `from` can now be an `add` expression of the selection
+  pipeline whose operands are source fields. No other expression is accepted
+  yet:
 
   ```ts
   {
@@ -140,10 +140,11 @@ value expressions of the selection pipeline are the planned next step.
     fields: [
       {
         from: {
-          moneySum: [
-            'answers.cost_design',
-            'answers.cost_construction',
-            'answers.cost_contingency',
+          operator: 'add',
+          operands: [
+            { field: 'answers.cost_design' },
+            { field: 'answers.cost_construction' },
+            { field: 'answers.cost_contingency' },
           ],
         },
         to: 'budget',
@@ -152,19 +153,24 @@ value expressions of the selection pipeline are the planned next step.
   }
   ```
 
-  This is the rule across sources that the copy rule deferred:
-  - One input gives the sum of the listed fields it has. A missing, `null` or
-    empty field is ignored, and an input with none of them gives no value.
-    Each operand is checked before the evaluator's `add`, which reads a
-    missing operand as 0.
-  - Each input has a source: a proposal is its own source, and a review has
-    the source of its proposal. A source gives the total that all its inputs
-    agree on. A source with no total, or with totals that differ, gives no
-    value.
-  - The result is the sum of the totals of all sources of the target. When a
-    source gives no value, the currencies differ, or the result is 0 or less,
-    the field stays empty, also when another rule gives it a value. A partial
-    sum is never filled.
-  - The sum is rounded at the finest decimal precision of its operands.
+  - The evaluator gets a registry of value types. A value type has two
+    operations: `parse` accepts only a value of the type, and `add` combines
+    two values or gives no value. Money is the first type: `{ amount,
+    currency }` with no other key and a finite amount; two currencies cannot
+    be added. The evaluator has no code for one type.
+  - The type of an operand comes from its value: the one type whose `parse`
+    accepts every operand. It does not come from `x-format` or the field
+    schema. When no single type accepts them, or `add` gives no value, the
+    result is `null`. A missing operand is skipped.
+  - With all operands numbers, or with no registry, `add` is unchanged, so
+    the selection pipeline does not change.
+  - The engine reads each operand as the copy rule reads a field, and
+    evaluates the expression one time for each input. An input with none of
+    the operands gives no value. An input with operands but no result, for
+    example mixed currencies, leaves the field empty, also when other inputs
+    or rules give it a value.
+  - The rule across sources is still deferred. An expression rule gives no
+    value when a target has more than one source proposal, because two
+    sources with equal totals would fill the total of one.
   - The develop create path loads the submitted reviews of the sources, in
     each phase that a review mapping names.

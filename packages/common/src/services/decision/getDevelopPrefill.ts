@@ -191,12 +191,26 @@ export const buildDevelopPrefill = async ({
     readContext: getProposalReadContext({ user, decisionRoles }),
   });
 
+  // Two sources with equal totals would fill one source's total, and how the
+  // totals of several sources combine is not decided yet.
+  const sourceCount = inputs.filter(
+    (input) => input.type === 'proposal',
+  ).length;
+
   return mapToSchema({
-    mappings,
+    mappings: sourceCount > 1 ? getCopyRules(mappings) : mappings,
     inputs: mappingInputs,
     targetSchema,
   });
 };
+
+const getCopyRules = (mappings: SchemaMapping[]): SchemaMapping[] =>
+  mappings.flatMap((mapping) => {
+    const fields = mapping.fields.filter(
+      (field) => typeof field.from === 'string',
+    );
+    return fields.length > 0 ? [{ ...mapping, fields }] : [];
+  });
 
 const assertValidRequest = (request: {
   inputs: DevelopPrefillInput[];
@@ -343,7 +357,6 @@ const loadMappingInputs = async ({
       return {
         schema: { type: 'proposal', phaseId: input.phaseId },
         data: proposalDataById.get(input.id),
-        sourceId: input.id,
       };
     }
     const review = reviewsById.get(input.id);
@@ -355,7 +368,6 @@ const loadMappingInputs = async ({
     return {
       schema: { type: 'review', phaseId: review.assignment.phaseId },
       data: review.reviewData,
-      sourceId: review.assignment.proposalId,
     };
   });
 };

@@ -1,8 +1,9 @@
+import { logger } from '@op/logging';
 import { isDeepStrictEqual } from 'node:util';
 
 import { evaluateExpression } from '../services/decision/selectionPipeline/expressionEvaluator';
-import { isEmptyValue, readOwnField } from './fieldPath';
-import { resolveMoneySum } from './moneySum';
+import { valueTypes } from '../valueTypes/valueTypes';
+import { readOwnField } from './fieldPath';
 import type {
   FieldMapping,
   MappingInput,
@@ -11,10 +12,15 @@ import type {
   SchemaRef,
 } from './schema';
 
+type InputValue =
+  | { status: 'filled'; value: unknown }
+  | { status: 'empty' }
+  | { status: 'blocked' };
+
 /**
  * Maps each field of each mapping from each input of the mapping's source
  * schema. A target field is filled only when all its values are equal, and
- * never when a `moneySum` rule for it gives no total.
+ * never when an input has values for an expression that gives no result.
  */
 export const mapToSchema = ({
   mappings,
@@ -27,7 +33,6 @@ export const mapToSchema = ({
 }): MappingResult => {
   const valuesByField = new Map<string, unknown[]>();
   const blockedFields = new Set<string>();
-  const sourceIds = [...new Set(inputs.map((input) => input.sourceId))];
 
   for (const mapping of mappings) {
     if (!isSameSchemaRef({ left: mapping.to, right: targetSchema })) {
@@ -38,59 +43,69 @@ export const mapToSchema = ({
     );
 
     for (const field of mapping.fields) {
-      const values = getFieldValues({ field, sources, sourceIds });
-      if (values === 'blocked') {
-        blockedFields.add(field.to);
-        continue;
+      for (const source of sources) {
+        const result = evaluateRule({ from: field.from, data: source.data });
+        if (result.status === 'blocked') {
+          // Skipping the input would fill the field from the other inputs.
+          logger.warn('A mapping expression gave no value; field left empty', {
+            targetPhaseId: targetSchema.phaseId,
+            field: field.to,
+          });
+          blockedFields.add(field.to);
+          continue;
+        }
+        if (result.status === 'empty') {
+          continue;
+        }
+        const values = valuesByField.get(field.to) ?? [];
+        values.push(result.value);
+        valuesByField.set(field.to, values);
       }
-      if (values.length === 0) {
-        continue;
-      }
-      valuesByField.set(field.to, [
-        ...(valuesByField.get(field.to) ?? []),
-        ...values,
-      ]);
     }
   }
 
   // Object.fromEntries defines own keys, so a `__proto__` key from a mapping
   // that skipped validation cannot change the prototype.
   const data = Object.fromEntries(
-    [...valuesByField].flatMap<[string, unknown]>(
-      ([field, [first, ...rest]]) =>
-        !blockedFields.has(field) &&
-        rest.every((value) => isDeepStrictEqual(first, value))
-          ? [[field, structuredClone(first)]]
-          : [],
+    [...valuesByField].flatMap<[string, unknown]>(([field, [first, ...rest]]) =>
+      !blockedFields.has(field) &&
+      rest.every((value) => isDeepStrictEqual(first, value))
+        ? [[field, structuredClone(first)]]
+        : [],
     ),
   );
 
   return { data };
 };
 
-/** `blocked` when a `moneySum` rule gives no total. */
-const getFieldValues = ({
-  field,
-  sources,
-  sourceIds,
+const evaluateRule = ({
+  from,
+  data,
 }: {
-  field: FieldMapping;
-  sources: MappingInput[];
-  sourceIds: string[];
-}): unknown[] | 'blocked' => {
-  if (typeof field.from !== 'string') {
-    const total = resolveMoneySum({
-      rule: field.from,
-      inputs: sources,
-      sourceIds,
-    });
-    return total ? [total] : 'blocked';
+  from: FieldMapping['from'];
+  data: unknown;
+}): InputValue => {
+  if (typeof from === 'string') {
+    const value = evaluateSourceField({ data, path: from });
+    return value === undefined
+      ? { status: 'empty' }
+      : { status: 'filled', value };
   }
-  const path = field.from;
-  return sources.flatMap((source) => {
-    const value = evaluateSourceField({ data: source.data, path });
-    return value === undefined ? [] : [value];
+
+  // Each operand goes through the copy rule's field read, so an inherited or
+  // empty field is a missing operand.
+  const values = from.operands.flatMap(({ field }) => {
+    const value = evaluateSourceField({ data, path: field });
+    return value === undefined ? [] : [{ value }];
   });
+  if (values.length === 0) {
+    return { status: 'empty' };
+  }
+  const value: unknown = evaluateExpression(
+    { operator: from.operator, operands: values },
+    { record: data, variables: {}, outputs: {}, valueTypes },
+  );
+  return value == null ? { status: 'blocked' } : { status: 'filled', value };
 };
 
 const isSameSchemaRef = ({
@@ -119,3 +134,6 @@ const evaluateSourceField = ({
   );
   return isEmptyValue(value) ? undefined : value;
 };
+
+const isEmptyValue = (value: unknown): boolean =>
+  value === undefined || value === null || value === '';

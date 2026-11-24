@@ -1,6 +1,7 @@
 import { logger } from '@op/logging';
 import safeRegex from 'safe-regex2';
 
+import type { ValueType } from '../../../valueTypes/valueType';
 import type {
   ArithmeticExpression,
   ComparisonExpression,
@@ -167,11 +168,18 @@ function evaluateLogical(
 function evaluateArithmetic(
   expr: ArithmeticExpression,
   context: ExpressionContext,
-): number {
-  const values = expr.operands.map((op) => {
-    const val = evaluateExpression(op, context);
-    return typeof val === 'number' ? val : 0;
-  });
+): unknown {
+  const operands: unknown[] = expr.operands.map((op) =>
+    evaluateExpression(op, context),
+  );
+  if (
+    expr.operator === 'add' &&
+    context.valueTypes &&
+    !operands.every((operand) => typeof operand === 'number')
+  ) {
+    return addTypedValues({ operands, valueTypes: context.valueTypes });
+  }
+  const values = operands.map((val) => (typeof val === 'number' ? val : 0));
 
   switch (expr.operator) {
     case 'add':
@@ -189,6 +197,44 @@ function evaluateArithmetic(
     default:
       throw new Error(`Unknown arithmetic operator: ${expr.operator}`);
   }
+}
+
+/**
+ * Null unless exactly one value type accepts every operand that is not null
+ * and can add them all. A missing operand is skipped.
+ */
+function addTypedValues({
+  operands,
+  valueTypes,
+}: {
+  operands: unknown[];
+  valueTypes: readonly ValueType<unknown>[];
+}): unknown {
+  const present = operands.filter((operand) => operand != null);
+  const matches = valueTypes.flatMap((type) => {
+    const values = present.map((operand) => type.parse(operand));
+    return values.every((value) => value !== undefined)
+      ? [{ type, values }]
+      : [];
+  });
+  const [match, ...otherMatches] = matches;
+  if (!match || otherMatches.length > 0) {
+    return null;
+  }
+
+  const [first, ...rest] = match.values;
+  if (first === undefined) {
+    return null;
+  }
+  let total = first;
+  for (const value of rest) {
+    const sum = match.type.add(total, value);
+    if (sum === undefined) {
+      return null;
+    }
+    total = sum;
+  }
+  return total;
 }
 
 /**

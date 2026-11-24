@@ -18,8 +18,5 @@ export const readOwnField = ({
   return current;
 };
 
-export const isEmptyValue = (value: unknown): boolean =>
-  value === undefined || value === null || value === '';
-
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);

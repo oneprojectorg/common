@@ -27,16 +27,14 @@ const mapProposals = ({
     targetSchema: targetRef,
   });
 
-const proposal = (data: unknown, sourceId = 'garden'): MappingInput => ({
+const proposal = (data: unknown): MappingInput => ({
   schema: proposalRef,
   data,
-  sourceId,
 });
 
-const review = (data: unknown, sourceId = 'garden'): MappingInput => ({
+const review = (data: unknown): MappingInput => ({
   schema: reviewRef,
   data,
-  sourceId,
 });
 
 describe('mapToSchema', () => {
@@ -186,17 +184,18 @@ describe('mapToSchema', () => {
   });
 });
 
-describe('mapToSchema with a moneySum rule', () => {
-  const costSum: SchemaMapping = {
+describe('mapToSchema with an add rule', () => {
+  const costTotal: SchemaMapping = {
     from: reviewRef,
     to: targetRef,
     fields: [
       {
         from: {
-          moneySum: [
-            'answers.cost_design',
-            'answers.cost_construction',
-            'answers.cost_contingency',
+          operator: 'add',
+          operands: [
+            { field: 'answers.cost_design' },
+            { field: 'answers.cost_construction' },
+            { field: 'answers.cost_contingency' },
           ],
         },
         to: 'budget',
@@ -206,115 +205,131 @@ describe('mapToSchema with a moneySum rule', () => {
 
   const usd = (amount: number) => ({ amount, currency: 'USD' });
 
-  const costs = (answers: Record<string, unknown>) => ({ answers });
+  const costs = ({
+    design,
+    construction,
+    contingency,
+  }: {
+    design?: unknown;
+    construction?: unknown;
+    contingency?: unknown;
+  }) => ({
+    answers: {
+      ...(design === undefined ? {} : { cost_design: design }),
+      ...(construction === undefined
+        ? {}
+        : { cost_construction: construction }),
+      ...(contingency === undefined ? {} : { cost_contingency: contingency }),
+      __overall_recommendation: 'feasible',
+    },
+  });
 
   const mapCosts = (
     inputs: MappingInput[],
-    mappings: SchemaMapping[] = [costSum],
+    mappings: SchemaMapping[] = [costTotal],
   ) => mapToSchema({ mappings, inputs, targetSchema: targetRef });
 
-  it('fills the sum of the fields of one review as a money value', () => {
+  it.each([
+    {
+      answers: {
+        design: usd(20000),
+        contingency: usd(20000),
+        construction: usd(120000),
+      },
+      budget: usd(160000),
+    },
+    {
+      answers: { contingency: usd(3600), construction: usd(18000) },
+      budget: usd(21600),
+    },
+    { answers: { construction: usd(5000) }, budget: usd(5000) },
+    { answers: { design: usd(500000) }, budget: usd(500000) },
+    {
+      answers: {
+        design: usd(0),
+        contingency: usd(5000),
+        construction: usd(50000),
+      },
+      budget: usd(55000),
+    },
+    {
+      answers: {
+        design: usd(50322.58),
+        contingency: usd(50322.58),
+        construction: usd(289354.84),
+      },
+      budget: usd(390000),
+    },
+    {
+      answers: {
+        design: usd(46451.61),
+        contingency: usd(46451.61),
+        construction: usd(267096.77),
+      },
+      budget: usd(359999.99),
+    },
+    {
+      answers: {
+        design: usd(60387.1),
+        contingency: usd(60387.1),
+        construction: usd(45290.32),
+      },
+      budget: usd(166064.52),
+    },
+    {
+      answers: {
+        design: usd(10000000),
+        contingency: usd(10000000),
+        construction: usd(50000000),
+      },
+      budget: usd(70000000),
+    },
+  ])(
+    'fills the total of the cost fields of one review: $budget.amount',
+    ({ answers, budget }) => {
+      const result = mapCosts([proposal({}), review(costs(answers))]);
+
+      expect(result.data).toEqual({ budget });
+    },
+  );
+
+  it('leaves the field empty for a review without a cost field', () => {
+    const result = mapCosts([review(costs({}))]);
+
+    expect(result).toEqual({ data: {} });
+  });
+
+  it('skips a review without a cost field and fills the total of the other review', () => {
     const result = mapCosts([
-      proposal({}),
+      review(costs({})),
       review(
         costs({
-          cost_design: usd(1000),
-          cost_construction: usd(20000),
-          cost_contingency: usd(500),
+          design: usd(12000),
+          contingency: usd(12000),
+          construction: usd(60000),
         }),
       ),
     ]);
 
-    expect(result.data).toEqual({ budget: usd(21500) });
+    expect(result.data).toEqual({ budget: usd(84000) });
   });
 
-  it('fills the total when two reviews of a proposal give equal totals', () => {
+  it('reads a null or empty cost field as missing', () => {
     const result = mapCosts([
-      review(costs({ cost_design: usd(100), cost_construction: usd(200) })),
-      review(costs({ cost_design: usd(200), cost_construction: usd(100) })),
-    ]);
-
-    expect(result.data).toEqual({ budget: usd(300) });
-  });
-
-  it('leaves the field empty when two reviews of a proposal give different totals', () => {
-    const result = mapCosts([
-      review(costs({ cost_design: usd(100) })),
-      review(costs({ cost_design: usd(900) })),
-    ]);
-
-    expect(result).toEqual({ data: {} });
-  });
-
-  it('leaves the field empty when a proposal has no review', () => {
-    const result = mapCosts([proposal({ title: 'Trees' })]);
-
-    expect(result).toEqual({ data: {} });
-  });
-
-  it('ignores a missing or null field and sums the others', () => {
-    const result = mapCosts([
-      review(costs({ cost_design: usd(100), cost_contingency: null })),
-    ]);
-
-    expect(result.data).toEqual({ budget: usd(100) });
-  });
-
-  it('gives no total for a review without any of the fields, and uses the other review', () => {
-    const result = mapCosts([
-      review(costs({ cost_design: null })),
-      review(costs({ cost_construction: usd(40) })),
+      review(costs({ design: null, contingency: '', construction: usd(40) })),
     ]);
 
     expect(result.data).toEqual({ budget: usd(40) });
   });
 
-  it('leaves the field empty when no review has any of the fields', () => {
-    const result = mapCosts([review(costs({ other: usd(10) }))]);
-
-    expect(result).toEqual({ data: {} });
-  });
-
-  it('adds the totals of the proposals of a merged entry', () => {
+  it('leaves the field empty when two reviews give different totals', () => {
     const result = mapCosts([
-      proposal({}, 'garden'),
-      proposal({}, 'benches'),
-      review(costs({ cost_design: usd(100) }), 'garden'),
-      review(
-        costs({ cost_design: usd(50), cost_contingency: usd(5) }),
-        'benches',
-      ),
-    ]);
-
-    expect(result.data).toEqual({ budget: usd(155) });
-  });
-
-  it('leaves the field empty when one proposal of a merged entry has no total', () => {
-    const result = mapCosts([
-      proposal({}, 'garden'),
-      proposal({}, 'benches'),
-      review(costs({ cost_design: usd(100) }), 'garden'),
-    ]);
-
-    expect(result).toEqual({ data: {} });
-  });
-
-  it('leaves the field empty when one proposal of a merged entry has reviews that disagree', () => {
-    const result = mapCosts([
-      review(costs({ cost_design: usd(100) }), 'garden'),
-      review(costs({ cost_design: usd(70) }), 'benches'),
-      review(costs({ cost_design: usd(80) }), 'benches'),
-    ]);
-
-    expect(result).toEqual({ data: {} });
-  });
-
-  it('leaves the field empty when the fields of one review have mixed currencies', () => {
-    const result = mapCosts([
+      review(costs({ construction: usd(5000) })),
       review(
         costs({
-          cost_design: usd(100),
-          cost_construction: { amount: 100, currency: 'EUR' },
+          design: usd(0),
+          contingency: usd(25000),
+          construction: usd(250000),
         }),
       ),
     ]);
@@ -322,54 +337,67 @@ describe('mapToSchema with a moneySum rule', () => {
     expect(result).toEqual({ data: {} });
   });
 
-  it('leaves the field empty when the proposals of a merged entry have mixed currencies', () => {
+  it('fills the total when two reviews with different fields give the same total', () => {
     const result = mapCosts([
-      review(costs({ cost_design: usd(100) }), 'garden'),
-      review(
-        costs({ cost_design: { amount: 100, currency: 'EUR' } }),
-        'benches',
-      ),
+      review(costs({ design: usd(100), construction: usd(200) })),
+      review(costs({ contingency: usd(300) })),
     ]);
 
-    expect(result).toEqual({ data: {} });
+    expect(result.data).toEqual({ budget: usd(300) });
   });
 
-  it.each([0, -10])('leaves the field empty for a total of %d', (amount) => {
-    const result = mapCosts([review(costs({ cost_design: usd(amount) }))]);
+  it.each([
+    {
+      name: 'two currencies',
+      answers: {
+        design: usd(100),
+        construction: { amount: 100, currency: 'EUR' },
+      },
+    },
+    {
+      name: 'an amount with a thousands separator',
+      answers: { design: { amount: '1,000', currency: 'USD' } },
+    },
+    {
+      name: 'an amount with a currency sign',
+      answers: { design: { amount: '$500', currency: 'USD' } },
+    },
+    {
+      name: 'a null amount',
+      answers: { design: { amount: null, currency: 'USD' } },
+    },
+    {
+      name: 'an extra key',
+      answers: { design: { amount: 100, currency: 'USD', note: 'estimate' } },
+    },
+    {
+      name: 'an infinite amount',
+      answers: { design: { amount: Infinity, currency: 'USD' } },
+    },
+    {
+      name: 'a plain number next to money',
+      answers: { design: usd(100), construction: 250 },
+    },
+  ])(
+    'leaves the field empty for $name, also when another review gives a total',
+    ({ answers }) => {
+      const result = mapCosts([
+        review(costs(answers)),
+        review(costs({ construction: usd(100) })),
+      ]);
 
-    expect(result).toEqual({ data: {} });
-  });
+      expect(result).toEqual({ data: {} });
+    },
+  );
 
-  it('leaves the field empty when a field holds a value that is not money', () => {
-    const result = mapCosts([
-      review(costs({ cost_design: usd(100), cost_construction: 250 })),
-    ]);
-
-    expect(result).toEqual({ data: {} });
-  });
-
-  it('adds decimal amounts at the precision of the inputs', () => {
-    const result = mapCosts([
-      review(costs({ cost_design: usd(0.1), cost_construction: usd(0.2) })),
-    ]);
-
-    expect(result.data).toEqual({ budget: usd(0.3) });
-  });
-
-  it('does not read an inherited property', () => {
-    const result = mapCosts([
-      review({ answers: { cost_design: usd(5) } }),
-      review({ answers: Object.create({ cost_design: usd(9) }) }),
-    ]);
-
-    expect(result.data).toEqual({ budget: usd(5) });
-  });
-
-  it('leaves the field empty when the sum gives no total and a copy rule gives a value', () => {
+  it('leaves the field empty when a copy rule gives a value and a review has a bad cost', () => {
     const result = mapCosts(
-      [proposal({ budget: usd(500) })],
       [
-        costSum,
+        proposal({ budget: usd(500) }),
+        review(costs({ design: usd(100), construction: 250 })),
+      ],
+      [
+        costTotal,
         {
           from: proposalRef,
           to: targetRef,
@@ -379,5 +407,14 @@ describe('mapToSchema with a moneySum rule', () => {
     );
 
     expect(result).toEqual({ data: {} });
+  });
+
+  it('does not read an inherited property', () => {
+    const result = mapCosts([
+      review({ answers: Object.create({ cost_design: usd(9) }) }),
+      review(costs({ design: usd(5) })),
+    ]);
+
+    expect(result.data).toEqual({ budget: usd(5) });
   });
 });

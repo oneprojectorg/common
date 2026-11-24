@@ -181,8 +181,8 @@ const configurePrefill = async ({
 
 const usd = (amount: number) => ({ amount, currency: 'USD' });
 
-/** Sums three review cost fields of phase "initial" into the entry budget. */
-const configureCostSum = async (instanceId: string) => {
+/** Adds three review cost fields of phase "initial" into the entry budget. */
+const configureCostTotal = async (instanceId: string) => {
   const entryRow = await insertFormSchema({
     processInstanceId: instanceId,
     name: 'Ballot entry',
@@ -197,10 +197,11 @@ const configureCostSum = async (instanceId: string) => {
         fields: [
           {
             from: {
-              moneySum: [
-                'answers.cost_design',
-                'answers.cost_construction',
-                'answers.cost_contingency',
+              operator: 'add',
+              operands: [
+                { field: 'answers.cost_design' },
+                { field: 'answers.cost_construction' },
+                { field: 'answers.cost_contingency' },
               ],
             },
             to: 'budget',
@@ -1102,8 +1103,8 @@ describe.concurrent('createDevelopedProposal', () => {
     expect(instanceProposals).toEqual([{ id: source.id }]);
   });
 
-  describe('with a money sum of review costs', () => {
-    const setUpCostSum = async ({
+  describe('with the sum of review costs', () => {
+    const setUpCostTotal = async ({
       testData,
       sourceCount,
     }: {
@@ -1112,7 +1113,7 @@ describe.concurrent('createDevelopedProposal', () => {
     }) => {
       const { setup, instanceId, source, otherSources } =
         await createDevelopPhaseSetup({ testData, sourceCount });
-      await configureCostSum(instanceId);
+      await configureCostTotal(instanceId);
       const caller = await createAuthenticatedCaller(setup.userEmail);
       const reviewers = [
         setup.organization.profileId,
@@ -1141,7 +1142,7 @@ describe.concurrent('createDevelopedProposal', () => {
     }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const { instanceId, sources, reviewers, createDraft } =
-        await setUpCostSum({ testData, sourceCount: 1 });
+        await setUpCostTotal({ testData, sourceCount: 1 });
       const [source] = sources;
       if (!source) {
         throw new Error('Expected a source');
@@ -1165,86 +1166,99 @@ describe.concurrent('createDevelopedProposal', () => {
       });
     });
 
-    it('prefills the budget only for a source whose submitted reviews agree on the total', async ({
+    it('prefills the budget from the reviews that have costs, and only when their totals agree', async ({
       task,
       onTestFinished,
     }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const { instanceId, sources, reviewers, createDraft } =
-        await setUpCostSum({ testData, sourceCount: 3 });
-      const [agreeing, disagreeing, unreviewed] = sources;
-      if (!agreeing || !disagreeing || !unreviewed) {
+        await setUpCostTotal({ testData, sourceCount: 3 });
+      const [partlyReviewed, disagreeing, noCosts] = sources;
+      if (!partlyReviewed || !disagreeing || !noCosts) {
         throw new Error('Expected three sources');
       }
       await Promise.all([
         createCostReview({
           instanceId,
-          proposalId: agreeing.id,
+          proposalId: partlyReviewed.id,
           reviewerProfileId: reviewers[0],
-          answers: { cost_design: usd(100), cost_construction: usd(200) },
+          answers: {},
         }),
         createCostReview({
           instanceId,
-          proposalId: agreeing.id,
+          proposalId: partlyReviewed.id,
           reviewerProfileId: reviewers[1],
-          answers: { cost_design: usd(250), cost_contingency: usd(50) },
+          answers: {
+            cost_design: usd(12000),
+            cost_contingency: usd(12000),
+            cost_construction: usd(60000),
+          },
         }),
         createCostReview({
           instanceId,
           proposalId: disagreeing.id,
           reviewerProfileId: reviewers[0],
-          answers: { cost_design: usd(100) },
+          answers: { cost_construction: usd(5000) },
         }),
         createCostReview({
           instanceId,
           proposalId: disagreeing.id,
           reviewerProfileId: reviewers[1],
-          answers: { cost_design: usd(900) },
+          answers: {
+            cost_design: usd(0),
+            cost_contingency: usd(25000),
+            cost_construction: usd(250000),
+          },
+        }),
+        createCostReview({
+          instanceId,
+          proposalId: noCosts.id,
+          reviewerProfileId: reviewers[0],
+          answers: {},
+        }),
+        createCostReview({
+          instanceId,
+          proposalId: noCosts.id,
+          reviewerProfileId: reviewers[1],
+          answers: {},
         }),
       ]);
 
-      await expect(createDraft([agreeing.id])).resolves.toMatchObject({
-        budget: usd(300),
+      await expect(createDraft([partlyReviewed.id])).resolves.toMatchObject({
+        budget: usd(84000),
       });
       await expect(createDraft([disagreeing.id])).resolves.not.toHaveProperty(
         'budget',
       );
-      await expect(createDraft([unreviewed.id])).resolves.not.toHaveProperty(
+      await expect(createDraft([noCosts.id])).resolves.not.toHaveProperty(
         'budget',
       );
     });
 
-    it('prefills a merged entry with the sum of its sources, and leaves it empty when one source has no total', async ({
+    it('leaves the budget of a merged entry empty, also when its sources give the same total', async ({
       task,
       onTestFinished,
     }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const { instanceId, sources, reviewers, createDraft } =
-        await setUpCostSum({ testData, sourceCount: 3 });
-      const [garden, benches, unreviewed] = sources;
-      if (!garden || !benches || !unreviewed) {
-        throw new Error('Expected three sources');
+        await setUpCostTotal({ testData, sourceCount: 2 });
+      const [garden, benches] = sources;
+      if (!garden || !benches) {
+        throw new Error('Expected two sources');
       }
-      await Promise.all([
-        createCostReview({
-          instanceId,
-          proposalId: garden.id,
-          reviewerProfileId: reviewers[0],
-          answers: { cost_design: usd(100) },
-        }),
-        createCostReview({
-          instanceId,
-          proposalId: benches.id,
-          reviewerProfileId: reviewers[0],
-          answers: { cost_construction: usd(50), cost_contingency: usd(5) },
-        }),
-      ]);
-
-      await expect(createDraft([garden.id, benches.id])).resolves.toMatchObject(
-        { budget: usd(155) },
+      await Promise.all(
+        [garden, benches].map((source) =>
+          createCostReview({
+            instanceId,
+            proposalId: source.id,
+            reviewerProfileId: reviewers[0],
+            answers: { cost_construction: usd(5000) },
+          }),
+        ),
       );
+
       await expect(
-        createDraft([garden.id, unreviewed.id]),
+        createDraft([garden.id, benches.id]),
       ).resolves.not.toHaveProperty('budget');
     });
 
@@ -1254,7 +1268,7 @@ describe.concurrent('createDevelopedProposal', () => {
     }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const { instanceId, sources, reviewers, createDraft } =
-        await setUpCostSum({ testData, sourceCount: 2 });
+        await setUpCostTotal({ testData, sourceCount: 2 });
       const [mixed, zero] = sources;
       if (!mixed || !zero) {
         throw new Error('Expected two sources');

@@ -33,9 +33,15 @@ describe('schemaMappingSchema', () => {
     expect(schemaMappingSchema.safeParse(mapping).success).toBe(false);
   });
 
-  it('accepts a money sum of source paths', () => {
+  it('accepts the sum of source fields', () => {
     const mapping = mappingWith({
-      from: { moneySum: ['answers.cost_design', 'answers.cost_construction'] },
+      from: {
+        operator: 'add',
+        operands: [
+          { field: 'answers.cost_design' },
+          { field: 'answers.cost_construction' },
+        ],
+      },
       to: 'budget',
     });
 
@@ -43,10 +49,17 @@ describe('schemaMappingSchema', () => {
   });
 
   it.each([
-    { moneySum: [] },
-    { moneySum: ['answers.__proto__'] },
-    { moneySum: ['answers.cost_design'], extra: true },
-    { sum: ['answers.cost_design'] },
+    { operator: 'add', operands: [] },
+    { operator: 'add', operands: [{ field: 'answers.__proto__' }] },
+    { operator: 'add', operands: [{ value: 5 }] },
+    { operator: 'add', operands: [{ field: 'a', extra: true }] },
+    { operator: 'add', operands: [{ field: 'a' }], extra: true },
+    { operator: 'subtract', operands: [{ field: 'a' }] },
+    {
+      operator: 'add',
+      operands: [{ operator: 'add', operands: [{ field: 'a' }] }],
+    },
+    { moneySum: ['answers.cost_design'] },
   ])('rejects the source %j', (from) => {
     const mapping = mappingWith({ from, to: 'budget' });
 
