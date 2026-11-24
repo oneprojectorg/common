@@ -1,4 +1,4 @@
-export { isSameSchemaRef, mapToSchema } from './mapToSchema';
+export { mapToSchema } from './mapToSchema';
 export { schemaMappingSchema } from './schema';
 export type {
   MappingInput,

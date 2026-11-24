@@ -4,6 +4,7 @@ import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
+import { DEFAULT_MONEY_CURRENCY } from '../../money';
 import {
   type MappingInput,
   type MappingResult,
@@ -19,7 +20,7 @@ import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { getPhases } from './instancePhases';
-import { parseProposalData } from './proposalDataSchema';
+import { normalizeBudget, parseProposalData } from './proposalDataSchema';
 import { resolveDocumentFieldValues } from './proposalListPreview';
 import {
   type ProposalReadContext,
@@ -33,7 +34,6 @@ import {
 import type { PhaseInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 import { assertInstancePhase } from './utils/instance';
-import { withBudgetCurrency } from './withBudgetCurrency';
 
 /**
  * A review's phase is its assignment's phase, so a review input names none. A
@@ -198,19 +198,26 @@ export const buildDevelopPrefill = async ({
     (input) => input.type === 'proposal',
   ).length;
 
-  const rules = sourceCount > 1 ? getCopyRules(mappings) : mappings;
-  const result = mapToSchema({
-    mappings: rules,
+  const { data } = mapToSchema({
+    mappings: sourceCount > 1 ? getCopyRules(mappings) : mappings,
     inputs: mappingInputs,
     targetSchema,
   });
 
-  return withBudgetCurrency({
-    result,
-    mappings: rules,
-    inputs: mappingInputs,
-    targetSchema,
-  });
+  return { data: withMoneyBudget(data) };
+};
+
+/** An `add` rule gives the budget as a bare number. */
+const withMoneyBudget = (
+  data: Record<string, unknown>,
+): Record<string, unknown> => {
+  const { budget: mappedBudget, ...dataWithoutBudget } = data;
+  const budget =
+    typeof mappedBudget === 'number'
+      ? { amount: mappedBudget, currency: DEFAULT_MONEY_CURRENCY }
+      : normalizeBudget(mappedBudget);
+
+  return budget ? { ...dataWithoutBudget, budget } : dataWithoutBudget;
 };
 
 const getCopyRules = (mappings: SchemaMapping[]): SchemaMapping[] =>

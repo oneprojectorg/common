@@ -19,6 +19,7 @@ import {
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
+import { DEFAULT_MONEY_CURRENCY } from '../../money';
 import type { SchemaMapping } from '../../schemaMapping';
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { getDevelopPrefill } from './getDevelopPrefill';
@@ -944,75 +945,11 @@ describe.concurrent('getDevelopPrefill', () => {
       });
 
       expect(result).toStrictEqual({
-        data: { title: 'Garden', budget: { amount: 35, currency: 'USD' } },
-      });
-    });
-
-    it('given a feasibility review whose costs are in two currencies, when the prefill is built, then the budget stays empty', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-      const { setup, instanceId, createSubmittedProposal, createReview } =
-        await seedDevelopDecision(testData);
-      const garden = await createSubmittedProposal({ title: 'Garden' });
-      const review = await createReview({
-        proposalId: garden.id,
-        phaseId: FEASIBILITY,
-        reviewData: {
-          answers: {
-            cost_design: { amount: 100, currency: 'USD' },
-            cost_construction: { amount: 200, currency: 'EUR' },
-          },
+        data: {
+          title: 'Garden',
+          budget: { amount: 35, currency: DEFAULT_MONEY_CURRENCY },
         },
       });
-
-      const result = await getDevelopPrefill({
-        instanceId,
-        inputs: [
-          { type: 'proposal', phaseId: SUBMISSION, id: garden.id },
-          { type: 'review', id: review.id },
-        ],
-        target: { type: 'proposal', phaseId: BALLOT },
-        mappings: costTotalMappings,
-        user: setup.user,
-      });
-
-      expect(result).toEqual({ data: { title: 'Garden' } });
-    });
-
-    it('given a feasibility review whose costs are plain numbers, when the prefill is built, then the budget stays empty', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-      const { setup, instanceId, createSubmittedProposal, createReview } =
-        await seedDevelopDecision(testData);
-      const garden = await createSubmittedProposal({ title: 'Garden' });
-      const review = await createReview({
-        proposalId: garden.id,
-        phaseId: FEASIBILITY,
-        reviewData: {
-          answers: {
-            cost_design: 100,
-            cost_construction: 200,
-            __overall_recommendation: 'feasible',
-          },
-        },
-      });
-
-      const result = await getDevelopPrefill({
-        instanceId,
-        inputs: [
-          { type: 'proposal', phaseId: SUBMISSION, id: garden.id },
-          { type: 'review', id: review.id },
-        ],
-        target: { type: 'proposal', phaseId: BALLOT },
-        mappings: costTotalMappings,
-        user: setup.user,
-      });
-
-      expect(result).toEqual({ data: { title: 'Garden' } });
     });
 
     it('given two proposals whose reviews give the same total, when the prefill is built, then the budget stays empty and the copy rules still apply', async ({

@@ -3,7 +3,11 @@ import {
   mockCollab,
   textFragment,
 } from '@op/collab/testing';
-import { type PhaseInstanceData, getInstancePhases } from '@op/common';
+import {
+  DEFAULT_MONEY_CURRENCY,
+  type PhaseInstanceData,
+  getInstancePhases,
+} from '@op/common';
 import {
   TEST_PERMISSION_BITS,
   TestDecisionsDataManager,
@@ -1160,8 +1164,9 @@ describe.concurrent('createDevelopedProposal', () => {
         state: ProposalReviewState.DRAFT,
       });
 
-      await expect(createDraft([source.id])).resolves.toMatchObject({
-        budget: usd(21000),
+      await expect(createDraft([source.id])).resolves.toHaveProperty('budget', {
+        amount: 21000,
+        currency: DEFAULT_MONEY_CURRENCY,
       });
     });
 
@@ -1259,121 +1264,6 @@ describe.concurrent('createDevelopedProposal', () => {
       await expect(
         createDraft([garden.id, benches.id]),
       ).resolves.not.toHaveProperty('budget');
-    });
-
-    it('leaves the budget empty for mixed currencies and for plain-number costs, and keeps the currency of the costs', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-      const { instanceId, sources, reviewers, createDraft } =
-        await setUpCostTotal({ testData, sourceCount: 4 });
-      const [mixed, plainNumbers, zero, euro] = sources;
-      if (!mixed || !plainNumbers || !zero || !euro) {
-        throw new Error('Expected four sources');
-      }
-      await Promise.all([
-        createCostReview({
-          instanceId,
-          proposalId: mixed.id,
-          reviewerProfileId: reviewers[0],
-          answers: {
-            cost_design: usd(100),
-            cost_construction: { amount: 100, currency: 'EUR' },
-          },
-        }),
-        createCostReview({
-          instanceId,
-          proposalId: plainNumbers.id,
-          reviewerProfileId: reviewers[0],
-          answers: { cost_design: 100, cost_construction: 200 },
-        }),
-        createCostReview({
-          instanceId,
-          proposalId: zero.id,
-          reviewerProfileId: reviewers[0],
-          answers: { cost_design: usd(0) },
-        }),
-        createCostReview({
-          instanceId,
-          proposalId: euro.id,
-          reviewerProfileId: reviewers[0],
-          answers: {
-            cost_contingency: { amount: 40, currency: 'EUR' },
-            cost_construction: { amount: 60, currency: 'EUR' },
-          },
-        }),
-      ]);
-
-      await expect(createDraft([mixed.id])).resolves.not.toHaveProperty(
-        'budget',
-      );
-      await expect(createDraft([plainNumbers.id])).resolves.not.toHaveProperty(
-        'budget',
-      );
-      await expect(createDraft([zero.id])).resolves.toMatchObject({
-        budget: usd(0),
-      });
-      // A bare number would have become USD on the way into the entry.
-      await expect(createDraft([euro.id])).resolves.toMatchObject({
-        budget: { amount: 100, currency: 'EUR' },
-      });
-    });
-
-    it('fills the budget from a copy rule that copies a plain number when the add rule for the budget gives no value', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-      const { setup, instanceId, source } = await createDevelopPhaseSetup({
-        testData,
-        sourceCount: 1,
-      });
-      const entryRow = await insertFormSchema({
-        processInstanceId: instanceId,
-        name: 'Ballot entry',
-        schema: prefillEntrySchema,
-      });
-      await configureDevelopPhase(instanceId, {
-        formSchemaId: entryRow.id,
-        developPrefillMappings: [
-          {
-            from: { type: 'review', phaseId: 'initial' },
-            to: { type: 'proposal', phaseId: 'final' },
-            fields: [
-              {
-                from: {
-                  operator: 'add',
-                  operands: [
-                    { field: 'answers.cost_design.amount' },
-                    { field: 'answers.cost_construction.amount' },
-                  ],
-                },
-                to: 'budget',
-              },
-              { from: 'answers.cost_estimate', to: 'budget' },
-            ],
-          },
-        ],
-      });
-      await createCostReview({
-        instanceId,
-        proposalId: source.id,
-        reviewerProfileId: setup.organization.profileId,
-        answers: { cost_estimate: 500 },
-      });
-      const caller = await createAuthenticatedCaller(setup.userEmail);
-
-      const draft = await caller.decision.createDevelopedProposal({
-        processInstanceId: instanceId,
-        sourceProposalIds: [source.id],
-        proposalData: {},
-      });
-      testData.trackProfileForCleanup(draft.profileId);
-
-      await expect(readProposalData(draft.id)).resolves.toMatchObject({
-        budget: usd(500),
-      });
     });
   });
 });
