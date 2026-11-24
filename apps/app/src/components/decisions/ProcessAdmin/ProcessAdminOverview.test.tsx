@@ -8,7 +8,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import en from '../../../lib/i18n/dictionaries/en.json';
 import { ProcessAdminOverview } from './ProcessAdminOverview';
-import type { ProcessAdminPhase } from './types';
 
 const { query, updateInstance, utils, toast, logger } = await vi.hoisted(
   async () => {
@@ -116,8 +115,21 @@ vi.mock('@op/api/client', () => ({
 // The timeline owns the phase-advance mutation; this test only needs to know
 // whether it rendered and what it was told.
 vi.mock('../DecisionPhaseTimeline', () => ({
-  DecisionPhaseTimeline: ({ hasStarted }: { hasStarted: boolean }) => (
-    <div data-testid="phase-timeline" data-started={String(hasStarted)} />
+  DecisionPhaseTimeline: ({
+    hasStarted,
+    currentPhaseId,
+    phases,
+  }: {
+    hasStarted: boolean;
+    currentPhaseId: string;
+    phases: { name: string }[];
+  }) => (
+    <div
+      data-testid="phase-timeline"
+      data-started={String(hasStarted)}
+      data-current={currentPhaseId}
+      data-names={phases.map((phase) => phase.name).join(',')}
+    />
   ),
 }));
 
@@ -166,6 +178,7 @@ const profile = ({
   status = ProcessStatus.PUBLISHED,
   description = null,
   phases = [],
+  currentStateId = null,
   steward = null,
   heroImage,
   isPrivate = false,
@@ -175,6 +188,7 @@ const profile = ({
   status?: string;
   description?: string | null;
   phases?: object[];
+  currentStateId?: string | null;
   steward?: object | null;
   heroImage?: string;
   isPrivate?: boolean;
@@ -185,7 +199,7 @@ const profile = ({
     profileId: 'profile-1',
     status,
     description,
-    currentStateId: null,
+    currentStateId,
     steward,
     instanceData: {
       phases,
@@ -199,37 +213,28 @@ const seed = (options: Parameters<typeof profile>[0]) => {
   query.decisionProfile = profile(options);
 };
 
-const overview = (
-  isOpen = false,
-  aboutSlot: ReactNode = null,
-  phases: ProcessAdminPhase[] = [],
-) => (
+const overview = (isOpen = false, aboutSlot: ReactNode = null) => (
   <NextIntlClientProvider locale="en" messages={en}>
-    <ProcessAdminOverview
-      slug={SLUG}
-      phases={phases}
-      isOpen={isOpen}
-      aboutSlot={aboutSlot}
-    />
+    <ProcessAdminOverview slug={SLUG} isOpen={isOpen} aboutSlot={aboutSlot} />
   </NextIntlClientProvider>
 );
 
-const renderOverview = (
-  isOpen = false,
-  aboutSlot: ReactNode = null,
-  phases: ProcessAdminPhase[] = [],
-) => render(overview(isOpen, aboutSlot, phases));
+const renderOverview = (isOpen = false, aboutSlot: ReactNode = null) =>
+  render(overview(isOpen, aboutSlot));
 
 const succeedSave = (saved: unknown) =>
   act(() => updateInstance.succeed(saved));
 const failSave = () => act(() => updateInstance.fail());
 
-const phase: ProcessAdminPhase = {
-  id: 'submit',
-  isCurrent: false,
-  sortOrder: 0,
+const phase = {
+  phaseId: 'submit',
   name: 'Submit',
   startDate: '2026-01-01T00:00:00.000Z',
+};
+const votePhase = {
+  phaseId: 'vote',
+  name: 'Vote',
+  startDate: '2026-02-01T00:00:00.000Z',
 };
 
 afterEach(() => {
@@ -296,16 +301,33 @@ describe('ProcessAdminOverview', () => {
   });
 
   it('renders the phase timeline when the process has phases', () => {
-    seed({});
-    renderOverview(true, null, [phase]);
+    seed({ phases: [phase, votePhase], currentStateId: 'vote' });
+    renderOverview(true);
 
-    expect(screen.getByTestId('phase-timeline').dataset.started).toBe('true');
+    const timeline = screen.getByTestId('phase-timeline');
+    expect(timeline.dataset.started).toBe('true');
+    expect(timeline.dataset.current).toBe('vote');
     expect(screen.queryByText('No phases yet')).toBeNull();
   });
 
+  it('updates the rail when a refetch renames a phase or advances the current one', () => {
+    seed({ phases: [phase, votePhase], currentStateId: 'submit' });
+    const { rerender } = renderOverview(true);
+
+    seed({
+      phases: [{ ...phase, name: 'Ideas' }, votePhase],
+      currentStateId: 'vote',
+    });
+    rerender(overview(true));
+
+    const timeline = screen.getByTestId('phase-timeline');
+    expect(timeline.dataset.names).toBe('Ideas,Vote');
+    expect(timeline.dataset.current).toBe('vote');
+  });
+
   it('links to the proposals once the process is open', () => {
-    seed({});
-    renderOverview(true, null, [phase]);
+    seed({ phases: [phase] });
+    renderOverview(true);
 
     expect(
       screen
@@ -315,8 +337,8 @@ describe('ProcessAdminOverview', () => {
   });
 
   it('keeps the timeline and the proposals link closed until the process is open', () => {
-    seed({});
-    renderOverview(false, null, [phase]);
+    seed({ phases: [phase] });
+    renderOverview(false);
 
     expect(screen.queryByRole('link', { name: 'Browse proposals' })).toBeNull();
     expect(screen.getByTestId('phase-timeline').dataset.started).toBe('false');

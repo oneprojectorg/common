@@ -3,8 +3,8 @@ import type { InstancePhaseData } from '@op/api/encoders';
 import type { ProcessAdminPhase } from './types';
 
 /**
- * Maps the instance's stored phases to the manage shape until `listPhases`
- * serves rows. The stored slug stands in for the row uuid, so this is the one
+ * Maps the instance's stored phases to the manage shape until the screens read
+ * `getInstance`'s phase rows. The stored slug stands in for the row uuid, so this is the one
  * place a slug reaches the manage surface; the wiring milestone deletes it.
  */
 export function toProcessAdminPhases({

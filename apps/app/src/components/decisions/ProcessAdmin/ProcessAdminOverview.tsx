@@ -43,16 +43,12 @@ import {
   STATUS_BADGE_VARIANT,
   getProcessAdminStatus,
 } from './processAdminStatus';
+import { toProcessAdminPhases } from './toProcessAdminPhases';
 import { toTimelinePhases } from './toTimelinePhases';
 import type { ProcessAdminPhase } from './types';
 
 interface ProcessAdminOverviewProps {
   slug: string;
-  /**
-   * The phases the rail shows, resolved by the page: the instance's stored
-   * phases today, a fixture behind `?fixture=` in development.
-   */
-  phases: ProcessAdminPhase[];
   /**
    * Whether participants can act on the process (`isProcessOpen`). Computed on
    * the server, because the check reads the clock and would otherwise differ
@@ -70,7 +66,6 @@ interface ProcessAdminOverviewProps {
 /** Read-only admin home for one process, at /decisions/[slug]/manage. */
 export function ProcessAdminOverview({
   slug,
-  phases,
   isOpen,
   aboutSlot,
 }: ProcessAdminOverviewProps) {
@@ -98,7 +93,6 @@ export function ProcessAdminOverview({
       <Suspense fallback={<ProcessAdminOverviewSkeleton />}>
         <ProcessAdminOverviewSuspense
           slug={slug}
-          phases={phases}
           isOpen={isOpen}
           aboutSlot={aboutSlot}
         />
@@ -109,7 +103,6 @@ export function ProcessAdminOverview({
 
 function ProcessAdminOverviewSuspense({
   slug,
-  phases,
   isOpen,
   aboutSlot,
 }: ProcessAdminOverviewProps) {
@@ -140,7 +133,10 @@ function ProcessAdminOverviewSuspense({
             <ProcessAdminPhaseRail
               slug={slug}
               instanceId={instance.id}
-              phases={phases}
+              phases={toProcessAdminPhases({
+                phases: instance.instanceData.phases,
+                currentStateId: instance.currentStateId,
+              })}
               isOpen={isOpen}
             />
             {instance.profileId ? (

@@ -1,9 +1,8 @@
 import type { InstancePhaseData, PhaseRules } from '@op/api/encoders';
 
 /**
- * One phase as the manage screens consume it. The shape a future
- * `decision.listPhases` encoder emits: the row uuid is the only key, and the
- * current-phase match is resolved by the server rather than keyed on a slug.
+ * One phase as the manage screens consume it, keyed by the row uuid that
+ * `getInstance` returns on each phase.
  */
 export interface ProcessAdminPhase {
   /** The `decision_process_phases` row uuid; the only identifier a screen or a mutation uses. */
