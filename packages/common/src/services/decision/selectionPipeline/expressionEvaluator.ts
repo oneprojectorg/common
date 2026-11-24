@@ -165,10 +165,6 @@ function evaluateLogical(
   throw new Error('Invalid logical expression');
 }
 
-/**
- * Evaluates the operands one time, then routes: numbers, or values of a
- * registered type.
- */
 function evaluateOperation(
   expr: ArithmeticExpression,
   context: ExpressionContext,
@@ -219,11 +215,8 @@ function evaluateArithmetic({
   }
 }
 
-/**
- * Null unless exactly one value type accepts every operand that is not null
- * and has the operation, and the operation gives a value at each step. A
- * missing operand is skipped.
- */
+// Null unless exactly one type accepts every present operand, not the first
+// match, and its operation gives a value at each step.
 function evaluateTypedValues({
   operator,
   operands,
