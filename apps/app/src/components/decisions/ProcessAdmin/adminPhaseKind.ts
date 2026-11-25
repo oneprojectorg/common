@@ -13,7 +13,7 @@ export type AdminPhaseKind =
   | 'Vote'
   | 'Results';
 
-export function getPhaseKind(phase: DecisionPhase): AdminPhaseKind {
+export function getAdminPhaseKind(phase: DecisionPhase): AdminPhaseKind {
   if (isReviewPhase(phase)) {
     return 'Review';
   }
