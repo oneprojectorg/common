@@ -144,13 +144,13 @@ const PeriodHeader = ({
         <TabsList
           variant="line"
           aria-label={t('periodLabel')}
-          className="w-full group-data-horizontal/tabs:h-auto sm:w-fit"
+          className="max-sm:w-full max-sm:group-data-horizontal/tabs:h-auto"
         >
           {DASHBOARD_PERIODS.map((option) => (
             <TabsTrigger
               key={option}
               value={option}
-              className="min-w-0 whitespace-normal max-sm:px-2 max-sm:text-sm"
+              className="max-sm:min-w-0 max-sm:px-2 max-sm:text-sm max-sm:whitespace-normal"
             >
               {periodLabels[option]}
             </TabsTrigger>
