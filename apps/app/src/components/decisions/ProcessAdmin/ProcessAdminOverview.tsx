@@ -80,7 +80,7 @@ export function ProcessAdminOverview({
         default: () => (
           <div className="flex min-h-dvh flex-col bg-background">
             <ProcessAdminTopBar slug={slug} />
-            <ProcessAdminLoadError />
+            <ProcessAdminLoadError subject="overview" />
           </div>
         ),
       }}

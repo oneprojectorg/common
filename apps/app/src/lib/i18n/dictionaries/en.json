@@ -2074,6 +2074,7 @@
       "editPhases": "Edit phases",
       "phasePageTitle": "{phaseName} · {decisionName}",
       "phaseNotFound": "This phase no longer exists",
+      "phaseLoadError": "Couldn't load this phase",
       "setupAction": "Set up",
       "setupPhaseLabel": "Set up {phaseName}",
       "setupBlurbCollect": "People send in proposals",

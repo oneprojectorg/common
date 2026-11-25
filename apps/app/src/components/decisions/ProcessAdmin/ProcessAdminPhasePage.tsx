@@ -2,13 +2,15 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { formatDateRange } from '@/utils/formatting';
+import { isolateBidi } from '@/utils/isolateBidi';
 import { trpc } from '@op/api/client';
+import { APP_NAME } from '@op/core';
 import { Card } from '@op/sense/Card';
 import { Empty, EmptyHeader, EmptyTitle } from '@op/sense/Empty';
 import { Header1 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
 import { useLocale } from 'next-intl';
-import { Suspense, type ReactNode } from 'react';
+import { Suspense, type ReactNode, useEffect } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -29,7 +31,7 @@ export function ProcessAdminPhasePage({
       fallbacks={{
         default: () => (
           <PhasePageFrame slug={slug}>
-            <ProcessAdminLoadError />
+            <ProcessAdminLoadError subject="phase" />
           </PhasePageFrame>
         ),
       }}
@@ -74,30 +76,44 @@ function ProcessAdminPhasePageSuspense({
     (candidate) => candidate.slug === phaseSlug,
   );
 
-  if (!phase) {
-    return (
-      <PhasePageFrame slug={slug}>
-        <Empty className="border-0">
+  const phaseName = phase?.name ?? '';
+  const decisionName = decisionProfile.name;
+
+  useEffect(() => {
+    const title = t('phasePageTitle', {
+      phaseName: isolateBidi(phaseName),
+      decisionName: isolateBidi(decisionName),
+    });
+    document.title = `${title} | ${APP_NAME}`;
+  }, [t, phaseName, decisionName]);
+
+  const dates = phase
+    ? formatDateRange(phase.startDate, phase.endDate, locale)
+    : null;
+
+  return (
+    <PhasePageFrame slug={slug}>
+      <p role="status" className="sr-only">
+        {phase ? null : t('phaseNotFound')}
+      </p>
+      {phase ? (
+        <>
+          <PhaseTitle>
+            <Header1>{phase.name}</Header1>
+            {dates ? <p className="text-muted-foreground">{dates}</p> : null}
+          </PhaseTitle>
+          <PhaseColumns>
+            <Card className="min-w-0 flex-1 shadow-none" />
+            <PhaseSettingsColumn />
+          </PhaseColumns>
+        </>
+      ) : (
+        <Empty className="border-0" aria-hidden>
           <EmptyHeader>
             <EmptyTitle>{t('phaseNotFound')}</EmptyTitle>
           </EmptyHeader>
         </Empty>
-      </PhasePageFrame>
-    );
-  }
-
-  const dates = formatDateRange(phase.startDate, phase.endDate, locale);
-
-  return (
-    <PhasePageFrame slug={slug}>
-      <PhaseTitle>
-        <Header1>{phase.name}</Header1>
-        {dates ? <p className="text-muted-foreground">{dates}</p> : null}
-      </PhaseTitle>
-      <PhaseColumns>
-        <Card className="min-w-0 flex-1 shadow-none" />
-        <PhaseSettingsColumn />
-      </PhaseColumns>
+      )}
     </PhasePageFrame>
   );
 }

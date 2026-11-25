@@ -2074,6 +2074,7 @@
       "editPhases": "تعديل المراحل",
       "phasePageTitle": "{phaseName} · {decisionName}",
       "phaseNotFound": "لم تعد هذه المرحلة موجودة",
+      "phaseLoadError": "تعذر تحميل هذه المرحلة",
       "setupAction": "إعداد",
       "setupPhaseLabel": "إعداد {phaseName}",
       "setupBlurbCollect": "يرسل الأشخاص مقترحاتهم",

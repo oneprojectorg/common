@@ -2074,6 +2074,7 @@
       "editPhases": "Wax ka bedel wejiyada",
       "phasePageTitle": "{phaseName} · {decisionName}",
       "phaseNotFound": "Wejigan hadda ma jiro",
+      "phaseLoadError": "Lama soo dejin karin wejigan",
       "setupAction": "Diyaari",
       "setupPhaseLabel": "Diyaari {phaseName}",
       "setupBlurbCollect": "Dadku waxay soo diraan soo jeedinno",

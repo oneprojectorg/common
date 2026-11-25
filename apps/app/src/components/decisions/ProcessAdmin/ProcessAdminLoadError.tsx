@@ -11,7 +11,11 @@ import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-export function ProcessAdminLoadError() {
+export function ProcessAdminLoadError({
+  subject,
+}: {
+  subject: 'overview' | 'phase';
+}) {
   const t = useTranslations('decisions');
 
   return (
@@ -20,7 +24,11 @@ export function ProcessAdminLoadError() {
         <EmptyMedia variant="icon">
           <LuTriangleAlert className="size-6" aria-hidden />
         </EmptyMedia>
-        <EmptyTitle>{t('overviewLoadError')}</EmptyTitle>
+        <EmptyTitle>
+          {subject === 'phase'
+            ? t('processAdmin.phaseLoadError')
+            : t('overviewLoadError')}
+        </EmptyTitle>
         <EmptyDescription>{t('refreshPageHint')}</EmptyDescription>
       </EmptyHeader>
     </Empty>

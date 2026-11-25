@@ -1,3 +1,4 @@
+import { isolateBidi } from '@/utils/isolateBidi';
 import {
   HydrationBoundary,
   createServerUtils,
@@ -13,19 +14,19 @@ import { ProcessAdminPhasePage } from '@/components/decisions/ProcessAdmin/Proce
 import { loadProcessAdmin } from '../../../loadProcessAdmin';
 
 interface ManagePhasePageProps {
-  params: Promise<{ slug: string; phaseId: string; locale: string }>;
+  params: Promise<{ slug: string; phaseSlug: string; locale: string }>;
 }
 
 const loadPhase = async ({
   slug,
-  phaseId,
+  phaseSlug,
 }: {
   slug: string;
-  phaseId: string;
+  phaseSlug: string;
 }) => {
   const { decisionProfile } = await loadProcessAdmin(slug);
   const phase = decisionProfile.processInstance.phases.find(
-    (candidate) => candidate.slug === phaseId,
+    (candidate) => candidate.slug === phaseSlug,
   );
 
   if (!phase) {
@@ -38,23 +39,23 @@ const loadPhase = async ({
 export async function generateMetadata({
   params,
 }: ManagePhasePageProps): Promise<Metadata> {
-  const { slug, phaseId, locale } = await params;
+  const { slug, phaseSlug, locale } = await params;
   const [{ decisionProfile, phase }, t] = await Promise.all([
-    loadPhase({ slug, phaseId }),
+    loadPhase({ slug, phaseSlug }),
     getTranslations({ locale, namespace: 'decisions.processAdmin' }),
   ]);
 
   return {
     title: t('phasePageTitle', {
-      phaseName: phase.name ?? '',
-      decisionName: decisionProfile.name,
+      phaseName: isolateBidi(phase.name ?? ''),
+      decisionName: isolateBidi(decisionProfile.name),
     }),
   };
 }
 
 const ManagePhasePage = async ({ params }: ManagePhasePageProps) => {
-  const { slug, phaseId } = await params;
-  const { decisionProfile } = await loadPhase({ slug, phaseId });
+  const { slug, phaseSlug } = await params;
+  const { decisionProfile } = await loadPhase({ slug, phaseSlug });
 
   const { utils, queryClient } = await createServerUtils();
   queryClient.setQueryData(
@@ -64,7 +65,7 @@ const ManagePhasePage = async ({ params }: ManagePhasePageProps) => {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <ProcessAdminPhasePage slug={slug} phaseSlug={phaseId} />
+      <ProcessAdminPhasePage slug={slug} phaseSlug={phaseSlug} />
     </HydrationBoundary>
   );
 };

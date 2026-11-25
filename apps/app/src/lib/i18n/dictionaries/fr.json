@@ -2074,6 +2074,7 @@
       "editPhases": "Modifier les phases",
       "phasePageTitle": "{phaseName} · {decisionName}",
       "phaseNotFound": "Cette phase n’existe plus",
+      "phaseLoadError": "Impossible de charger cette phase",
       "setupAction": "Configurer",
       "setupPhaseLabel": "Configurer {phaseName}",
       "setupBlurbCollect": "Les participants envoient des propositions",
