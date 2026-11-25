@@ -480,3 +480,15 @@ export {
   PERSONAL_DATA_EXPORT_FILE_LIFETIME_MS,
   PERSONAL_DATA_EXPORT_MAX_RUN_MS,
 } from './services/personalDataExport/constants';
+export {
+  DASHBOARD_PERIODS,
+  MIN_SURVEY_RESPONSES,
+} from './services/platform/dashboard/constants';
+export {
+  dashboardMetricsSchema,
+  dashboardPeriodSchema,
+  type DashboardMetric,
+  type DashboardMetrics,
+  type DashboardPeriod,
+  type DashboardSurveyResult,
+} from './services/platform/dashboard/schemas';
