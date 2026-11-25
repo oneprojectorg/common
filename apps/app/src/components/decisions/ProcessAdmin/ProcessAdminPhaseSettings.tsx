@@ -45,15 +45,15 @@ export function PhaseWindowCard({
           <span>
             {previousPhase.endDate
               ? t.rich('previousPhaseEnds', {
-                  phaseName: previousPhase.name ?? '',
+                  phaseName: previousPhase.name ?? previousPhase.phaseId,
                   date: formatDate(previousPhase.endDate, locale, {
                     month: 'short',
                     day: 'numeric',
                   }),
                   name: (chunks) => <bdi>{chunks}</bdi>,
                 })
-              : t.rich('previousPhaseNoDates', {
-                  phaseName: previousPhase.name ?? '',
+              : t.rich('previousPhaseNoEndDate', {
+                  phaseName: previousPhase.name ?? previousPhase.phaseId,
                   name: (chunks) => <bdi>{chunks}</bdi>,
                 })}
           </span>

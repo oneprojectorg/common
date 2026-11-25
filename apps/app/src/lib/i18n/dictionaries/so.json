@@ -2116,8 +2116,8 @@
       "phaseWindowResults": "Goorta natiijooyinka la wadaago",
       "phaseDatesNotSet": "Weli taariikho ma jiraan",
       "phaseComingSoon": "Dhowaan",
-      "previousPhaseEnds": "“<name>{phaseName}</name>” wuxuu dhammaanayaa {date}.",
-      "previousPhaseNoDates": "“<name>{phaseName}</name>” weli taariikho ma leh."
+      "previousPhaseEnds": "Dhammaadka “<name>{phaseName}</name>”: {date}.",
+      "previousPhaseNoEndDate": "“<name>{phaseName}</name>” weli ma laha taariikh dhammaad."
     }
   },
   "loadingProgress": "Waa la soo rarayaa...",

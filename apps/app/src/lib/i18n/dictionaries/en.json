@@ -2076,9 +2076,9 @@
       "phaseNotFound": "This phase no longer exists",
       "phaseLoadError": "Couldn't load this phase",
       "phaseSaved": "Phase saved.",
-      "setupPhaseLabel": "Set up {phaseName}",
-      "setupAction": "Set up",
       "phaseNameLabel": "Phase name",
+      "setupAction": "Set up",
+      "setupPhaseLabel": "Set up {phaseName}",
       "setupBlurbCollect": "People send in proposals",
       "setupBlurbReview": "Reviewers read what came in",
       "setupBlurbDevelop": "Shortlisted proposals are developed further",
@@ -2116,8 +2116,8 @@
       "phaseWindowResults": "When results are shared",
       "phaseDatesNotSet": "No dates yet",
       "phaseComingSoon": "Coming soon",
-      "previousPhaseEnds": "“<name>{phaseName}</name>” ends {date}.",
-      "previousPhaseNoDates": "“<name>{phaseName}</name>” has no dates yet."
+      "previousPhaseEnds": "End of “<name>{phaseName}</name>”: {date}.",
+      "previousPhaseNoEndDate": "“<name>{phaseName}</name>” has no end date yet."
     }
   },
   "loadingProgress": "Loading...",

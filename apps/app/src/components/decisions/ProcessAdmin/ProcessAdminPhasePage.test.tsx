@@ -113,7 +113,7 @@ describe('ProcessAdminPhasePage', () => {
       screen.getByText(
         (_, element) =>
           element?.tagName === 'SPAN' &&
-          element.textContent === '“Submit” ends Feb 27.',
+          element.textContent === 'End of “Submit”: Feb 27.',
       ),
     ).toBeTruthy();
   });

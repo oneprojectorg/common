@@ -2117,7 +2117,7 @@
       "phaseDatesNotSet": "Még nincsenek dátumok",
       "phaseComingSoon": "Hamarosan",
       "previousPhaseEnds": "„<name>{phaseName}</name>” vége: {date}.",
-      "previousPhaseNoDates": "„<name>{phaseName}</name>”: még nincsenek dátumok."
+      "previousPhaseNoEndDate": "„<name>{phaseName}</name>”: még nincs záródátum."
     }
   },
   "loadingProgress": "Betöltés...",

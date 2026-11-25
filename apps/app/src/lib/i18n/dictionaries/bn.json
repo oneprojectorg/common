@@ -2116,8 +2116,8 @@
       "phaseWindowResults": "ফলাফল কখন জানানো হবে",
       "phaseDatesNotSet": "এখনও কোনো তারিখ নেই",
       "phaseComingSoon": "শীঘ্রই আসছে",
-      "previousPhaseEnds": "“<name>{phaseName}</name>” শেষ হয় {date}-এ।",
-      "previousPhaseNoDates": "“<name>{phaseName}</name>”-এর এখনও কোনো তারিখ নেই।"
+      "previousPhaseEnds": "“<name>{phaseName}</name>”-এর শেষ: {date}।",
+      "previousPhaseNoEndDate": "“<name>{phaseName}</name>”-এর এখনও কোনো শেষের তারিখ নেই।"
     }
   },
   "loadingProgress": "লোড হচ্ছে...",

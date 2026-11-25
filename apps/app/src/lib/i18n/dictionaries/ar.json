@@ -2116,8 +2116,8 @@
       "phaseWindowResults": "موعد مشاركة النتائج",
       "phaseDatesNotSet": "لا توجد تواريخ بعد",
       "phaseComingSoon": "قريبًا",
-      "previousPhaseEnds": "تنتهي «<name>{phaseName}</name>» في {date}.",
-      "previousPhaseNoDates": "لا توجد تواريخ لـ«<name>{phaseName}</name>» بعد."
+      "previousPhaseEnds": "نهاية «<name>{phaseName}</name>»: {date}.",
+      "previousPhaseNoEndDate": "لا يوجد تاريخ انتهاء لـ«<name>{phaseName}</name>» بعد."
     }
   },
   "loadingProgress": "جارٍ التحميل...",

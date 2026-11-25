@@ -2116,8 +2116,8 @@
       "phaseWindowResults": "Date de publication des résultats",
       "phaseDatesNotSet": "Pas encore de dates",
       "phaseComingSoon": "Bientôt disponible",
-      "previousPhaseEnds": "« <name>{phaseName}</name> » se termine le {date}.",
-      "previousPhaseNoDates": "« <name>{phaseName}</name> » n’a pas encore de dates."
+      "previousPhaseEnds": "Fin de « <name>{phaseName}</name> » : {date}.",
+      "previousPhaseNoEndDate": "« <name>{phaseName}</name> » n’a pas encore de date de fin."
     }
   },
   "loadingProgress": "En train de charger…",
