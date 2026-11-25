@@ -1185,7 +1185,7 @@ export const relations = defineRelations(schema, (r) => ({
       optional: false,
     }),
     user: r.one.authUsers({
-      from: r.notifications.userId,
+      from: r.notifications.authUserId,
       to: r.authUsers.id,
       optional: false,
     }),

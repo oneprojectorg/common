@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "dc3ac4e9-dc33-4a9a-88fb-7790b7a31f5a",
+  "id": "570e415a-3411-4c3b-a09e-fa2cfc46391a",
   "prevIds": [
     "147d002c-4aec-4154-ae1c-4ef509578617"
   ],
@@ -4426,7 +4426,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "user_id",
+      "name": "auth_user_id",
       "entityType": "columns",
       "schema": "public",
       "table": "notifications"
@@ -8970,7 +8970,7 @@
         }
       ],
       "isUnique": false,
-      "where": null,
+      "where": "organization_id IS NOT NULL",
       "with": "",
       "method": "btree",
       "concurrently": false,
@@ -9005,7 +9005,7 @@
         }
       ],
       "isUnique": false,
-      "where": null,
+      "where": "process_instance_id IS NOT NULL",
       "with": "",
       "method": "btree",
       "concurrently": false,
@@ -9040,7 +9040,7 @@
         }
       ],
       "isUnique": false,
-      "where": null,
+      "where": "proposal_id IS NOT NULL",
       "with": "",
       "method": "btree",
       "concurrently": false,
@@ -9075,7 +9075,7 @@
         }
       ],
       "isUnique": false,
-      "where": null,
+      "where": "post_id IS NOT NULL",
       "with": "",
       "method": "btree",
       "concurrently": false,
@@ -9110,7 +9110,7 @@
         }
       ],
       "isUnique": false,
-      "where": null,
+      "where": "actor_profile_id IS NOT NULL",
       "with": "",
       "method": "btree",
       "concurrently": false,
@@ -11006,7 +11006,7 @@
           "opclass": null
         },
         {
-          "value": "user_id",
+          "value": "auth_user_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -11018,7 +11018,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "notifications_activity_id_user_id_idx",
+      "name": "notifications_activity_id_auth_user_id_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "notifications"
@@ -11027,7 +11027,7 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "user_id",
+          "value": "auth_user_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -11053,7 +11053,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "notifications_user_id_created_at_id_idx",
+      "name": "notifications_auth_user_id_created_at_id_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "notifications"
@@ -11062,10 +11062,24 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "user_id",
+          "value": "auth_user_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "created_at",
+          "isExpression": false,
+          "asc": false,
+          "nullsFirst": true,
+          "opclass": null
+        },
+        {
+          "value": "id",
+          "isExpression": false,
+          "asc": false,
+          "nullsFirst": true,
           "opclass": null
         }
       ],
@@ -11074,7 +11088,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "notifications_user_id_unread_idx",
+      "name": "notifications_auth_user_id_unread_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "notifications"
@@ -11083,10 +11097,24 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "user_id",
+          "value": "auth_user_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "created_at",
+          "isExpression": false,
+          "asc": false,
+          "nullsFirst": true,
+          "opclass": null
+        },
+        {
+          "value": "id",
+          "isExpression": false,
+          "asc": false,
+          "nullsFirst": true,
           "opclass": null
         }
       ],
@@ -11095,7 +11123,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "notifications_user_id_needs_action_idx",
+      "name": "notifications_auth_user_id_needs_action_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "notifications"
@@ -15389,7 +15417,7 @@
     {
       "nameExplicit": false,
       "columns": [
-        "user_id"
+        "auth_user_id"
       ],
       "schemaTo": "auth",
       "tableTo": "users",
@@ -15398,7 +15426,7 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
-      "name": "notifications_user_id_users_id_fkey",
+      "name": "notifications_auth_user_id_users_id_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "notifications"

@@ -13,6 +13,9 @@ import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { activities } from './activities.sql';
 import { authUsers } from './authUsers.sql';
 
+export const notificationCategories = ['proposalComment'] as const;
+export type NotificationCategory = (typeof notificationCategories)[number];
+
 export const notifications = pgTable(
   'notifications',
   {
@@ -22,12 +25,12 @@ export const notifications = pgTable(
       .references(() => activities.id, {
         onDelete: 'cascade',
       }),
-    userId: uuid()
+    authUserId: uuid()
       .notNull()
       .references(() => authUsers.id, {
         onDelete: 'cascade',
       }),
-    category: varchar({ length: 255 }).notNull(),
+    category: varchar({ length: 255 }).$type<NotificationCategory>().notNull(),
     actionRequired: boolean().default(false).notNull(),
     seenAt: timestamp({ withTimezone: true, mode: 'string' }),
     readAt: timestamp({ withTimezone: true, mode: 'string' }),
@@ -35,20 +38,28 @@ export const notifications = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    uniqueIndex('notifications_activity_id_user_id_idx').on(
+    uniqueIndex('notifications_activity_id_auth_user_id_idx').on(
       table.activityId,
-      table.userId,
+      table.authUserId,
     ),
-    index('notifications_user_id_created_at_id_idx').on(
-      table.userId,
+    index('notifications_auth_user_id_created_at_id_idx').on(
+      table.authUserId,
       table.createdAt.desc().nullsFirst(),
       table.id.desc().nullsFirst(),
     ),
-    index('notifications_user_id_unread_idx')
-      .on(table.userId)
+    index('notifications_auth_user_id_unread_idx')
+      .on(
+        table.authUserId,
+        table.createdAt.desc().nullsFirst(),
+        table.id.desc().nullsFirst(),
+      )
       .where(sql`read_at IS NULL`),
-    index('notifications_user_id_needs_action_idx')
-      .on(table.userId)
+    index('notifications_auth_user_id_needs_action_idx')
+      .on(
+        table.authUserId,
+        table.createdAt.desc().nullsFirst(),
+        table.id.desc().nullsFirst(),
+      )
       .where(sql`action_required AND read_at IS NULL`),
   ],
 );

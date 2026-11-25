@@ -46,7 +46,7 @@ We will store notifications in four tables.
   `(scope, created_at desc, id desc)`; shared feeds read this table in
   database order (no JS sorts).
 - `notifications` — the per-recipient fan-out, unique on
-  `(activity_id, user_id)`, with `category`, `action_required` (stamped
+  `(activity_id, auth_user_id)`, with `category`, `action_required` (stamped
   from the event name), and `seen_at` / `read_at` state. Partial indexes
   serve the unread badge and the needs-action tab.
 - `notification_deliveries` — an append-only log of per-channel
@@ -76,8 +76,8 @@ erDiagram
   }
   notifications {
     uuid id PK
-    uuid activity_id FK "unique with user_id"
-    uuid user_id FK
+    uuid activity_id FK "unique with auth_user_id"
+    uuid auth_user_id FK
     text category
     bool action_required
     timestamptz seen_at
@@ -137,7 +137,7 @@ sequenceDiagram
   Relay->>PG: mark sent_at
   IG->>FN: invoke (retries on failure)
   FN->>PG: insert activity (unique outbox_id)
-  FN->>PG: fan out notifications (unique activity_id, user_id)
+  FN->>PG: fan out notifications (unique activity_id, auth_user_id)
   FN->>PG: read notification preferences
   FN->>RS: send batch (idempotency keys)
   FN->>PG: append notification_deliveries
@@ -163,7 +163,7 @@ cascade from their parents.
 
 - A rollback emits nothing, and a crash between any two steps replays
   safely on the database side: the `outbox_id` and
-  `(activity_id, user_id)` uniques absorb the duplicate rows. Email
+  `(activity_id, auth_user_id)` uniques absorb the duplicate rows. Email
   dedup is narrower: the deliveries check and the Resend idempotency
   key cover a replay, but a crash after the send and before the
   deliveries insert, recovered after Resend's 24-hour key window, sends

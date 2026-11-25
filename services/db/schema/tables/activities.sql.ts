@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   index,
   jsonb,
@@ -41,31 +42,41 @@ export const activities = pgTable(
   (table) => [
     ...serviceRolePolicies,
     uniqueIndex('activities_outbox_id_idx').on(table.outboxId),
-    index('activities_organization_id_created_at_id_idx').on(
-      table.organizationId,
-      table.createdAt.desc().nullsFirst(),
-      table.id.desc().nullsFirst(),
-    ),
-    index('activities_process_instance_id_created_at_id_idx').on(
-      table.processInstanceId,
-      table.createdAt.desc().nullsFirst(),
-      table.id.desc().nullsFirst(),
-    ),
-    index('activities_proposal_id_created_at_id_idx').on(
-      table.proposalId,
-      table.createdAt.desc().nullsFirst(),
-      table.id.desc().nullsFirst(),
-    ),
-    index('activities_post_id_created_at_id_idx').on(
-      table.postId,
-      table.createdAt.desc().nullsFirst(),
-      table.id.desc().nullsFirst(),
-    ),
-    index('activities_actor_profile_id_created_at_id_idx').on(
-      table.actorProfileId,
-      table.createdAt.desc().nullsFirst(),
-      table.id.desc().nullsFirst(),
-    ),
+    index('activities_organization_id_created_at_id_idx')
+      .on(
+        table.organizationId,
+        table.createdAt.desc().nullsFirst(),
+        table.id.desc().nullsFirst(),
+      )
+      .where(sql`organization_id IS NOT NULL`),
+    index('activities_process_instance_id_created_at_id_idx')
+      .on(
+        table.processInstanceId,
+        table.createdAt.desc().nullsFirst(),
+        table.id.desc().nullsFirst(),
+      )
+      .where(sql`process_instance_id IS NOT NULL`),
+    index('activities_proposal_id_created_at_id_idx')
+      .on(
+        table.proposalId,
+        table.createdAt.desc().nullsFirst(),
+        table.id.desc().nullsFirst(),
+      )
+      .where(sql`proposal_id IS NOT NULL`),
+    index('activities_post_id_created_at_id_idx')
+      .on(
+        table.postId,
+        table.createdAt.desc().nullsFirst(),
+        table.id.desc().nullsFirst(),
+      )
+      .where(sql`post_id IS NOT NULL`),
+    index('activities_actor_profile_id_created_at_id_idx')
+      .on(
+        table.actorProfileId,
+        table.createdAt.desc().nullsFirst(),
+        table.id.desc().nullsFirst(),
+      )
+      .where(sql`actor_profile_id IS NOT NULL`),
   ],
 );
 
