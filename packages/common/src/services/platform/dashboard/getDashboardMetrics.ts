@@ -1,4 +1,4 @@
-import { cache } from '@op/cache';
+import { cache, invalidate } from '@op/cache';
 import { db } from '@op/db/client';
 
 import {
@@ -11,7 +11,7 @@ import { getMoneyTotals } from './getMoneyTotals';
 import { getPeopleCounts } from './getPeopleCounts';
 import { getProcessCounts } from './getProcessCounts';
 import { getProposalCounts } from './getProposalCounts';
-import type { DashboardMetrics } from './schemas';
+import { type DashboardMetrics, dashboardMetricsSchema } from './schemas';
 import { resolveDashboardMetrics, resolvePeriodWindows } from './utils';
 
 /**
@@ -24,12 +24,23 @@ export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
     return getLiveDashboardMetrics();
   }
 
-  return cache<DashboardMetrics>({
+  const params = ['dashboardMetrics', DASHBOARD_METRICS_CACHE_VERSION];
+  const cached = await cache<unknown>({
     type: 'platform',
-    params: ['dashboardMetrics', DASHBOARD_METRICS_CACHE_VERSION],
+    params,
     fetch: getLiveDashboardMetrics,
     options: { ttl: DASHBOARD_METRICS_CACHE_TTL_MS },
   });
+
+  const parsed = dashboardMetricsSchema.safeParse(cached);
+  if (parsed.success) {
+    return parsed.data;
+  }
+
+  const metrics = await getLiveDashboardMetrics();
+  await invalidate({ type: 'platform', params, data: metrics });
+
+  return metrics;
 };
 
 const getLiveDashboardMetrics = async (): Promise<DashboardMetrics> => {
