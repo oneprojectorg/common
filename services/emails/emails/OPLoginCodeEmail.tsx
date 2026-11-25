@@ -1,20 +1,16 @@
-import { OP_EMAIL_HELP } from '@op/core';
-import { Section, Text } from 'react-email';
+import { Text } from 'react-email';
 
 import EmailTemplate from '../components/EmailTemplate';
-import { Footnote } from '../components/Footnote';
 import { Header } from '../components/Header';
-import { InlineLink } from '../components/InlineLink';
+import { OtpCode } from '../components/OtpCode';
+import { OtpFootnote } from '../components/OtpFootnote';
 
 interface OPLoginCodeEmailProps {
   /** Preview only. GoTrue fills `{{ .Token }}` itself when this is absent. */
   token?: string;
 }
 
-/**
- * Source of `supabase/templates/magiclink.html`. The snapshot test keeps the
- * two in sync; `pnpm w:emails test -- -u` regenerates the HTML.
- */
+/** The `magiclink` auth email; also the source of `supabase/templates/magiclink.html` (see authCodeEmails.test.ts). */
 export const OPLoginCodeEmail = ({ token }: OPLoginCodeEmailProps = {}) => {
   return (
     <EmailTemplate previewText="Your Common login code">
@@ -24,17 +20,9 @@ export const OPLoginCodeEmail = ({ token }: OPLoginCodeEmailProps = {}) => {
         and we’ll get you signed in.
       </Text>
 
-      <Section className="mt-6 mb-6">
-        <Text className="login-code bg-primary-teal m-0 block rounded-lg px-4 py-3 text-center font-mono text-xl font-medium tracking-[0.25em] whitespace-nowrap text-white md:text-2xl">
-          {token ?? '{{ .Token }}'}
-        </Text>
-      </Section>
+      <OtpCode token={token} />
 
-      <Footnote>
-        This code will only be valid for the next 10 minutes. If you’re having
-        problems, send us an{' '}
-        <InlineLink href={`mailto:${OP_EMAIL_HELP}`}>email</InlineLink>.
-      </Footnote>
+      <OtpFootnote />
     </EmailTemplate>
   );
 };
