@@ -21,8 +21,8 @@ export const handleProposalCommentPosted = inngest.createFunction(
     const { postId, proposalId, authorProfileId } =
       proposalCommentPosted.schema.parse(event.data);
 
-    const outboxId = event.id;
-    if (!outboxId) {
+    const idempotencyKey = event.id;
+    if (!idempotencyKey) {
       logger.error('proposalComment/posted event has no id; skipping', {
         postId,
         proposalId,
@@ -32,7 +32,7 @@ export const handleProposalCommentPosted = inngest.createFunction(
 
     const recorded = await step.run('record-activity', async () =>
       recordProposalCommentActivity({
-        outboxId,
+        idempotencyKey,
         postId,
         proposalId,
         authorProfileId,

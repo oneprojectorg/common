@@ -12,7 +12,7 @@ import { eq } from 'drizzle-orm';
 const EXCERPT_LENGTH = 280;
 
 export interface RecordProposalCommentActivityInput {
-  outboxId: string;
+  idempotencyKey: string;
   postId: string;
   proposalId: string;
   authorProfileId: string;
@@ -30,7 +30,7 @@ export interface ProposalCommentActivityContext {
 }
 
 export const recordProposalCommentActivity = async ({
-  outboxId,
+  idempotencyKey,
   postId,
   proposalId,
   authorProfileId,
@@ -95,15 +95,16 @@ export const recordProposalCommentActivity = async ({
   const [inserted] = await db
     .insert(activities)
     .values({
-      outboxId,
-      eventName: Events.proposalCommentPosted.name,
-      actorProfileId: authorProfileId,
-      processInstanceId: proposal.processInstanceId,
-      proposalId,
-      postId,
+      idempotencyKey,
+      actorId: authorProfileId,
+      verb: Events.proposalCommentPosted.name,
+      objectType: 'post',
+      objectId: postId,
+      targetType: 'proposal',
+      targetId: proposalId,
       snapshot,
     })
-    .onConflictDoNothing({ target: activities.outboxId })
+    .onConflictDoNothing({ target: activities.idempotencyKey })
     .returning();
 
   const activity =
@@ -111,7 +112,7 @@ export const recordProposalCommentActivity = async ({
     (await db
       .select()
       .from(activities)
-      .where(eq(activities.outboxId, outboxId))
+      .where(eq(activities.idempotencyKey, idempotencyKey))
       .limit(1)
       .then((rows) => rows[0]));
 

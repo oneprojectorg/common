@@ -48,7 +48,9 @@ const seedProposalComment = async (
   }
 
   onFinished(async () => {
-    await db.delete(activities).where(eq(activities.outboxId, outboxRow.id));
+    await db
+      .delete(activities)
+      .where(eq(activities.idempotencyKey, outboxRow.id));
     await db.delete(eventOutbox).where(eq(eventOutbox.id, outboxRow.id));
   });
 
@@ -58,7 +60,7 @@ const seedProposalComment = async (
 };
 
 describe('recordProposalCommentActivity', () => {
-  it('records the activity with scopes and snapshot, idempotent on outboxId', async ({
+  it('records the activity with actor, object, target, and snapshot, idempotent on the key', async ({
     task,
     onTestFinished: onFinished,
   }) => {
@@ -68,11 +70,11 @@ describe('recordProposalCommentActivity', () => {
     );
 
     const first = await recordProposalCommentActivity({
-      outboxId: outboxRow.id,
+      idempotencyKey: outboxRow.id,
       ...payload,
     });
     const second = await recordProposalCommentActivity({
-      outboxId: outboxRow.id,
+      idempotencyKey: outboxRow.id,
       ...payload,
     });
 
@@ -81,11 +83,12 @@ describe('recordProposalCommentActivity', () => {
     expect(second!.activity.id).toBe(first!.activity.id);
 
     const { activity, context } = first!;
-    expect(activity.eventName).toBe(Events.proposalCommentPosted.name);
-    expect(activity.proposalId).toBe(proposal.id);
-    expect(activity.postId).toBe(post.id);
-    expect(activity.actorProfileId).toBe(payload.authorProfileId);
-    expect(activity.processInstanceId).toBe(proposal.processInstanceId);
+    expect(activity.verb).toBe(Events.proposalCommentPosted.name);
+    expect(activity.actorId).toBe(payload.authorProfileId);
+    expect(activity.objectType).toBe('post');
+    expect(activity.objectId).toBe(post.id);
+    expect(activity.targetType).toBe('proposal');
+    expect(activity.targetId).toBe(proposal.id);
     expect(activity.snapshot).toMatchObject({
       proposalTitle: 'Fan-out target',
       commentExcerpt: 'A comment worth notifying about',
@@ -96,7 +99,7 @@ describe('recordProposalCommentActivity', () => {
 
   it('returns null when the proposal is gone', async () => {
     const result = await recordProposalCommentActivity({
-      outboxId: randomUUID(),
+      idempotencyKey: randomUUID(),
       postId: randomUUID(),
       proposalId: randomUUID(),
       authorProfileId: randomUUID(),
@@ -116,7 +119,7 @@ describe('fanOutNotifications', () => {
       onFinished,
     );
     const recorded = await recordProposalCommentActivity({
-      outboxId: outboxRow.id,
+      idempotencyKey: outboxRow.id,
       ...payload,
     });
     const activityId = recorded!.activity.id;
@@ -157,7 +160,7 @@ describe('notification deliveries', () => {
       onFinished,
     );
     const recorded = await recordProposalCommentActivity({
-      outboxId: outboxRow.id,
+      idempotencyKey: outboxRow.id,
       ...payload,
     });
     const activityId = recorded!.activity.id;
