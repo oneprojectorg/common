@@ -2075,6 +2075,8 @@
       "phasePageTitle": "{phaseName} · {decisionName}",
       "phaseNotFound": "Ez a fázis már nem létezik",
       "phaseLoadError": "Nem sikerült betölteni ezt a fázist",
+      "phaseSaved": "Fázis mentve.",
+      "phaseNameLabel": "Fázis neve",
       "setupAction": "Beállítás",
       "setupPhaseLabel": "Beállítás: {phaseName}",
       "setupBlurbCollect": "Az emberek javaslatokat küldenek be",

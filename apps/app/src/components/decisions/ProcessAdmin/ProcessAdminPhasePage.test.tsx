@@ -1,19 +1,30 @@
 // @vitest-environment jsdom
 import type { DecisionPhase } from '@op/api/encoders';
 import { APP_NAME } from '@op/core';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import en from '../../../lib/i18n/dictionaries/en.json';
 import { ProcessAdminPhasePage } from './ProcessAdminPhasePage';
 
-const query: { phases: DecisionPhase[]; error: Error | null } = vi.hoisted(
-  () => ({ phases: [], error: null }),
-);
+const query: {
+  phases: DecisionPhase[];
+  status: string;
+  currentStateId: string | null;
+  mutate: (...args: unknown[]) => void;
+  error: Error | null;
+} = vi.hoisted(() => ({
+  phases: [],
+  status: 'draft',
+  currentStateId: null,
+  mutate: () => {},
+  error: null,
+}));
 
 vi.mock('@op/api/client', () => ({
   trpc: {
+    useUtils: () => ({}),
     decision: {
       getDecisionBySlug: {
         useSuspenseQuery: () => {
@@ -23,10 +34,17 @@ vi.mock('@op/api/client', () => ({
           return [
             {
               name: 'Community Fund',
-              processInstance: { phases: query.phases },
+              processInstance: {
+                phases: query.phases,
+                status: query.status,
+                currentStateId: query.currentStateId,
+              },
             },
           ];
         },
+      },
+      updatePhase: {
+        useMutation: () => ({ mutate: query.mutate, isPending: false }),
       },
     },
   },
@@ -64,6 +82,9 @@ const renderPage = (phaseSlug: string) => render(page(phaseSlug));
 
 afterEach(() => {
   cleanup();
+  query.status = 'draft';
+  query.currentStateId = null;
+  query.mutate = () => {};
   query.error = null;
   vi.restoreAllMocks();
 });
@@ -157,5 +178,61 @@ describe('ProcessAdminPhasePage', () => {
     expect(screen.getByText("Couldn't load this phase")).toBeTruthy();
     expect(screen.queryByText("Couldn't load the overview")).toBeNull();
     expect(screen.getByRole('link', { name: 'Back' })).toBeTruthy();
+  });
+
+  it('saves a renamed phase from the header', () => {
+    const mutate = vi.fn();
+    query.mutate = mutate;
+    query.phases = [review];
+    renderPage('a1b2c3d4');
+
+    const save = screen.getByRole('button', { name: 'Save' });
+    expect(save.hasAttribute('disabled')).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Review' }));
+    const field = screen.getByRole('textbox', { name: 'Phase name' });
+    fireEvent.change(field, { target: { value: 'Shortlisting' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+      'Shortlisting',
+    );
+    expect(save.hasAttribute('disabled')).toBe(false);
+    fireEvent.click(save);
+    expect(mutate).toHaveBeenCalledWith(
+      { phaseId: 'row-review', name: 'Shortlisting' },
+      expect.anything(),
+    );
+  });
+
+  it('locks the name of a phase the live process has left', () => {
+    query.status = 'published';
+    query.currentStateId = 'vote';
+    query.phases = [
+      review,
+      {
+        ...review,
+        id: 'row-vote',
+        slug: 'vote',
+        phaseId: 'vote',
+        name: 'Vote',
+      },
+    ];
+    renderPage('a1b2c3d4');
+
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+      'Review',
+    );
+    expect(screen.queryByRole('button', { name: 'Edit Review' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Update' })).toBeTruthy();
+  });
+
+  it('keeps the current phase of a live process editable', () => {
+    query.status = 'published';
+    query.currentStateId = 'review';
+    query.phases = [review];
+    renderPage('a1b2c3d4');
+
+    expect(screen.getByRole('button', { name: 'Edit Review' })).toBeTruthy();
   });
 });

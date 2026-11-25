@@ -2075,6 +2075,8 @@
       "phasePageTitle": "{phaseName} · {decisionName}",
       "phaseNotFound": "لم تعد هذه المرحلة موجودة",
       "phaseLoadError": "تعذر تحميل هذه المرحلة",
+      "phaseSaved": "تم حفظ المرحلة.",
+      "phaseNameLabel": "اسم المرحلة",
       "setupAction": "إعداد",
       "setupPhaseLabel": "إعداد {phaseName}",
       "setupBlurbCollect": "يرسل الأشخاص مقترحاتهم",

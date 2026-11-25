@@ -4,6 +4,7 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { isolateBidi } from '@/utils/isolateBidi';
 import { trpc } from '@op/api/client';
 import type { DecisionPhase } from '@op/api/encoders';
+import { MAX_PHASE_NAME_LENGTH } from '@op/common/client';
 import { APP_NAME } from '@op/core';
 import { Button } from '@op/sense/Button';
 import {
@@ -13,12 +14,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@op/sense/Card';
+import { EditableText } from '@op/sense/EditableText';
 import { Empty, EmptyHeader, EmptyTitle } from '@op/sense/Empty';
-import { Header1 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
-import { Suspense, type ReactNode, useEffect } from 'react';
+import { Suspense, type ReactNode, useEffect, useState } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -29,6 +30,7 @@ import { ProcessAdminLoadError } from './ProcessAdminLoadError';
 import { PhaseWindowCard } from './ProcessAdminPhaseSettings';
 import { getPhaseKind } from './phaseKind';
 import { getProcessAdminStatus } from './processAdminStatus';
+import { useSavePhase } from './useSavePhase';
 
 export function ProcessAdminPhasePage({
   slug,
@@ -82,13 +84,13 @@ function ProcessAdminPhasePageSuspense({
   phaseSlug: string;
 }) {
   const t = useTranslations('decisions.processAdmin');
-  const tShared = useTranslations();
   const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery({
     slug,
   });
-  const { phases, status } = decisionProfile.processInstance;
+  const { phases, status, currentStateId } = decisionProfile.processInstance;
   const index = phases.findIndex((candidate) => candidate.slug === phaseSlug);
   const phase = phases[index];
+  const isDraft = getProcessAdminStatus(status) === 'draft';
 
   const phaseName = phase?.name ?? '';
   const decisionName = decisionProfile.name;
@@ -102,51 +104,96 @@ function ProcessAdminPhasePageSuspense({
   }, [t, phaseName, decisionName]);
 
   return (
-    <PhasePageFrame
-      slug={slug}
-      action={
-        phase ? (
-          <Button disabled>
-            {getProcessAdminStatus(status) === 'draft'
-              ? tShared('Save')
-              : tShared('Update')}
-          </Button>
-        ) : undefined
-      }
-    >
+    <>
       <p role="status" className="sr-only">
         {phase ? null : t('phaseNotFound')}
       </p>
       {phase ? (
-        <PhaseEditor phase={phase} previousPhase={phases[index - 1]} />
+        <PhaseEditor
+          key={phase.id ?? phase.phaseId}
+          slug={slug}
+          phase={phase}
+          previousPhase={phases[index - 1]}
+          isDraft={isDraft}
+          isLocked={isPastPhase({ isDraft, currentStateId, phases, index })}
+        />
       ) : (
-        <Empty className="border-0" aria-hidden>
-          <EmptyHeader>
-            <EmptyTitle>{t('phaseNotFound')}</EmptyTitle>
-          </EmptyHeader>
-        </Empty>
+        <PhasePageFrame slug={slug}>
+          <Empty className="border-0" aria-hidden>
+            <EmptyHeader>
+              <EmptyTitle>{t('phaseNotFound')}</EmptyTitle>
+            </EmptyHeader>
+          </Empty>
+        </PhasePageFrame>
       )}
-    </PhasePageFrame>
+    </>
   );
 }
 
 function PhaseEditor({
+  slug,
   phase,
   previousPhase,
+  isDraft,
+  isLocked,
 }: {
+  slug: string;
   phase: DecisionPhase;
   previousPhase: DecisionPhase | undefined;
+  isDraft: boolean;
+  isLocked: boolean;
 }) {
   const t = useTranslations('decisions.processAdmin');
+  const tShared = useTranslations();
   const kind = getPhaseKind(phase);
+  const savePhase = useSavePhase(slug);
+  const [draftName, setDraftName] = useState<string | null>(null);
+  const savedName = phase.name ?? '';
+  const name = draftName ?? savedName;
+  const rowId = phase.id;
+  const canEdit = !isLocked && rowId !== null;
+  const isDirty = canEdit && name !== savedName;
+
+  const save = () => {
+    if (!rowId || !isDirty) {
+      return;
+    }
+    savePhase.mutate(
+      { phaseId: rowId, name },
+      { onSuccess: () => setDraftName(null) },
+    );
+  };
 
   return (
-    <>
+    <PhasePageFrame
+      slug={slug}
+      action={
+        <Button
+          disabled={!isDirty}
+          loading={savePhase.isPending}
+          onClick={save}
+        >
+          {isDraft ? tShared('Save') : tShared('Update')}
+        </Button>
+      }
+    >
       <PhaseTitle>
         <StatusBadge variant="inactive" icon={false}>
           {t(`phaseBadge${kind}`)}
         </StatusBadge>
-        <Header1>{phase.name}</Header1>
+        <EditableText
+          as="h1"
+          wrap
+          value={name}
+          label={t('phaseNameLabel')}
+          editHint={t('editTitleHint')}
+          doneLabel={tShared('Done')}
+          maxLength={MAX_PHASE_NAME_LENGTH}
+          disabled={!canEdit}
+          iconClassName="size-5"
+          className="font-serif text-display font-light"
+          onCommit={setDraftName}
+        />
       </PhaseTitle>
       <Tabs defaultValue="setup" className="flex flex-col gap-6">
         <TabsList variant="line">
@@ -172,7 +219,7 @@ function PhaseEditor({
           </PhaseSettingsColumn>
         </PhaseColumns>
       </Tabs>
-    </>
+    </PhasePageFrame>
   );
 }
 
@@ -250,4 +297,25 @@ function PhaseSettingsColumn({ children }: { children: ReactNode }) {
       {children}
     </div>
   );
+}
+
+function isPastPhase({
+  isDraft,
+  currentStateId,
+  phases,
+  index,
+}: {
+  isDraft: boolean;
+  currentStateId: string | null | undefined;
+  phases: DecisionPhase[];
+  index: number;
+}): boolean {
+  if (isDraft || !currentStateId) {
+    return false;
+  }
+  const currentIndex = phases.findIndex(
+    (candidate) => candidate.phaseId === currentStateId,
+  );
+  // A current phase missing from the list locks every phase, as the server does.
+  return currentIndex === -1 || index < currentIndex;
 }

@@ -2075,6 +2075,8 @@
       "phasePageTitle": "{phaseName} · {decisionName}",
       "phaseNotFound": "Cette phase n’existe plus",
       "phaseLoadError": "Impossible de charger cette phase",
+      "phaseSaved": "Phase enregistrée.",
+      "phaseNameLabel": "Nom de la phase",
       "setupAction": "Configurer",
       "setupPhaseLabel": "Configurer {phaseName}",
       "setupBlurbCollect": "Les participants envoient des propositions",

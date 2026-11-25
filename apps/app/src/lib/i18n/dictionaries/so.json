@@ -2075,6 +2075,8 @@
       "phasePageTitle": "{phaseName} · {decisionName}",
       "phaseNotFound": "Wejigan hadda ma jiro",
       "phaseLoadError": "Lama soo dejin karin wejigan",
+      "phaseSaved": "Wejiga waa la keydiyay.",
+      "phaseNameLabel": "Magaca wejiga",
       "setupAction": "Diyaari",
       "setupPhaseLabel": "Diyaari {phaseName}",
       "setupBlurbCollect": "Dadku waxay soo diraan soo jeedinno",

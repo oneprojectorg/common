@@ -2075,6 +2075,8 @@
       "phasePageTitle": "{phaseName} · {decisionName}",
       "phaseNotFound": "এই পর্যায়টি আর নেই",
       "phaseLoadError": "এই পর্যায়টি লোড করা যায়নি",
+      "phaseSaved": "পর্যায় সংরক্ষিত হয়েছে।",
+      "phaseNameLabel": "পর্যায়ের নাম",
       "setupAction": "সেটআপ",
       "setupPhaseLabel": "সেটআপ {phaseName}",
       "setupBlurbCollect": "লোকেরা প্রস্তাব পাঠায়",
