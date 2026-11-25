@@ -28,7 +28,7 @@ import { ButtonLink } from '@/components/ButtonLink';
 
 import { ProcessAdminLoadError } from './ProcessAdminLoadError';
 import { PhaseWindowCard } from './ProcessAdminPhaseSettings';
-import { getPhaseKind } from './phaseKind';
+import { getAdminPhaseKind } from './adminPhaseKind';
 import { getProcessAdminStatus } from './processAdminStatus';
 import { useSavePhase } from './useSavePhase';
 
@@ -145,7 +145,7 @@ function PhaseEditor({
 }) {
   const t = useTranslations('decisions.processAdmin');
   const tShared = useTranslations();
-  const kind = getPhaseKind(phase);
+  const kind = getAdminPhaseKind(phase);
   const savePhase = useSavePhase(slug);
   const [draftName, setDraftName] = useState<string | null>(null);
   const savedName = phase.name ?? '';

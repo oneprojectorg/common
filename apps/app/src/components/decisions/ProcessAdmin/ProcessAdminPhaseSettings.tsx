@@ -10,7 +10,7 @@ import { LuCalendar, LuCalendarClock } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { AdminPhaseKind } from './phaseKind';
+import type { AdminPhaseKind } from './adminPhaseKind';
 
 export function PhaseWindowCard({
   phase,
