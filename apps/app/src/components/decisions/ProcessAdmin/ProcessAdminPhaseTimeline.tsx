@@ -36,7 +36,7 @@ export function ProcessAdminPhaseTimeline({
       phase,
       state,
       needsSetup:
-        state !== 'current' && !isPhaseReady({ phase, decision: templates }),
+        state === 'upcoming' && !isPhaseReady({ phase, decision: templates }),
     };
   });
   const leadIndex = rows.findIndex((row) => row.needsSetup);

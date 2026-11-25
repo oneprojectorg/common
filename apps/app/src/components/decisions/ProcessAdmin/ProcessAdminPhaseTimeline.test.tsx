@@ -28,6 +28,15 @@ const submit = {
   endDate: '2026-01-31T00:00:00.000Z',
   rules: { proposals: { submit: true } },
 };
+const review = {
+  id: 'row-review',
+  slug: 'c9d0e1f2',
+  phaseId: 'review',
+  name: 'Review',
+  startDate: '2026-02-01T00:00:00.000Z',
+  endDate: '2026-02-14T00:00:00.000Z',
+  rules: { reviews: { submit: true } },
+};
 const vote = {
   id: 'row-vote',
   slug: 'e5f6a7b8',
@@ -154,22 +163,49 @@ describe('ProcessAdminPhaseTimeline', () => {
     });
 
     expect(
-      screen.getByRole('link', { name: 'Setup Vote' }).getAttribute('href'),
+      screen.getByRole('link', { name: 'Set up Vote' }).getAttribute('href'),
     ).toBe(editorHref('e5f6a7b8'));
     expect(screen.getByText('People decide between them')).toBeTruthy();
   });
 
   it('asks for setup on a collecting phase with no form of its own or from the decision', () => {
-    renderTimeline({ currentStateId: 'vote', templates: {} });
+    renderTimeline({ templates: {} });
 
-    expect(screen.getByRole('link', { name: 'Setup Submit' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Set up Submit' })).toBeTruthy();
     expect(screen.getByText('People send in proposals')).toBeTruthy();
   });
 
   it('never asks the current phase for setup', () => {
     renderTimeline({ currentStateId: 'submit', templates: {} });
 
-    expect(screen.queryByRole('link', { name: /^Setup/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: /^Set up/ })).toBeNull();
+  });
+
+  it('never asks a past phase for setup, since its fields are locked', () => {
+    renderTimeline({
+      currentStateId: 'vote',
+      phases: [submit, { ...vote, endDate: undefined }],
+      templates: {},
+    });
+
+    expect(screen.queryByRole('link', { name: 'Set up Submit' })).toBeNull();
+    expect(screen.getByText('Submit')).toBeTruthy();
+  });
+
+  it('makes only the first phase that needs setup the primary action', () => {
+    renderTimeline({
+      currentStateId: 'submit',
+      phases: [
+        submit,
+        { ...review, endDate: undefined },
+        { ...vote, endDate: undefined },
+      ],
+    });
+
+    const [first, second] = screen.getAllByRole('link', { name: /^Set up/ });
+    expect(first?.getAttribute('aria-label')).toBe('Set up Review');
+    expect(second?.getAttribute('aria-label')).toBe('Set up Vote');
+    expect(first?.className).not.toBe(second?.className);
   });
 
   it('gives a phase with no row yet no editor link, even when it needs setup', () => {
