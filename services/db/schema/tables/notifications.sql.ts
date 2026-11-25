@@ -12,9 +12,7 @@ import {
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { activities } from './activities.sql';
 import { authUsers } from './authUsers.sql';
-
-export const notificationCategories = ['proposalComment'] as const;
-export type NotificationCategory = (typeof notificationCategories)[number];
+import type { NotificationCategory } from './users.sql';
 
 export const notifications = pgTable(
   'notifications',

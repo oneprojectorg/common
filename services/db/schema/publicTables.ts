@@ -122,7 +122,11 @@ export {
   ProfileRelationshipType,
   profileRelationshipTypeEnum,
 } from './tables/relationships.sql';
-export { users, usersRelations } from './tables/users.sql';
+export {
+  notificationCategories,
+  users,
+  usersRelations,
+} from './tables/users.sql';
 export type {
   CommonUser,
   NotificationCategory,
