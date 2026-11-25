@@ -14,19 +14,31 @@ export function useSavePhase(slug: string) {
   return trpc.decision.updatePhase.useMutation({
     scope: { id: `process-admin-save:${slug}` },
     onSuccess: async (saved) => {
-      utils.decision.getDecisionBySlug.setData(
-        { slug },
-        (current) =>
-          current && {
-            ...current,
-            processInstance: {
-              ...current.processInstance,
-              phases: current.processInstance.phases.map((phase) =>
-                phase.id === saved.id ? { ...phase, name: saved.name } : phase,
+      utils.decision.getDecisionBySlug.setData({ slug }, (current) => {
+        if (!current) {
+          return current;
+        }
+        const { phases, instanceData } = current.processInstance;
+        const phaseId = phases.find((phase) => phase.id === saved.id)?.phaseId;
+
+        return {
+          ...current,
+          processInstance: {
+            ...current.processInstance,
+            phases: phases.map((phase) =>
+              phase.id === saved.id ? { ...phase, name: saved.name } : phase,
+            ),
+            instanceData: {
+              ...instanceData,
+              phases: instanceData.phases?.map((phase) =>
+                phase.phaseId === phaseId
+                  ? { ...phase, name: saved.name }
+                  : phase,
               ),
             },
           },
-      );
+        };
+      });
       toast.success(t('phaseSaved'));
       await utils.decision.getDecisionBySlug.invalidate({ slug }, undefined, {
         cancelRefetch: false,
