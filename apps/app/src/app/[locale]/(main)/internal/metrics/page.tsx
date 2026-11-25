@@ -34,7 +34,7 @@ export default async function MetricsPage() {
   try {
     await utils.platform.getDashboardMetrics.fetch();
   } catch (error) {
-    logger.warn('Failed to preload the dashboard metrics', { error });
+    logger.error('Failed to preload the dashboard metrics', { error });
   }
 
   return (
