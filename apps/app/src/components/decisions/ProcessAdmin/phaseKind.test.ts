@@ -6,6 +6,8 @@ const phase = { id: 'row-1', slug: 'a1b2c3d4', phaseId: 'phase-1' };
 
 describe('getPhaseKind', () => {
   it.each([
+    [{ reviews: { submit: true } }, 'Review'],
+    [{ proposals: { review: true } }, 'Review'],
     [{ reviews: { submit: true }, proposals: { submit: true } }, 'Review'],
     [{ proposals: { submit: true } }, 'Collect'],
     [{ proposals: { develop: true } }, 'Develop'],

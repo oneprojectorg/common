@@ -6,9 +6,14 @@ import {
   isVotingPhase,
 } from '@op/common/client';
 
-export type PhaseKind = 'Collect' | 'Review' | 'Develop' | 'Vote' | 'Results';
+export type AdminPhaseKind =
+  | 'Collect'
+  | 'Review'
+  | 'Develop'
+  | 'Vote'
+  | 'Results';
 
-export function getPhaseKind(phase: DecisionPhase): PhaseKind {
+export function getPhaseKind(phase: DecisionPhase): AdminPhaseKind {
   if (isReviewPhase(phase)) {
     return 'Review';
   }
