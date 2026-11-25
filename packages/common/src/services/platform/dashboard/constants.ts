@@ -37,6 +37,3 @@ export const TEST_EMAIL_DOMAINS = ['test.local'];
 export const DASHBOARD_METRICS_CACHE_VERSION = 2;
 
 export const DASHBOARD_METRICS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
-
-// A currency warning clears soon after the data is fixed.
-export const DASHBOARD_METRICS_WARNING_CACHE_TTL_MS = 10 * 60 * 1000;

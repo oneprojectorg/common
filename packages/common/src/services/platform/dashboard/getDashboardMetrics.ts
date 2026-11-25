@@ -4,7 +4,6 @@ import { db } from '@op/db/client';
 import {
   DASHBOARD_METRICS_CACHE_TTL_MS,
   DASHBOARD_METRICS_CACHE_VERSION,
-  DASHBOARD_METRICS_WARNING_CACHE_TTL_MS,
 } from './constants';
 import { getFeedbackCounts } from './getFeedbackCounts';
 import { getGrowthCounts } from './getGrowthCounts';
@@ -30,7 +29,7 @@ export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
     type: 'platform',
     params,
     fetch: getLiveDashboardMetrics,
-    options: { ttl: resolveDashboardMetricsCacheTtl },
+    options: { ttl: DASHBOARD_METRICS_CACHE_TTL_MS },
   });
 
   const parsed = dashboardMetricsSchema.safeParse(cached);
@@ -39,12 +38,7 @@ export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
   }
 
   const metrics = await getLiveDashboardMetrics();
-  await invalidate({
-    type: 'platform',
-    params,
-    data: metrics,
-    ttl: resolveDashboardMetricsCacheTtl(metrics),
-  });
+  await invalidate({ type: 'platform', params, data: metrics });
 
   return metrics;
 };
@@ -73,8 +67,3 @@ const getLiveDashboardMetrics = async (): Promise<DashboardMetrics> => {
 
   return resolveDashboardMetrics({ dataAsOf, ...sections });
 };
-
-const resolveDashboardMetricsCacheTtl = (metrics: DashboardMetrics): number =>
-  metrics.totals.moneyMoved.status === 'unexpectedCurrency'
-    ? DASHBOARD_METRICS_WARNING_CACHE_TTL_MS
-    : DASHBOARD_METRICS_CACHE_TTL_MS;
