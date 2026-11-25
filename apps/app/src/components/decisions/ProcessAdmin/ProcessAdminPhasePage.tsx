@@ -149,18 +149,26 @@ function PhaseEditor({
   const savePhase = useSavePhase(slug);
   const [draftName, setDraftName] = useState<string | null>(null);
   const savedName = phase.name ?? '';
-  const name = draftName ?? savedName;
   const rowId = phase.id;
   const canEdit = !isLocked && rowId !== null;
+  const name = canEdit ? (draftName ?? savedName) : savedName;
   const isDirty = canEdit && name !== savedName;
+
+  const commitName = (next: string) => {
+    setDraftName(next === savedName ? null : next);
+  };
 
   const save = () => {
     if (!rowId || !isDirty) {
       return;
     }
+    const sentName = name;
     savePhase.mutate(
-      { phaseId: rowId, name },
-      { onSuccess: () => setDraftName(null) },
+      { phaseId: rowId, name: sentName },
+      {
+        onSuccess: () =>
+          setDraftName((current) => (current === sentName ? null : current)),
+      },
     );
   };
 
@@ -192,7 +200,7 @@ function PhaseEditor({
           disabled={!canEdit}
           iconClassName="size-5"
           className="font-serif text-display font-light"
-          onCommit={setDraftName}
+          onCommit={commitName}
         />
       </PhaseTitle>
       <Tabs defaultValue="setup" className="flex flex-col gap-6">
@@ -316,6 +324,6 @@ function isPastPhase({
   const currentIndex = phases.findIndex(
     (candidate) => candidate.phaseId === currentStateId,
   );
-  // A current phase missing from the list locks every phase, as the server does.
+  // A current phase missing from the list locks every phase.
   return currentIndex === -1 || index < currentIndex;
 }
