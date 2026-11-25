@@ -1151,26 +1151,10 @@ export const relations = defineRelations(schema, (r) => ({
   },
 
   activities: {
-    actorProfile: r.one.profiles({
-      from: r.activities.actorProfileId,
+    actor: r.one.profiles({
+      from: r.activities.actorId,
       to: r.profiles.id,
-      alias: 'activity_actorProfile',
-    }),
-    organization: r.one.organizations({
-      from: r.activities.organizationId,
-      to: r.organizations.id,
-    }),
-    processInstance: r.one.processInstances({
-      from: r.activities.processInstanceId,
-      to: r.processInstances.id,
-    }),
-    proposal: r.one.proposals({
-      from: r.activities.proposalId,
-      to: r.proposals.id,
-    }),
-    post: r.one.posts({
-      from: r.activities.postId,
-      to: r.posts.id,
+      alias: 'activity_actor',
     }),
     notifications: r.many.notifications({
       from: r.activities.id,

@@ -1,12 +1,12 @@
 CREATE TABLE "activities" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-	"outbox_id" uuid NOT NULL,
-	"event_name" varchar(255) NOT NULL,
-	"actor_profile_id" uuid,
-	"organization_id" uuid,
-	"process_instance_id" uuid,
-	"proposal_id" uuid,
-	"post_id" uuid,
+	"idempotency_key" uuid NOT NULL,
+	"actor_id" uuid,
+	"verb" varchar(255) NOT NULL,
+	"object_type" varchar(255),
+	"object_id" uuid,
+	"target_type" varchar(255),
+	"target_id" uuid,
 	"snapshot" jsonb NOT NULL,
 	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
 	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
@@ -56,12 +56,10 @@ DROP INDEX "posts_to_organizations_org_id_created_at_post_id_idx";--> statement-
 CREATE INDEX "posts_to_organizations_org_id_created_at_post_id_idx" ON "posts_to_organizations" ("organization_id","created_at" DESC,"post_id" DESC);--> statement-breakpoint
 DROP INDEX "posts_to_profiles_profile_id_created_at_post_id_idx";--> statement-breakpoint
 CREATE INDEX "posts_to_profiles_profile_id_created_at_post_id_idx" ON "posts_to_profiles" ("profile_id","created_at" DESC,"post_id" DESC);--> statement-breakpoint
-CREATE UNIQUE INDEX "activities_outbox_id_idx" ON "activities" ("outbox_id");--> statement-breakpoint
-CREATE INDEX "activities_organization_id_created_at_id_idx" ON "activities" ("organization_id","created_at" DESC,"id" DESC) WHERE organization_id IS NOT NULL;--> statement-breakpoint
-CREATE INDEX "activities_process_instance_id_created_at_id_idx" ON "activities" ("process_instance_id","created_at" DESC,"id" DESC) WHERE process_instance_id IS NOT NULL;--> statement-breakpoint
-CREATE INDEX "activities_proposal_id_created_at_id_idx" ON "activities" ("proposal_id","created_at" DESC,"id" DESC) WHERE proposal_id IS NOT NULL;--> statement-breakpoint
-CREATE INDEX "activities_post_id_created_at_id_idx" ON "activities" ("post_id","created_at" DESC,"id" DESC) WHERE post_id IS NOT NULL;--> statement-breakpoint
-CREATE INDEX "activities_actor_profile_id_created_at_id_idx" ON "activities" ("actor_profile_id","created_at" DESC,"id" DESC) WHERE actor_profile_id IS NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "activities_idempotency_key_idx" ON "activities" ("idempotency_key");--> statement-breakpoint
+CREATE INDEX "activities_object_type_object_id_created_at_id_idx" ON "activities" ("object_type","object_id","created_at" DESC,"id" DESC) WHERE object_id IS NOT NULL;--> statement-breakpoint
+CREATE INDEX "activities_target_type_target_id_created_at_id_idx" ON "activities" ("target_type","target_id","created_at" DESC,"id" DESC) WHERE target_id IS NOT NULL;--> statement-breakpoint
+CREATE INDEX "activities_actor_id_created_at_id_idx" ON "activities" ("actor_id","created_at" DESC,"id" DESC) WHERE actor_id IS NOT NULL;--> statement-breakpoint
 CREATE INDEX "event_outbox_unsent_created_at_idx" ON "event_outbox" ("created_at") WHERE sent_at IS NULL;--> statement-breakpoint
 CREATE INDEX "notification_deliveries_notification_id_idx" ON "notification_deliveries" ("notification_id");--> statement-breakpoint
 CREATE INDEX "notification_deliveries_provider_message_id_idx" ON "notification_deliveries" ("provider_message_id");--> statement-breakpoint
@@ -69,11 +67,7 @@ CREATE UNIQUE INDEX "notifications_activity_id_auth_user_id_idx" ON "notificatio
 CREATE INDEX "notifications_auth_user_id_created_at_id_idx" ON "notifications" ("auth_user_id","created_at" DESC,"id" DESC);--> statement-breakpoint
 CREATE INDEX "notifications_auth_user_id_unread_idx" ON "notifications" ("auth_user_id","created_at" DESC,"id" DESC) WHERE read_at IS NULL;--> statement-breakpoint
 CREATE INDEX "notifications_auth_user_id_needs_action_idx" ON "notifications" ("auth_user_id","created_at" DESC,"id" DESC) WHERE action_required AND read_at IS NULL;--> statement-breakpoint
-ALTER TABLE "activities" ADD CONSTRAINT "activities_actor_profile_id_profiles_id_fkey" FOREIGN KEY ("actor_profile_id") REFERENCES "profiles"("id") ON DELETE SET NULL;--> statement-breakpoint
-ALTER TABLE "activities" ADD CONSTRAINT "activities_organization_id_organizations_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE SET NULL;--> statement-breakpoint
-ALTER TABLE "activities" ADD CONSTRAINT "activities_tRCCNWABay1d_fkey" FOREIGN KEY ("process_instance_id") REFERENCES "decision_process_instances"("id") ON DELETE SET NULL;--> statement-breakpoint
-ALTER TABLE "activities" ADD CONSTRAINT "activities_proposal_id_decision_proposals_id_fkey" FOREIGN KEY ("proposal_id") REFERENCES "decision_proposals"("id") ON DELETE SET NULL;--> statement-breakpoint
-ALTER TABLE "activities" ADD CONSTRAINT "activities_post_id_posts_id_fkey" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE SET NULL;--> statement-breakpoint
+ALTER TABLE "activities" ADD CONSTRAINT "activities_actor_id_profiles_id_fkey" FOREIGN KEY ("actor_id") REFERENCES "profiles"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "notification_deliveries" ADD CONSTRAINT "notification_deliveries_notification_id_notifications_id_fkey" FOREIGN KEY ("notification_id") REFERENCES "notifications"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_activity_id_activities_id_fkey" FOREIGN KEY ("activity_id") REFERENCES "activities"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_auth_user_id_users_id_fkey" FOREIGN KEY ("auth_user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;--> statement-breakpoint

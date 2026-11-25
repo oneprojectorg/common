@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "570e415a-3411-4c3b-a09e-fa2cfc46391a",
+  "id": "be7e526c-a3bd-4d72-89cd-50f8122cd568",
   "prevIds": [
     "147d002c-4aec-4154-ae1c-4ef509578617"
   ],
@@ -916,7 +916,20 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "outbox_id",
+      "name": "idempotency_key",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "activities"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "actor_id",
       "entityType": "columns",
       "schema": "public",
       "table": "activities"
@@ -929,7 +942,20 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "event_name",
+      "name": "verb",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "activities"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "object_type",
       "entityType": "columns",
       "schema": "public",
       "table": "activities"
@@ -942,7 +968,20 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "actor_profile_id",
+      "name": "object_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "activities"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "target_type",
       "entityType": "columns",
       "schema": "public",
       "table": "activities"
@@ -955,46 +994,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "organization_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "activities"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "process_instance_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "activities"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "proposal_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "activities"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "post_id",
+      "name": "target_id",
       "entityType": "columns",
       "schema": "public",
       "table": "activities"
@@ -8927,7 +8927,7 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "outbox_id",
+          "value": "idempotency_key",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -8939,7 +8939,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "activities_outbox_id_idx",
+      "name": "activities_idempotency_key_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "activities"
@@ -8948,7 +8948,14 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "organization_id",
+          "value": "object_type",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "object_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -8970,11 +8977,11 @@
         }
       ],
       "isUnique": false,
-      "where": "organization_id IS NOT NULL",
+      "where": "object_id IS NOT NULL",
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "activities_organization_id_created_at_id_idx",
+      "name": "activities_object_type_object_id_created_at_id_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "activities"
@@ -8983,7 +8990,14 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "process_instance_id",
+          "value": "target_type",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "target_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -9005,11 +9019,11 @@
         }
       ],
       "isUnique": false,
-      "where": "process_instance_id IS NOT NULL",
+      "where": "target_id IS NOT NULL",
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "activities_process_instance_id_created_at_id_idx",
+      "name": "activities_target_type_target_id_created_at_id_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "activities"
@@ -9018,7 +9032,7 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "proposal_id",
+          "value": "actor_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -9040,81 +9054,11 @@
         }
       ],
       "isUnique": false,
-      "where": "proposal_id IS NOT NULL",
+      "where": "actor_id IS NOT NULL",
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "activities_proposal_id_created_at_id_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "activities"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "post_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
-          "value": "created_at",
-          "isExpression": false,
-          "asc": false,
-          "nullsFirst": true,
-          "opclass": null
-        },
-        {
-          "value": "id",
-          "isExpression": false,
-          "asc": false,
-          "nullsFirst": true,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": "post_id IS NOT NULL",
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "activities_post_id_created_at_id_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "activities"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "actor_profile_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
-          "value": "created_at",
-          "isExpression": false,
-          "asc": false,
-          "nullsFirst": true,
-          "opclass": null
-        },
-        {
-          "value": "id",
-          "isExpression": false,
-          "asc": false,
-          "nullsFirst": true,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": "actor_profile_id IS NOT NULL",
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "activities_actor_profile_id_created_at_id_idx",
+      "name": "activities_actor_id_created_at_id_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "activities"
@@ -14440,7 +14384,7 @@
     {
       "nameExplicit": false,
       "columns": [
-        "actor_profile_id"
+        "actor_id"
       ],
       "schemaTo": "public",
       "tableTo": "profiles",
@@ -14449,75 +14393,7 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
-      "name": "activities_actor_profile_id_profiles_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "activities"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "organization_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "organizations",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "SET NULL",
-      "name": "activities_organization_id_organizations_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "activities"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "process_instance_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "decision_process_instances",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "SET NULL",
-      "name": "activities_tRCCNWABay1d_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "activities"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "proposal_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "decision_proposals",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "SET NULL",
-      "name": "activities_proposal_id_decision_proposals_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "activities"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "post_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "posts",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "SET NULL",
-      "name": "activities_post_id_posts_id_fkey",
+      "name": "activities_actor_id_profiles_id_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "activities"

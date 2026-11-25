@@ -36,15 +36,19 @@ We will store notifications in four tables.
   at least once; `sent_at` and `attempts` record progress, and sent rows
   are pruned after 30 days.
 - `activities` — one row per domain event, created by the workflow
-  function. A unique index on `outbox_id` makes replay idempotent;
-  the column is a plain uuid, not a foreign key, so pruning the outbox
+  function, in the activity-streams shape: `actor_id`, `verb`,
+  `object_type` + `object_id`, and `target_type` + `target_id`. The
+  actor is a profile — every subject in the activity system has a
+  profile row — and keeps a foreign key. The object and target pairs
+  carry no foreign key: they name any entity generically, and the
+  `snapshot` jsonb carries what a feed renders. A unique index on
+  `idempotency_key` makes replay idempotent; the column is a plain
+  uuid (the outbox row id), not a foreign key, so pruning the outbox
   never blocks on or deletes feed history, and replay only needs the
-  key within Inngest's retry window, long before the 30-day prune. The
-  row denormalizes its scopes (actor, owner profile, organization,
-  process instance, proposal, post, profile) and carries a `snapshot`
-  jsonb for rendering. Each feed scope gets a composite index
-  `(scope, created_at desc, id desc)`; shared feeds read this table in
-  database order (no JS sorts).
+  key within Inngest's retry window, long before the 30-day prune.
+  The actor, object, and target each get a composite index
+  `(..., created_at desc, id desc)`, partial on the id being present;
+  shared feeds read this table in database order (no JS sorts).
 - `notifications` — the per-recipient fan-out, unique on
   `(activity_id, auth_user_id)`, with `category`, `action_required` (stamped
   from the event name), and `seen_at` / `read_at` state. Partial indexes
@@ -65,13 +69,13 @@ erDiagram
   }
   activities {
     uuid id PK
-    uuid outbox_id UK "plain uuid, no FK"
-    text event_name
-    uuid actor_profile_id FK "set null"
-    uuid organization_id FK "set null"
-    uuid process_instance_id FK "set null"
-    uuid proposal_id FK "set null"
-    uuid post_id FK "set null"
+    uuid idempotency_key UK "plain uuid, no FK"
+    uuid actor_id FK "set null"
+    text verb
+    text object_type
+    uuid object_id "no FK"
+    text target_type
+    uuid target_id "no FK"
     jsonb snapshot
   }
   notifications {
@@ -94,13 +98,8 @@ erDiagram
   event_outbox ||--o| activities : becomes
   activities ||--o{ notifications : "fans out per recipient"
   notifications ||--o{ notification_deliveries : "per channel attempt"
-  profiles ||--o{ activities : "actor / owner / subject"
-  organizations ||--o{ activities : scope
-  process_instances ||--o{ activities : scope
-  proposals ||--o{ activities : subject
-  posts ||--o{ activities : subject
+  profiles ||--o{ activities : actor
   auth_users ||--o{ notifications : receives
-  profiles ||--o{ notifications : capacity
 
   classDef newTable fill:none,stroke:#3FA7A0,stroke-width:3px
   class event_outbox,activities,notifications,notification_deliveries newTable
@@ -136,7 +135,7 @@ sequenceDiagram
   Relay->>IG: inngest.send(id = outbox.id)
   Relay->>PG: mark sent_at
   IG->>FN: invoke (retries on failure)
-  FN->>PG: insert activity (unique outbox_id)
+  FN->>PG: insert activity (unique idempotency_key)
   FN->>PG: fan out notifications (unique activity_id, auth_user_id)
   FN->>PG: read notification preferences
   FN->>RS: send batch (idempotency keys)
@@ -151,18 +150,18 @@ send dedupes on a Resend idempotency key, which Resend keeps for 24
 hours; before sending, the function also skips any notification whose
 deliveries log already records a send.
 
-Every foreign key on `activities` sets null: the scope columns
-(`organization_id`, `process_instance_id`, `proposal_id`, `post_id`)
-and `actor_profile_id`. A deleted object leaves the event in place,
-and the row renders from its snapshot — the record of what the object
-looked like at that time. A departed actor does not erase events from
-other people's feeds. `notifications` and `notification_deliveries`
-cascade from their parents.
+`actor_id` is the only foreign key on `activities`, and it sets null:
+a departed actor does not erase events from other people's feeds. The
+object and target ids carry no foreign key, so a deleted object leaves
+its id dangling and the event in place; the row renders from its
+snapshot — the record of what the object looked like at that time.
+`notifications` and `notification_deliveries` cascade from their
+parents.
 
 ## Consequences
 
 - A rollback emits nothing, and a crash between any two steps replays
-  safely on the database side: the `outbox_id` and
+  safely on the database side: the `idempotency_key` and
   `(activity_id, auth_user_id)` uniques absorb the duplicate rows. Email
   dedup is narrower: the deliveries check and the Resend idempotency
   key cover a replay, but a crash after the send and before the
@@ -179,8 +178,8 @@ cascade from their parents.
 - `thingsYouFollow` needs three events that do not exist yet
   (`proposal/followed`, `profile/followed`, `decision/joined`).
 - Reading `activities` for a shared feed must still apply visibility:
-  the scope filter alone would unmask anonymous actors and restricted
-  proposals through the snapshot.
+  the object or target filter alone would unmask anonymous actors and
+  restricted proposals through the snapshot.
 
 The four tables grow at different rates and need different storage
 rules:
@@ -189,17 +188,17 @@ rules:
   sent rows are pruned after 30 days. The partial index on unsent rows
   keeps the sweep fast whatever the table's size.
 - `activities` grows with domain events and is kept for the life of its
-  scope. The `snapshot` dominates row size, so it holds only the fields
-  a feed renders (ids, names, a title) — never a whole document. Its
-  four composite feed indexes are the write-amplification cost of fast
-  reads.
+  subjects. The `snapshot` dominates row size, so it holds only the
+  fields a feed renders (ids, names, a title) — never a whole document.
+  Its three composite feed indexes (actor, object, target) are the
+  write-amplification cost of fast reads.
 - `notifications` grows fastest: rows = events x recipients. Marking
   seen or read rewrites the partial unread indexes, and rows leave with
   their activity through the cascade.
 - `notification_deliveries` appends one row per channel attempt plus
   one per provider webhook, bounded by notifications x channels.
 - We start without partitioning or an archive tier. Feed queries read
-  recent rows through `(scope, created_at desc, id desc)` indexes, so
+  recent rows through `(..., created_at desc, id desc)` indexes, so
   `activities` and `notifications` can move to range partitions on
   `created_at` later without changing a query. Revisit when either
   table nears about 50 million rows.
