@@ -19,7 +19,7 @@ import { Header1, Header2, Header3 } from '@op/sense/Header';
 import { SegmentedProgress } from '@op/sense/SegmentedProgress';
 import { Separator } from '@op/sense/Separator';
 import { Skeleton } from '@op/sense/Skeleton';
-import { ToggleGroup, ToggleGroupItem } from '@op/sense/ToggleGroup';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { cn } from '@op/sense/lib/utils';
 import { useFormatter } from 'next-intl';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
@@ -27,7 +27,6 @@ import {
   type ComponentProps,
   type ReactNode,
   Suspense,
-  useId,
   useSyncExternalStore,
 } from 'react';
 
@@ -94,89 +93,88 @@ const CommonDashboardSuspense = () => {
     parseAsStringLiteral(DASHBOARD_PERIODS).withDefault('ytd'),
   );
 
+  const handlePeriodValueChange = (value: unknown) => {
+    const parsed = dashboardPeriodSchema.safeParse(value);
+    if (parsed.success) {
+      setPeriod(parsed.data);
+    }
+  };
+
+  // Base UI mounts only the active panel, so each period renders its own sections.
   return (
-    <div className="flex flex-col gap-10">
-      <PeriodHeader
-        period={period}
-        dataAsOf={metrics.dataAsOf}
-        onPeriodChange={(nextPeriod) => setPeriod(nextPeriod)}
-      />
-      <GrowthSection metrics={metrics} period={period} />
-      <PeopleSection metrics={metrics} period={period} />
-      <MoneySection metrics={metrics} period={period} />
-      <ProcessesSection metrics={metrics} period={period} />
-      <FeedbackSection metrics={metrics} period={period} />
-    </div>
+    <Tabs
+      className="gap-10"
+      value={period}
+      onValueChange={handlePeriodValueChange}
+    >
+      <PeriodHeader period={period} dataAsOf={metrics.dataAsOf} />
+      {DASHBOARD_PERIODS.map((option) => (
+        <TabsContent
+          key={option}
+          value={option}
+          className="flex flex-col gap-10"
+        >
+          <GrowthSection metrics={metrics} period={option} />
+          <PeopleSection metrics={metrics} period={option} />
+          <MoneySection metrics={metrics} period={option} />
+          <ProcessesSection metrics={metrics} period={option} />
+          <FeedbackSection metrics={metrics} period={option} />
+        </TabsContent>
+      ))}
+    </Tabs>
   );
 };
 
 const PeriodHeader = ({
   period,
   dataAsOf,
-  onPeriodChange,
 }: {
   period: DashboardPeriod;
   dataAsOf: string;
-  onPeriodChange: (period: DashboardPeriod) => void;
 }) => {
   const t = useTranslations('commonDashboard');
   const format = useFormatter();
   const timeZone = useViewerTimeZone();
-  const periodLabelId = useId();
   const periodLabels = usePeriodLabels();
 
-  const handlePeriodValueChange = (values: unknown[]) => {
-    const parsed = dashboardPeriodSchema.safeParse(values[0]);
-    if (parsed.success) {
-      onPeriodChange(parsed.data);
-    }
-  };
-
   return (
-    <Card className="border-dashed shadow-none">
-      <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-wrap items-center gap-3">
-          <p id={periodLabelId} className="text-sm font-strong">
-            {t('periodLabel')}
-          </p>
-          {/* Below `sm` the four options share the full width and wrap their
-              labels, so the group fits a phone screen. */}
-          <ToggleGroup
-            aria-labelledby={periodLabelId}
-            variant="outline"
-            spacing={0}
-            className="max-sm:w-full max-sm:items-stretch"
-            value={[period]}
-            onValueChange={handlePeriodValueChange}
-          >
-            {DASHBOARD_PERIODS.map((option) => (
-              <ToggleGroupItem
-                key={option}
-                value={option}
-                className="max-sm:h-auto max-sm:min-h-11 max-sm:min-w-0 max-sm:flex-1 max-sm:shrink max-sm:px-2 max-sm:text-sm max-sm:whitespace-normal"
-              >
-                {periodLabels[option]}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </div>
-        <div className="flex flex-col gap-1 text-sm text-muted-foreground md:items-end">
-          <p aria-live="polite">
-            {t('scopeStatus', { period: periodLabels[period] })}
-          </p>
-          <p>
-            {t.rich('dataAsOfStatus', {
-              date: format.dateTime(new Date(dataAsOf), {
-                dateStyle: 'medium',
-                timeStyle: 'short',
-                timeZone,
-              }),
-              time: (chunks) => <time dateTime={dataAsOf}>{chunks}</time>,
-            })}
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex flex-col gap-4">
+      {/* On a wrapper: sense's `line` variant draws only the indicator. Below
+          `sm` the four tabs share the full width and wrap their labels, so the
+          list fits a phone screen. */}
+      <div className="border-b">
+        <TabsList
+          variant="line"
+          aria-label={t('periodLabel')}
+          className="w-full group-data-horizontal/tabs:h-auto sm:w-fit"
+        >
+          {DASHBOARD_PERIODS.map((option) => (
+            <TabsTrigger
+              key={option}
+              value={option}
+              className="min-w-0 whitespace-normal max-sm:px-2 max-sm:text-sm"
+            >
+              {periodLabels[option]}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
+      <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+        <p aria-live="polite">
+          {t('scopeStatus', { period: periodLabels[period] })}
+        </p>
+        <p>
+          {t.rich('dataAsOfStatus', {
+            date: format.dateTime(new Date(dataAsOf), {
+              dateStyle: 'medium',
+              timeStyle: 'short',
+              timeZone,
+            }),
+            time: (chunks) => <time dateTime={dataAsOf}>{chunks}</time>,
+          })}
+        </p>
+      </div>
+    </div>
   );
 };
 
