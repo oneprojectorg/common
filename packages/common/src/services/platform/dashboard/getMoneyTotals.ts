@@ -1,4 +1,12 @@
-import { type TransactionType, sql } from '@op/db/client';
+import { type TransactionType, aliasedTable, sql } from '@op/db/client';
+import {
+  decisionProcessResultSelections,
+  decisionProcessResults,
+  processInstances,
+  processPhases,
+  profiles,
+  proposals,
+} from '@op/db/schema';
 import type { SQL } from 'drizzle-orm';
 
 import {
@@ -12,6 +20,14 @@ import {
   type PeriodWindow,
   resolvePeriodRows,
 } from './utils';
+
+const result = aliasedTable(decisionProcessResults, 'r');
+const selection = aliasedTable(decisionProcessResultSelections, 's');
+const proposal = aliasedTable(proposals, 'p');
+const instance = aliasedTable(processInstances, 'i');
+const phase = aliasedTable(processPhases, 'p');
+const phaseProfile = aliasedTable(profiles, 'pr');
+const livePhase = aliasedTable(processPhases, 'live_phase');
 
 /**
  * Money in launched processes. Every stored amount is USD.
@@ -41,14 +57,14 @@ export const getMoneyTotals = async ({
   }>(sql`
     with launched as (${launchedProcessesSql(dataAsOf)}),
     latest_results as (
-      select distinct on (r.process_instance_id) r.id
-      from decision_process_results r
-      join launched on launched.id = r.process_instance_id
+      select distinct on (${result.processInstanceId}) ${result.id}
+      from ${decisionProcessResults} ${result}
+      join launched on launched.id = ${result.processInstanceId}
       where launched.is_completed
-        and r.success
-        and r.deleted_at is null
-        and r.executed_at <= ${timestampSql(dataAsOf)}
-      order by r.process_instance_id, r.executed_at desc, r.id desc
+        and ${result.success}
+        and ${result.deletedAt} is null
+        and ${result.executedAt} <= ${timestampSql(dataAsOf)}
+      order by ${result.processInstanceId}, ${result.executedAt} desc, ${result.id} desc
     ),
     budgeted as (${processBudgetsSql})
     select
@@ -57,14 +73,14 @@ export const getMoneyTotals = async ({
         where ${isActiveInPeriodSql('budgeted')}
       ), 0)::float8 as active_process_budgets,
       (select coalesce(sum(coalesce(
-          s.allocated,
-          ${proposalBudgetAmountSql(sql`p.proposal_data -> 'budget'`)},
+          ${selection.allocated},
+          ${proposalBudgetAmountSql(sql`${proposal.proposalData} -> 'budget'`)},
           0
         )), 0)
         from latest_results
-        join decision_process_result_selections s
-          on s.process_result_id = latest_results.id
-        join decision_proposals p on p.id = s.proposal_id
+        join ${decisionProcessResultSelections} ${selection}
+          on ${selection.processResultId} = latest_results.id
+        join ${proposals} ${proposal} on ${proposal.id} = ${selection.proposalId}
       )::float8 as money_moved
     from ${periodWindowsSql(windows)}
     left join budgeted on true
@@ -114,33 +130,33 @@ const processBudgetsSql: SQL = sql`
     launched.completed_at,
     coalesce(phase_row.budget, legacy_phase.budget) as budget
   from launched
-  join decision_process_instances i on i.id = launched.id
+  join ${processInstances} ${instance} on ${instance.id} = launched.id
   left join lateral (
-    select ${numberAmountSql(sql`p.data -> 'settings' -> 'budget'`)} as budget
-    from decision_process_phases p
-    join profiles pr on pr.id = p.profile_id
-    where p.process_instance_id = i.id
-      and p.deleted_at is null
-      and ${numberAmountSql(sql`p.data -> 'settings' -> 'budget'`)} > 0
+    select ${numberAmountSql(sql`${phase.data} -> 'settings' -> 'budget'`)} as budget
+    from ${processPhases} ${phase}
+    join ${profiles} ${phaseProfile} on ${phaseProfile.id} = ${phase.profileId}
+    where ${phase.processInstanceId} = ${instance.id}
+      and ${phase.deletedAt} is null
+      and ${numberAmountSql(sql`${phase.data} -> 'settings' -> 'budget'`)} > 0
     order by
-      coalesce(i.current_state_id in (coalesce(p.data ->> 'phaseId', pr.slug), p.id::text), false) desc,
-      p.sort_order
+      coalesce(${instance.currentStateId} in (coalesce(${phase.data} ->> 'phaseId', ${phaseProfile.slug}), ${phase.id}::text), false) desc,
+      ${phase.sortOrder}
     limit 1
   ) phase_row on true
   left join lateral (
     select ${numberAmountSql(sql`phase.value -> 'settings' -> 'budget'`)} as budget
     from jsonb_array_elements(
-      case when jsonb_typeof(i.instance_data -> 'phases') = 'array'
-        then i.instance_data -> 'phases' else '[]'::jsonb end
+      case when jsonb_typeof(${instance.instanceData} -> 'phases') = 'array'
+        then ${instance.instanceData} -> 'phases' else '[]'::jsonb end
     ) with ordinality as phase(value, position)
     where ${numberAmountSql(sql`phase.value -> 'settings' -> 'budget'`)} > 0
       and not exists (
-        select 1 from decision_process_phases live_phase
-        where live_phase.process_instance_id = i.id
-          and live_phase.deleted_at is null
+        select 1 from ${processPhases} ${livePhase}
+        where ${livePhase.processInstanceId} = ${instance.id}
+          and ${livePhase.deletedAt} is null
       )
     order by
-      coalesce(phase.value ->> 'phaseId' = i.current_state_id, false) desc,
+      coalesce(phase.value ->> 'phaseId' = ${instance.currentStateId}, false) desc,
       phase.position
     limit 1
   ) legacy_phase on true

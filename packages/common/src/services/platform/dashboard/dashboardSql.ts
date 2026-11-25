@@ -1,9 +1,30 @@
 import { GLOBAL_USER_IDS, allowedEmailDomains } from '@op/core';
-import { sql } from '@op/db/client';
+import { aliasedTable, sql } from '@op/db/client';
+import {
+  authUsers,
+  decisionProcessResults,
+  decisionProcessTransitions,
+  processInstances,
+  processPhases,
+  profileInvites,
+  profiles,
+  stateTransitionHistory,
+  users,
+} from '@op/db/schema';
 import type { SQL } from 'drizzle-orm';
 
 import { DASHBOARD_PERIODS, TEST_EMAIL_DOMAINS } from './constants';
 import type { PeriodRecord, PeriodWindow } from './utils';
+
+const user = aliasedTable(users, 'u');
+const authUser = aliasedTable(authUsers, 'au');
+const instance = aliasedTable(processInstances, 'i');
+const transition = aliasedTable(decisionProcessTransitions, 't');
+const invite = aliasedTable(profileInvites, 'pi');
+const history = aliasedTable(stateTransitionHistory, 'h');
+const phase = aliasedTable(processPhases, 'p');
+const phaseProfile = aliasedTable(profiles, 'pr');
+const result = aliasedTable(decisionProcessResults, 'r');
 
 const sqlList = (values: readonly string[]): SQL =>
   sql.join(
@@ -31,19 +52,19 @@ export const periodWindowsSql = (windows: PeriodRecord<PeriodWindow>): SQL =>
  * login-code request creates the account before the code is confirmed.
  */
 export const eligibleUsersSql = (dataAsOf: Date): SQL => sql`
-  select u.auth_user_id, u.created_at
-  from users u
-  join auth.users au on au.id = u.auth_user_id
-  where u.deleted_at is null
-    and u.auth_user_id not in (${sql.join(
+  select ${user.authUserId}, ${user.createdAt}
+  from ${users} ${user}
+  join ${authUsers} ${authUser} on ${authUser.id} = ${user.authUserId}
+  where ${user.deletedAt} is null
+    and ${user.authUserId} not in (${sql.join(
       GLOBAL_USER_IDS.map((id) => sql`${id}::uuid`),
       sql`, `,
     )})
-    and au.is_anonymous is not true
-    and (au.email_confirmed_at is not null or au.phone_confirmed_at is not null)
-    and lower(split_part(coalesce(au.email, u.email, ''), '@', 2))
+    and ${authUser.isAnonymous} is not true
+    and (${authUser.emailConfirmedAt} is not null or ${authUser.phoneConfirmedAt} is not null)
+    and lower(split_part(coalesce(${authUser.email}, ${user.email}, ''), '@', 2))
       not in (${sqlList([...allowedEmailDomains, ...TEST_EMAIL_DOMAINS])})
-    and u.created_at <= ${timestampSql(dataAsOf)}
+    and ${user.createdAt} <= ${timestampSql(dataAsOf)}
 `;
 
 /**
@@ -59,7 +80,7 @@ export const isActiveInPeriodSql = (process: string): SQL => {
 };
 
 /** Staff name their trial processes with "test" or "example". */
-const isRealProcessSql = sql`i.name !~* '(test|example)'`;
+const isRealProcessSql = sql`${instance.name} !~* '(test|example)'`;
 
 // A malformed stored date must not fail the whole snapshot: only the date part
 // of an ISO value is read, and an impossible day (Feb 30) gives null.
@@ -83,42 +104,42 @@ const configuredDateSql = (value: SQL): SQL => sql`(
 export const launchedProcessesSql = (dataAsOf: Date): SQL => sql`
   with instances as (
     select
-      i.id,
-      i.current_state_id,
-      i.updated_at,
+      ${instance.id},
+      ${instance.currentStateId},
+      ${instance.updatedAt},
       coalesce(
         least(
-          (select min(t.created_at) from decision_process_transitions t
-            where t.process_instance_id = i.id and t.deleted_at is null),
-          (select min(pi.notified_at) from profile_invites pi
-            where pi.profile_id = i.profile_id and pi.deleted_at is null),
-          (select min(h.transitioned_at) from decision_transition_history h
-            where h.process_instance_id = i.id)
+          (select min(${transition.createdAt}) from ${decisionProcessTransitions} ${transition}
+            where ${transition.processInstanceId} = ${instance.id} and ${transition.deletedAt} is null),
+          (select min(${invite.notifiedAt}) from ${profileInvites} ${invite}
+            where ${invite.profileId} = ${instance.profileId} and ${invite.deletedAt} is null),
+          (select min(${history.transitionedAt}) from ${stateTransitionHistory} ${history}
+            where ${history.processInstanceId} = ${instance.id})
         ),
-        i.created_at
+        ${instance.createdAt}
       ) as launched_at,
-      coalesce(last_phase.phase_id, i.instance_data -> 'phases' -> -1 ->> 'phaseId')
+      coalesce(last_phase.phase_id, ${instance.instanceData} -> 'phases' -> -1 ->> 'phaseId')
         as last_phase_id,
       last_phase.row_id as last_phase_row_id,
       ${configuredDateSql(
         sql`case when last_phase.row_id is null
-          then i.instance_data -> 'phases' -> -1 ->> 'startDate'
+          then ${instance.instanceData} -> 'phases' -> -1 ->> 'startDate'
           else last_phase.start_date end`,
       )} as last_phase_start_date
-    from decision_process_instances i
+    from ${processInstances} ${instance}
     left join lateral (
       select
-        p.id::text as row_id,
-        coalesce(p.data ->> 'phaseId', pr.slug) as phase_id,
-        p.data ->> 'startDate' as start_date
-      from decision_process_phases p
-      join profiles pr on pr.id = p.profile_id
-      where p.process_instance_id = i.id and p.deleted_at is null
-      order by p.sort_order desc
+        ${phase.id}::text as row_id,
+        coalesce(${phase.data} ->> 'phaseId', ${phaseProfile.slug}) as phase_id,
+        ${phase.data} ->> 'startDate' as start_date
+      from ${processPhases} ${phase}
+      join ${profiles} ${phaseProfile} on ${phaseProfile.id} = ${phase.profileId}
+      where ${phase.processInstanceId} = ${instance.id} and ${phase.deletedAt} is null
+      order by ${phase.sortOrder} desc
       limit 1
     ) last_phase on true
-    where i.deleted_at is null
-      and i.status in ('published', 'completed')
+    where ${instance.deletedAt} is null
+      and ${instance.status} in ('published', 'completed')
       and ${isRealProcessSql}
   ),
   classified as (
@@ -136,12 +157,12 @@ export const launchedProcessesSql = (dataAsOf: Date): SQL => sql`
     classified.launched_at,
     classified.is_completed,
     case when classified.is_completed then least(coalesce(
-      (select max(h.transitioned_at) from decision_transition_history h
-        where h.process_instance_id = classified.id
-          and h.to_state_id in (classified.last_phase_id, classified.last_phase_row_id)),
+      (select max(${history.transitionedAt}) from ${stateTransitionHistory} ${history}
+        where ${history.processInstanceId} = classified.id
+          and ${history.toStateId} in (classified.last_phase_id, classified.last_phase_row_id)),
       classified.last_phase_start_date,
-      (select max(r.executed_at) from decision_process_results r
-        where r.process_instance_id = classified.id and r.deleted_at is null),
+      (select max(${result.executedAt}) from ${decisionProcessResults} ${result}
+        where ${result.processInstanceId} = classified.id and ${result.deletedAt} is null),
       classified.updated_at
     ), ${timestampSql(dataAsOf)}) end as completed_at
   from classified

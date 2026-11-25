@@ -1,4 +1,5 @@
-import { type TransactionType, sql } from '@op/db/client';
+import { type TransactionType, aliasedTable, sql } from '@op/db/client';
+import { decisionProcessSurveyResponses } from '@op/db/schema';
 
 import {
   launchedProcessesSql,
@@ -11,6 +12,8 @@ import {
   type SurveyCounts,
   resolvePeriodRows,
 } from './utils';
+
+const response = aliasedTable(decisionProcessSurveyResponses, 'r');
 
 /** Exit-survey counts for the processes completed in each period. */
 export const getFeedbackCounts = async ({
@@ -33,12 +36,12 @@ export const getFeedbackCounts = async ({
     with launched as (${launchedProcessesSql(dataAsOf)}),
     scores as (
       select
-        r.process_instance_id,
-        case when jsonb_typeof(r.internal_data -> 'npsScore') = 'number'
-          then (r.internal_data ->> 'npsScore')::numeric end as score
-      from decision_process_survey_responses r
-      where r.deleted_at is null
-        and r.created_at <= ${timestampSql(dataAsOf)}
+        ${response.processInstanceId},
+        case when jsonb_typeof(${response.internalData} -> 'npsScore') = 'number'
+          then (${response.internalData} ->> 'npsScore')::numeric end as score
+      from ${decisionProcessSurveyResponses} ${response}
+      where ${response.deletedAt} is null
+        and ${response.createdAt} <= ${timestampSql(dataAsOf)}
     ),
     valid_scores as (
       select * from scores where score between 0 and 10

@@ -1,4 +1,5 @@
-import { type TransactionType, sql } from '@op/db/client';
+import { type TransactionType, aliasedTable, sql } from '@op/db/client';
+import { proposals } from '@op/db/schema';
 
 import {
   isActiveInPeriodSql,
@@ -10,6 +11,8 @@ import {
   type PeriodWindow,
   resolvePeriodRows,
 } from './utils';
+
+const proposal = aliasedTable(proposals, 'p');
 
 /**
  * Proposals in launched processes.
@@ -37,10 +40,10 @@ export const getProposalCounts = async ({
   }>(sql`
     with launched as (${launchedProcessesSql(dataAsOf)}),
     proposals as (
-      select p.status, launched.is_completed, launched.completed_at
-      from decision_proposals p
-      join launched on launched.id = p.process_instance_id
-      where p.deleted_at is null and p.moderation_detached_at is null
+      select ${proposal.status}, launched.is_completed, launched.completed_at
+      from ${proposals} ${proposal}
+      join launched on launched.id = ${proposal.processInstanceId}
+      where ${proposal.deletedAt} is null and ${proposal.moderationDetachedAt} is null
     )
     select
       w.period,

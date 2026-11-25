@@ -1,4 +1,10 @@
-import { type TransactionType, sql } from '@op/db/client';
+import { type TransactionType, aliasedTable, sql } from '@op/db/client';
+import {
+  authSessions,
+  authUsers,
+  processInstances,
+  profileUsers,
+} from '@op/db/schema';
 
 import {
   eligibleUsersSql,
@@ -11,6 +17,11 @@ import {
   type PeriodWindow,
   resolvePeriodRows,
 } from './utils';
+
+const authUser = aliasedTable(authUsers, 'au');
+const session = aliasedTable(authSessions, 's');
+const instance = aliasedTable(processInstances, 'i');
+const member = aliasedTable(profileUsers, 'pu');
 
 /**
  * Counts of eligible users.
@@ -48,26 +59,26 @@ export const getPeopleCounts = async ({
     active_users as (
       select
         eligible_users.auth_user_id,
-        greatest(au.last_sign_in_at, sessions.last_seen_at) as last_active_at
+        greatest(${authUser.lastSignInAt}, sessions.last_seen_at) as last_active_at
       from eligible_users
-      join auth.users au on au.id = eligible_users.auth_user_id
+      join ${authUsers} ${authUser} on ${authUser.id} = eligible_users.auth_user_id
       left join lateral (
         select max(greatest(
-          s.refreshed_at at time zone 'UTC',
-          s.updated_at,
-          s.created_at
+          ${session.refreshedAt} at time zone 'UTC',
+          ${session.updatedAt},
+          ${session.createdAt}
         )) as last_seen_at
-        from auth.sessions s
-        where s.user_id = eligible_users.auth_user_id
+        from ${authSessions} ${session}
+        where ${session.userId} = eligible_users.auth_user_id
       ) sessions on true
     ),
     launched as (${launchedProcessesSql(dataAsOf)}),
     process_members as (
-      select pu.auth_user_id, launched.is_completed, launched.completed_at
+      select ${member.authUserId}, launched.is_completed, launched.completed_at
       from launched
-      join decision_process_instances i on i.id = launched.id
-      join profile_users pu
-        on pu.profile_id = i.profile_id and pu.deleted_at is null
+      join ${processInstances} ${instance} on ${instance.id} = launched.id
+      join ${profileUsers} ${member}
+        on ${member.profileId} = ${instance.profileId} and ${member.deletedAt} is null
     )
     select
       w.period,

@@ -1,4 +1,5 @@
-import { type TransactionType, sql } from '@op/db/client';
+import { type TransactionType, aliasedTable, sql } from '@op/db/client';
+import { organizations } from '@op/db/schema';
 
 import { periodWindowsSql, timestampSql } from './dashboardSql';
 import {
@@ -6,6 +7,8 @@ import {
   type PeriodWindow,
   resolvePeriodRows,
 } from './utils';
+
+const organization = aliasedTable(organizations, 'o');
 
 export const getGrowthCounts = async ({
   tx,
@@ -26,10 +29,10 @@ export const getGrowthCounts = async ({
     total_organizations: number;
   }>(sql`
     with live_organizations as (
-      select o.created_at
-      from organizations o
-      where o.deleted_at is null
-        and o.created_at <= ${timestampSql(dataAsOf)}
+      select ${organization.createdAt}
+      from ${organizations} ${organization}
+      where ${organization.deletedAt} is null
+        and ${organization.createdAt} <= ${timestampSql(dataAsOf)}
     )
     select
       w.period,
