@@ -1,5 +1,5 @@
-# Test-specific Supabase configuration
-# This runs on different ports to avoid conflicts with the development instance
+# Integration-test Supabase configuration, used locally (`pnpm test:supabase:start`)
+# and by the Tests job in CI. It runs on its own ports, apart from the dev instance.
 
 project_id = "common-test"
 
