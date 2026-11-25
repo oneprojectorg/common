@@ -3,12 +3,12 @@ import { z } from 'zod';
 
 export const notificationActivityEncoder = z.object({
   id: z.string(),
-  eventName: z.string(),
-  actorProfileId: z.string().nullable(),
-  organizationId: z.string().nullable(),
-  processInstanceId: z.string().nullable(),
-  proposalId: z.string().nullable(),
-  postId: z.string().nullable(),
+  verb: z.string(),
+  actorId: z.string().nullable(),
+  objectType: z.string().nullable(),
+  objectId: z.string().nullable(),
+  targetType: z.string().nullable(),
+  targetId: z.string().nullable(),
   snapshot: z.unknown(),
   createdAt: z.string().nullable(),
 });

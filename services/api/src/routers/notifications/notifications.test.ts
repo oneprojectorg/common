@@ -69,7 +69,9 @@ async function seedNotifications(
       throw new Error('Seed failed: no outbox row');
     }
     onFinished(async () => {
-      await db.delete(activities).where(eq(activities.outboxId, outboxRow.id));
+      await db
+        .delete(activities)
+        .where(eq(activities.idempotencyKey, outboxRow.id));
       await db.delete(eventOutbox).where(eq(eventOutbox.id, outboxRow.id));
     });
 
@@ -77,7 +79,7 @@ async function seedNotifications(
       outboxRow.payload,
     );
     const recorded = await recordProposalCommentActivity({
-      outboxId: outboxRow.id,
+      idempotencyKey: outboxRow.id,
       ...payload,
     });
     await fanOutNotifications({
