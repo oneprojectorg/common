@@ -61,11 +61,18 @@ export function getDecisionRolePermissionsCollectionOptions(profileId: string) {
         profileId,
         trpcClient,
       });
+      const [rolesPath, rolesKeyMeta] = rolesQueryOptions.queryKey;
 
       return queryCollectionOptions({
-        // Nested under the roles key, so realtime and `listRoles.invalidate()`
-        // refetch the permissions of a role someone else added.
-        queryKey: [...rolesQueryOptions.queryKey, 'decisionPermissions'],
+        // Shares the `listRoles` path and input, so realtime and
+        // `listRoles.invalidate()` (whose keys carry no `type`) refetch the
+        // permissions of a role someone else added. Its own `type` keeps it
+        // off the roles key's prefix: the roles collection owns every cache
+        // entry under that prefix and would write role rows into this one.
+        queryKey: [
+          rolesPath,
+          { ...rolesKeyMeta, type: 'decisionPermissions' },
+        ],
         queryFn: async (): Promise<DecisionRolePermissionsRecord[]> => {
           const { items: roles } =
             await queryClient.fetchQuery(rolesQueryOptions);
