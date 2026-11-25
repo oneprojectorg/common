@@ -17,7 +17,6 @@ import { Badge } from '@op/sense/Badge';
 import { Card, CardContent, CardHeader } from '@op/sense/Card';
 import { Header1, Header2, Header3 } from '@op/sense/Header';
 import { SegmentedProgress } from '@op/sense/SegmentedProgress';
-import { Separator } from '@op/sense/Separator';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { cn } from '@op/sense/lib/utils';
@@ -44,6 +43,11 @@ type MetricTextResolver = (
 // so the figures of neighbouring cards start at the same height.
 const CARD_ROWS_CLASS_NAME = 'md:row-span-2 md:grid md:grid-rows-subgrid';
 
+const SKELETON_GRID_COLUMNS_CLASS_NAMES = {
+  2: 'md:grid-cols-2',
+  3: 'md:grid-cols-3',
+} as const;
+
 const WHOLE_USD_FORMAT: Intl.NumberFormatOptions = {
   style: 'currency',
   currency: 'USD',
@@ -68,16 +72,19 @@ export const CommonDashboard = () => {
 };
 
 export const CommonDashboardSkeleton = () => (
-  <div className="flex flex-col gap-8">
-    <Skeleton className="h-20 w-full" />
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-      {[...Array(3)].map((_, index) => (
-        <Skeleton key={index} className="h-36 w-full" />
-      ))}
+  <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-4">
+      <Skeleton className="h-12 w-full sm:w-80" />
+      <Skeleton className="h-10 w-64" />
     </div>
-    <Skeleton className="h-40 w-full" />
-    <Skeleton className="h-40 w-full" />
-    <Skeleton className="h-72 w-full" />
+    <SkeletonCardGrid cardCount={3} />
+    <SkeletonCardGrid cardCount={3} />
+    <SkeletonCardGrid cardCount={2} />
+    <div className="flex flex-col gap-4">
+      <SkeletonCardGrid cardCount={3} />
+      <Skeleton className="h-72 w-full" />
+    </div>
+    <SkeletonCardGrid cardCount={2} />
   </div>
 );
 
@@ -189,49 +196,37 @@ const GrowthSection = ({
   const resolveMetricText = useMetricText();
   const periodMetrics = metrics.periods[period];
 
-  const tiles = [
-    {
-      label: t('newUsersLabel'),
-      metric: periodMetrics.newUsers,
-      total: metrics.totals.users,
-    },
-    {
-      label: t('newOrganizationsLabel'),
-      metric: periodMetrics.newOrganizations,
-      total: metrics.totals.organizations,
-    },
-    {
-      label: t('newProcessesLabel'),
-      metric: periodMetrics.newProcesses,
-      total: metrics.totals.processes,
-      hint: t('launchDatesApproximateHint'),
-    },
-  ];
-
   return (
     <DashboardSection heading={t('growthHeading')}>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {tiles.map((tile) => (
-          <Card key={tile.label} className={CARD_ROWS_CLASS_NAME}>
-            <CardHeader className="justify-items-start gap-2">
-              <Header3 className="font-sans text-base font-strong">
-                {tile.label}
-              </Header3>
-              <PlaceholderBadge metric={tile.metric} />
-            </CardHeader>
-            <CardContent className="flex min-w-0 flex-col gap-1">
-              <MetricFigure metric={tile.metric} />
-              <p className="text-sm text-muted-foreground">
-                {t('allTimeTotalHint', {
-                  total: resolveMetricText(tile.total),
-                })}
-              </p>
-              {tile.hint ? (
-                <p className="text-sm text-muted-foreground">{tile.hint}</p>
-              ) : null}
-            </CardContent>
-          </Card>
-        ))}
+        <StatCard label={t('newUsersLabel')} metric={periodMetrics.newUsers}>
+          <StatHint>
+            {t('allTimeTotalHint', {
+              total: resolveMetricText(metrics.totals.users),
+            })}
+          </StatHint>
+        </StatCard>
+        <StatCard
+          label={t('newOrganizationsLabel')}
+          metric={periodMetrics.newOrganizations}
+        >
+          <StatHint>
+            {t('allTimeTotalHint', {
+              total: resolveMetricText(metrics.totals.organizations),
+            })}
+          </StatHint>
+        </StatCard>
+        <StatCard
+          label={t('newProcessesLabel')}
+          metric={periodMetrics.newProcesses}
+        >
+          <StatHint>
+            {t('allTimeTotalHint', {
+              total: resolveMetricText(metrics.totals.processes),
+            })}
+          </StatHint>
+          <StatHint>{t('launchDatesApproximateHint')}</StatHint>
+        </StatCard>
       </div>
     </DashboardSection>
   );
@@ -254,36 +249,37 @@ const PeopleSection = ({
 
   return (
     <DashboardSection heading={t('peopleHeading')}>
-      <Card>
-        <CardContent className="grid grid-cols-1 divide-y md:grid-cols-3 md:divide-x md:divide-y-0">
-          <StatColumn
-            label={t('totalUsersLabel')}
-            tag={t('toDateTag')}
-            metric={metrics.totals.users}
-            hint={t('registeredAccountsHint')}
-          />
-          <StatColumn
-            label={t('activeUsersLabel')}
-            tag={t('inPeriodTag')}
-            metric={periodMetrics.activeUsers}
-            hint={
-              activeUserShare
-                ? t('shareOfTotalUsersHint', { share: activeUserShare })
-                : undefined
-            }
-          />
-          <StatColumn
-            label={t('participatingUsersLabel')}
-            tag={t('inPeriodTag')}
-            metric={periodMetrics.participatingUsers}
-            hint={
-              participatingUserShare
-                ? t('shareOfActiveUsersHint', { share: participatingUserShare })
-                : undefined
-            }
-          />
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <StatCard
+          label={t('totalUsersLabel')}
+          tag={t('toDateTag')}
+          metric={metrics.totals.users}
+        >
+          <StatHint>{t('registeredAccountsHint')}</StatHint>
+        </StatCard>
+        <StatCard
+          label={t('activeUsersLabel')}
+          tag={t('inPeriodTag')}
+          metric={periodMetrics.activeUsers}
+        >
+          {activeUserShare ? (
+            <StatHint>
+              {t('shareOfTotalUsersHint', { share: activeUserShare })}
+            </StatHint>
+          ) : null}
+        </StatCard>
+        <StatCard
+          label={t('participatingUsersLabel')}
+          tag={t('inPeriodTag')}
+          metric={periodMetrics.participatingUsers}
+        >
+          {participatingUserShare ? (
+            <StatHint>
+              {t('shareOfActiveUsersHint', { share: participatingUserShare })}
+            </StatHint>
+          ) : null}
+        </StatCard>
+      </div>
     </DashboardSection>
   );
 };
@@ -299,23 +295,22 @@ const MoneySection = ({
 
   return (
     <DashboardSection heading={t('moneyHeading')}>
-      <Card>
-        <CardContent className="grid grid-cols-1 divide-y md:grid-cols-2 md:divide-x md:divide-y-0">
-          <StatColumn
-            label={t('totalMoneyMovedLabel')}
-            tag={t('toDateTag')}
-            metric={metrics.totals.moneyMoved}
-            numberFormat={WHOLE_USD_FORMAT}
-            hint={t('totalMoneyMovedHint')}
-          />
-          <StatColumn
-            label={t('activeProcessBudgetsLabel')}
-            tag={t('inPeriodTag')}
-            metric={metrics.periods[period].activeProcessBudgets}
-            numberFormat={WHOLE_USD_FORMAT}
-          />
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <StatCard
+          label={t('totalMoneyMovedLabel')}
+          tag={t('toDateTag')}
+          metric={metrics.totals.moneyMoved}
+          numberFormat={WHOLE_USD_FORMAT}
+        >
+          <StatHint>{t('totalMoneyMovedHint')}</StatHint>
+        </StatCard>
+        <StatCard
+          label={t('activeProcessBudgetsLabel')}
+          tag={t('inPeriodTag')}
+          metric={metrics.periods[period].activeProcessBudgets}
+          numberFormat={WHOLE_USD_FORMAT}
+        />
+      </div>
     </DashboardSection>
   );
 };
@@ -355,43 +350,47 @@ const ProcessesSection = ({
 
   return (
     <DashboardSection heading={t('processesHeading')}>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <StatCard
+          label={t('completedProcessesLabel')}
+          tag={t('inPeriodTag')}
+          metric={periodMetrics.completedProcesses}
+        >
+          <StatHint>
+            {t('allTimeTotalHint', {
+              total: resolveMetricText(metrics.totals.completedProcesses),
+            })}
+          </StatHint>
+        </StatCard>
+        <StatCard
+          label={t('activeProcessesLabel')}
+          tag={t('nowTag')}
+          metric={metrics.activeProcesses}
+        >
+          {periodMetrics.activeProcesses.status === 'available' ? (
+            <StatHint>
+              {t('activeInPeriodHint', {
+                count: periodMetrics.activeProcesses.value,
+              })}
+            </StatHint>
+          ) : null}
+        </StatCard>
+        <StatCard
+          label={t('submittedProposalsLabel')}
+          tag={t('inPeriodTag')}
+          metric={periodMetrics.submittedProposals}
+        >
+          {metrics.draftProposals.status === 'available' ? (
+            <StatHint>
+              {t('draftProposalsHint', {
+                count: metrics.draftProposals.value,
+              })}
+            </StatHint>
+          ) : null}
+        </StatCard>
+      </div>
       <Card>
         <CardContent className="flex flex-col gap-6">
-          <div className="grid grid-cols-1 divide-y md:grid-cols-3 md:divide-x md:divide-y-0">
-            <StatColumn
-              label={t('completedProcessesLabel')}
-              tag={t('inPeriodTag')}
-              metric={periodMetrics.completedProcesses}
-              hint={t('allTimeTotalHint', {
-                total: resolveMetricText(metrics.totals.completedProcesses),
-              })}
-            />
-            <StatColumn
-              label={t('activeProcessesLabel')}
-              tag={t('nowTag')}
-              metric={metrics.activeProcesses}
-              hint={
-                periodMetrics.activeProcesses.status === 'available'
-                  ? t('activeInPeriodHint', {
-                      count: periodMetrics.activeProcesses.value,
-                    })
-                  : undefined
-              }
-            />
-            <StatColumn
-              label={t('submittedProposalsLabel')}
-              tag={t('inPeriodTag')}
-              metric={periodMetrics.submittedProposals}
-              hint={
-                metrics.draftProposals.status === 'available'
-                  ? t('draftProposalsHint', {
-                      count: metrics.draftProposals.value,
-                    })
-                  : undefined
-              }
-            />
-          </div>
-          <Separator />
           <div className="flex flex-wrap items-center gap-2">
             <Header3 className="font-sans text-base font-strong">
               {t('votingFunnelHeading')}
@@ -518,31 +517,57 @@ const DashboardSection = ({
   </section>
 );
 
-const StatColumn = ({
+const StatCard = ({
   label,
   tag,
   metric,
   numberFormat,
-  hint,
+  children,
 }: {
   label: string;
-  tag: string;
+  /** Names the time scope of the figure. Omit for no scope badge. */
+  tag?: string;
   metric: DashboardMetric | DashboardMoneyMetric;
   /** How to format an available value. Omit for a plain number. */
   numberFormat?: Intl.NumberFormatOptions;
-  hint?: string;
+  /** Hint lines below the figure. */
+  children?: ReactNode;
 }) => (
-  <div className="flex min-w-0 flex-col gap-2 py-4 first:pt-0 last:pb-0 md:row-span-4 md:grid md:grid-rows-subgrid md:px-6 md:py-0 md:first:ps-0 md:last:pe-0">
-    <p className="text-sm font-strong">{label}</p>
-    <div className="flex flex-wrap items-center gap-2">
-      <Badge variant="outline" className="rounded-full font-normal">
-        {tag}
-      </Badge>
-      <PlaceholderBadge metric={metric} />
-      <CurrencyWarningBadge metric={metric} />
-    </div>
-    <MetricFigure metric={metric} numberFormat={numberFormat} />
-    {hint ? <p className="text-sm text-muted-foreground">{hint}</p> : null}
+  <Card className={CARD_ROWS_CLASS_NAME}>
+    <CardHeader className="justify-items-start gap-2">
+      <Header3 className="font-sans text-base font-strong">{label}</Header3>
+      {/* `empty:hidden` keeps the header gap out when no badge renders. */}
+      <div className="flex flex-wrap items-center gap-2 empty:hidden">
+        {tag ? (
+          <Badge variant="outline" className="rounded-full font-normal">
+            {tag}
+          </Badge>
+        ) : null}
+        <PlaceholderBadge metric={metric} />
+        <CurrencyWarningBadge metric={metric} />
+      </div>
+    </CardHeader>
+    <CardContent className="flex min-w-0 flex-col gap-1">
+      <MetricFigure metric={metric} numberFormat={numberFormat} />
+      {children}
+    </CardContent>
+  </Card>
+);
+
+const StatHint = ({ children }: { children: ReactNode }) => (
+  <p className="text-sm text-muted-foreground">{children}</p>
+);
+
+const SkeletonCardGrid = ({ cardCount }: { cardCount: 2 | 3 }) => (
+  <div
+    className={cn(
+      'grid grid-cols-1 gap-4',
+      SKELETON_GRID_COLUMNS_CLASS_NAMES[cardCount],
+    )}
+  >
+    {[...Array(cardCount)].map((_, index) => (
+      <Skeleton key={index} className="h-36 w-full" />
+    ))}
   </div>
 );
 
