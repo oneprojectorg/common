@@ -82,8 +82,8 @@ async function seedNotifications(
     });
     await fanOutNotifications({
       activityId: recorded!.activity.id,
-      userIds: [setup.user.id],
-      category: 'proposalComment',
+      authUserIds: [setup.user.id],
+      category: 'proposalsAndComments',
     });
     const [row] = await db
       .update(notifications)
@@ -114,7 +114,7 @@ describe('notifications.list', () => {
       notificationIds[2],
       notificationIds[1],
     ]);
-    expect(page1.items[0]!.category).toBe('proposalComment');
+    expect(page1.items[0]!.category).toBe('proposalsAndComments');
     expect(page1.items[0]!.activity.snapshot).toMatchObject({
       proposalTitle: 'Notified proposal',
       commentExcerpt: 'Comment number 3',

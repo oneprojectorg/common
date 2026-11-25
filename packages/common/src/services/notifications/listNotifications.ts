@@ -38,7 +38,7 @@ export const listNotifications = async ({
     .innerJoin(activities, eq(notifications.activityId, activities.id))
     .where(
       and(
-        eq(notifications.userId, authUserId),
+        eq(notifications.authUserId, authUserId),
         decodedCursor
           ? getGenericCursorCondition({
               columns: { id: notifications.id, date: notifications.createdAt },

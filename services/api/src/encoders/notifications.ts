@@ -1,3 +1,4 @@
+import { notificationCategories } from '@op/db/schema';
 import { z } from 'zod';
 
 export const notificationActivityEncoder = z.object({
@@ -14,7 +15,7 @@ export const notificationActivityEncoder = z.object({
 
 export const notificationEncoder = z.object({
   id: z.string(),
-  category: z.string(),
+  category: z.enum(notificationCategories),
   actionRequired: z.boolean(),
   seenAt: z.string().nullable(),
   readAt: z.string().nullable(),

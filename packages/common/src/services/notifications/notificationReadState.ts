@@ -16,7 +16,10 @@ export const getUnreadNotificationCount = async ({
     .select({ count: count() })
     .from(notifications)
     .where(
-      and(eq(notifications.userId, authUserId), isNull(notifications.readAt)),
+      and(
+        eq(notifications.authUserId, authUserId),
+        isNull(notifications.readAt),
+      ),
     );
 
   return row?.count ?? 0;
@@ -38,7 +41,7 @@ export const markNotificationsRead = async ({
     .set(READ_NOW)
     .where(
       and(
-        eq(notifications.userId, authUserId),
+        eq(notifications.authUserId, authUserId),
         inArray(notifications.id, notificationIds),
         isNull(notifications.readAt),
       ),
@@ -57,7 +60,10 @@ export const markAllNotificationsRead = async ({
     .update(notifications)
     .set(READ_NOW)
     .where(
-      and(eq(notifications.userId, authUserId), isNull(notifications.readAt)),
+      and(
+        eq(notifications.authUserId, authUserId),
+        isNull(notifications.readAt),
+      ),
     )
     .returning({ id: notifications.id });
 
