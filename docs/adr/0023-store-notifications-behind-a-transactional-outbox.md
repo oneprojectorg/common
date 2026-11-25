@@ -68,10 +68,10 @@ erDiagram
     uuid outbox_id UK "plain uuid, no FK"
     text event_name
     uuid actor_profile_id FK "set null"
-    uuid organization_id FK "cascade"
-    uuid process_instance_id FK "cascade"
-    uuid proposal_id FK "cascade"
-    uuid post_id FK "cascade"
+    uuid organization_id FK "set null"
+    uuid process_instance_id FK "set null"
+    uuid proposal_id FK "set null"
+    uuid post_id FK "set null"
     jsonb snapshot
   }
   notifications {
@@ -151,12 +151,13 @@ send dedupes on a Resend idempotency key, which Resend keeps for 24
 hours; before sending, the function also skips any notification whose
 deliveries log already records a send.
 
-Foreign keys follow the schema's delete mechanism: scope columns
+Every foreign key on `activities` sets null: the scope columns
 (`organization_id`, `process_instance_id`, `proposal_id`, `post_id`)
-cascade, so a deleted scope takes its feed with it; `actor_profile_id`
-sets null, so a departed actor does not erase events from other
-people's feeds; `notifications` and `notification_deliveries` cascade
-from their parents.
+and `actor_profile_id`. A deleted object leaves the event in place,
+and the row renders from its snapshot — the record of what the object
+looked like at that time. A departed actor does not erase events from
+other people's feeds. `notifications` and `notification_deliveries`
+cascade from their parents.
 
 ## Consequences
 

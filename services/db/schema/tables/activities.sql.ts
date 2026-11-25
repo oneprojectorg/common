@@ -24,16 +24,16 @@ export const activities = pgTable(
       onDelete: 'set null',
     }),
     organizationId: uuid().references(() => organizations.id, {
-      onDelete: 'cascade',
+      onDelete: 'set null',
     }),
     processInstanceId: uuid().references(() => processInstances.id, {
-      onDelete: 'cascade',
+      onDelete: 'set null',
     }),
     proposalId: uuid().references(() => proposals.id, {
-      onDelete: 'cascade',
+      onDelete: 'set null',
     }),
     postId: uuid().references(() => posts.id, {
-      onDelete: 'cascade',
+      onDelete: 'set null',
     }),
     snapshot: jsonb().notNull(),
     ...timestamps,
@@ -61,7 +61,11 @@ export const activities = pgTable(
       table.createdAt.desc().nullsFirst(),
       table.id.desc().nullsFirst(),
     ),
-    index('activities_actor_profile_id_idx').on(table.actorProfileId),
+    index('activities_actor_profile_id_created_at_id_idx').on(
+      table.actorProfileId,
+      table.createdAt.desc().nullsFirst(),
+      table.id.desc().nullsFirst(),
+    ),
   ],
 );
 

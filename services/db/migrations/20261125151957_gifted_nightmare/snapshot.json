@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "5768cbf6-1f31-40e7-8617-a4e092ce247c",
+  "id": "dc3ac4e9-dc33-4a9a-88fb-7790b7a31f5a",
   "prevIds": [
     "147d002c-4aec-4154-ae1c-4ef509578617"
   ],
@@ -9093,6 +9093,20 @@
           "asc": true,
           "nullsFirst": false,
           "opclass": null
+        },
+        {
+          "value": "created_at",
+          "isExpression": false,
+          "asc": false,
+          "nullsFirst": true,
+          "opclass": null
+        },
+        {
+          "value": "id",
+          "isExpression": false,
+          "asc": false,
+          "nullsFirst": true,
+          "opclass": null
         }
       ],
       "isUnique": false,
@@ -9100,7 +9114,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "activities_actor_profile_id_idx",
+      "name": "activities_actor_profile_id_created_at_id_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "activities"
@@ -14423,7 +14437,7 @@
         "id"
       ],
       "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
+      "onDelete": "SET NULL",
       "name": "activities_organization_id_organizations_id_fkey",
       "entityType": "fks",
       "schema": "public",
@@ -14440,7 +14454,7 @@
         "id"
       ],
       "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
+      "onDelete": "SET NULL",
       "name": "activities_tRCCNWABay1d_fkey",
       "entityType": "fks",
       "schema": "public",
@@ -14457,7 +14471,7 @@
         "id"
       ],
       "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
+      "onDelete": "SET NULL",
       "name": "activities_proposal_id_decision_proposals_id_fkey",
       "entityType": "fks",
       "schema": "public",
@@ -14474,7 +14488,7 @@
         "id"
       ],
       "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
+      "onDelete": "SET NULL",
       "name": "activities_post_id_posts_id_fkey",
       "entityType": "fks",
       "schema": "public",
