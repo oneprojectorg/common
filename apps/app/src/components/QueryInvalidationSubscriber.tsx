@@ -126,9 +126,11 @@ function useInvalidateQueries(enabled: boolean): void {
         queryChannelRegistry.getQueryKeysForChannels(freshChannels);
 
       await Promise.allSettled(
-        queryKeys.map((queryKey) =>
-          queryClientRef.current.invalidateQueries({ queryKey }),
-        ),
+        queryKeys
+          .filter(Array.isArray)
+          .map((queryKey) =>
+            queryClientRef.current.invalidateQueries({ queryKey }),
+          ),
       );
     },
     [],
@@ -152,9 +154,11 @@ function useInvalidateQueries(enabled: boolean): void {
       const queryKeys = queryChannelRegistry.getQueryKeysForChannels([channel]);
 
       await Promise.allSettled(
-        queryKeys.map((queryKey) =>
-          queryClientRef.current.invalidateQueries({ queryKey }),
-        ),
+        queryKeys
+          .filter(Array.isArray)
+          .map((queryKey) =>
+            queryClientRef.current.invalidateQueries({ queryKey }),
+          ),
       );
     },
     [],

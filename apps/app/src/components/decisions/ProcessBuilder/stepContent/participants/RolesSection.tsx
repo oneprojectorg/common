@@ -1,9 +1,8 @@
 'use client';
 
-import { trpc } from '@op/api/client';
-import type { Role } from '@op/api/encoders';
+import { ClientOnly } from '@/utils/ClientOnly';
 import type { DecisionRolePermissions } from '@op/common';
-import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
+import { useMediaQuery } from '@op/hooks';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,9 +40,9 @@ import {
   TableHeader,
   TableRow,
 } from '@op/sense/Table';
-import { toast } from '@op/sense/Toast';
 import { screens } from '@op/styles/constants';
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { eq, useLiveSuspenseQuery } from '@tanstack/react-db';
+import { Suspense, useState } from 'react';
 import {
   LuCheck,
   LuEllipsis,
@@ -56,6 +55,10 @@ import {
 import { useTranslations } from '@/lib/i18n';
 
 import type { SectionProps } from '../../contentRegistry';
+import type { RoleRecord } from './roleCollections';
+import { useDecisionPermissionToggle } from './useDecisionPermissionToggle';
+import { DEFAULT_DECISION_PERMISSIONS, useRoleActions } from './useRoleActions';
+import { useRoleCollections } from './useRoleCollections';
 
 const PERMISSION_COLUMNS = [
   { key: 'admin', label: 'Manage Process' },
@@ -67,19 +70,6 @@ const PERMISSION_COLUMNS = [
 ] as const;
 
 type DecisionRoleKey = (typeof PERMISSION_COLUMNS)[number]['key'];
-
-const DEFAULT_DECISION_PERMISSIONS: DecisionRolePermissions = {
-  admin: false,
-  create: false,
-  read: false,
-  update: false,
-  delete: false,
-  inviteMembers: false,
-  review: false,
-  submitProposals: false,
-  vote: false,
-  developProposals: false,
-};
 
 function useNewRolePermissions() {
   const [permissions, setPermissions] = useState<DecisionRolePermissions>({
@@ -115,96 +105,6 @@ export default function RolesSection({
   );
 }
 
-function useRoleMutation({
-  role,
-  profileId,
-  onComplete,
-}: {
-  role?: Role;
-  profileId: string;
-  onComplete: () => void;
-}) {
-  const t = useTranslations();
-  const utils = trpc.useUtils();
-
-  const pendingDecisionRolePermissions = useRef<DecisionRolePermissions | null>(
-    null,
-  );
-  const updateDecisionRoles = trpc.profile.updateDecisionRoles.useMutation();
-
-  const createRole = trpc.profile.createRole.useMutation({
-    onSuccess: async (data) => {
-      const decisionPermissions = pendingDecisionRolePermissions.current;
-      pendingDecisionRolePermissions.current = null;
-      if (
-        decisionPermissions &&
-        Object.values(decisionPermissions).some(Boolean)
-      ) {
-        try {
-          await updateDecisionRoles.mutateAsync({
-            roleId: data.id,
-            decisionPermissions,
-          });
-        } catch {
-          toast.error(t('decisions.updateRoleError'));
-          utils.profile.listRoles.invalidate();
-          onComplete();
-          return;
-        }
-      }
-      toast.success(t('decisions.processBuilder.createRoleSuccess'));
-      utils.profile.listRoles.invalidate();
-      onComplete();
-    },
-    onError: () => {
-      toast.error(t('decisions.processBuilder.createRoleError'));
-    },
-  });
-
-  const updateRole = trpc.profile.updateRole.useMutation({
-    onSuccess: () => {
-      toast.success(t('decisions.updateRoleSuccess'));
-      utils.profile.listRoles.invalidate();
-      onComplete();
-    },
-    onError: () => {
-      toast.error(t('decisions.updateRoleError'));
-    },
-  });
-
-  const isPending =
-    (role ? updateRole.isPending : createRole.isPending) ||
-    updateDecisionRoles.isPending;
-
-  const save = (
-    name: string,
-    decisionPermissions?: DecisionRolePermissions,
-  ) => {
-    if (isPending) {
-      return;
-    }
-    if (role) {
-      updateRole.mutate({ roleId: role.id, name });
-    } else {
-      pendingDecisionRolePermissions.current = decisionPermissions ?? null;
-      createRole.mutate({
-        profileId,
-        zoneName: 'decisions',
-        name,
-        permissions: {
-          admin: false,
-          create: false,
-          read: false,
-          update: false,
-          delete: false,
-        },
-      });
-    }
-  };
-
-  return { save, isPending };
-}
-
 function RoleNameForm({
   roleName,
   onRoleNameChange,
@@ -238,27 +138,25 @@ function RoleNameForm({
 
 function RoleRow({
   role,
+  decisionPermissions,
   profileId,
   onDelete,
 }: {
-  role: Role;
+  role: RoleRecord;
+  decisionPermissions?: DecisionRolePermissions;
   profileId: string;
-  onDelete: (role: Role) => void;
+  onDelete: (role: RoleRecord) => void;
 }) {
   const t = useTranslations();
   const [isEditing, setIsEditing] = useState(false);
   const [roleName, setRoleName] = useState(role.name);
-
-  const { save, isPending } = useRoleMutation({
-    role,
-    profileId,
-    onComplete: () => setIsEditing(false),
-  });
+  const { renameRole } = useRoleActions(profileId);
 
   const handleSave = () => {
     const trimmed = roleName.trim();
     if (trimmed) {
-      save(trimmed);
+      renameRole({ roleId: role.id, name: trimmed });
+      setIsEditing(false);
     }
   };
 
@@ -285,7 +183,11 @@ function RoleRow({
           role.name
         )}
       </TableCell>
-      <DecisionRoleCheckboxes roleId={role.id} profileId={profileId} />
+      <DecisionRoleCheckboxes
+        role={role}
+        decisionPermissions={decisionPermissions}
+        profileId={profileId}
+      />
       <TableCell className="w-22 p-2">
         <div className="flex gap-1">
           {isEditing ? (
@@ -294,7 +196,7 @@ function RoleRow({
                 variant="outline"
                 size="icon-sm"
                 onClick={handleSave}
-                disabled={!roleName.trim() || isPending}
+                disabled={!roleName.trim()}
                 aria-label={t('decisions.processBuilder.saveRoleAction')}
                 className="ms-auto"
               >
@@ -318,6 +220,7 @@ function RoleRow({
                     size="icon-sm"
                     aria-label={t('decisions.processBuilder.roleOptionsLabel')}
                     className="ms-auto"
+                    disabled={role.isUnsaved}
                   >
                     <LuEllipsis className="size-4" />
                   </Button>
@@ -357,19 +260,15 @@ function AddRoleDialog({
   const [roleName, setRoleName] = useState('');
   const { permissions, togglePermission, resetPermissions } =
     useNewRolePermissions();
-  const { save, isPending } = useRoleMutation({
-    profileId,
-    onComplete: () => {
-      setRoleName('');
-      resetPermissions();
-      onClose();
-    },
-  });
+  const { createRole } = useRoleActions(profileId);
 
   const handleSubmit = () => {
     const trimmed = roleName.trim();
     if (trimmed) {
-      save(trimmed, permissions);
+      createRole({ name: trimmed, permissions });
+      setRoleName('');
+      resetPermissions();
+      onClose();
     }
   };
 
@@ -416,10 +315,7 @@ function AddRoleDialog({
           <Button variant="outline" onClick={onClose}>
             {t('Cancel')}
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!roleName.trim() || isPending}
-          >
+          <Button onClick={handleSubmit} disabled={!roleName.trim()}>
             {t('Save')}
           </Button>
         </DialogFooter>
@@ -434,6 +330,9 @@ function RolesSectionContent({
 }: SectionProps) {
   const t = useTranslations();
   const [isAdding, setIsAdding] = useState(false);
+  const tableFallback = (
+    <div className="h-48 animate-pulse rounded-lg bg-secondary" />
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -452,108 +351,42 @@ function RolesSectionContent({
         </Button>
       </div>
 
-      <Suspense
-        fallback={
-          <div className="h-48 animate-pulse rounded-lg bg-secondary" />
-        }
-      >
-        <RolesTable
-          decisionProfileId={decisionProfileId}
-          decisionName={decisionName}
-          isAdding={isAdding}
-          onAddComplete={() => setIsAdding(false)}
-        />
-      </Suspense>
+      {/* TanStack DB collections do not render on the server. */}
+      <ClientOnly fallback={tableFallback}>
+        <Suspense fallback={tableFallback}>
+          <RolesTable
+            decisionProfileId={decisionProfileId}
+            decisionName={decisionName}
+            isAdding={isAdding}
+            onAddComplete={() => setIsAdding(false)}
+          />
+        </Suspense>
+      </ClientOnly>
     </div>
   );
 }
 
-const DEBOUNCE_MS = 300;
-
-function usePermissionToggle(roleId: string, profileId: string) {
-  const t = useTranslations();
-  const utils = trpc.useUtils();
-
-  const { data: serverPermissions } = trpc.profile.getDecisionRole.useQuery({
-    roleId,
-    profileId,
-  });
-
-  // Local overlay: null = use server data, non-null = use local override
-  const [localPermissions, setLocalPermissions] =
-    useState<DecisionRolePermissions | null>(null);
-
-  const localRef = useRef(localPermissions);
-  localRef.current = localPermissions;
-  const updatePermissions = trpc.profile.updateDecisionRoles.useMutation();
-
-  const flush = useDebouncedCallback(
-    () => {
-      const toSend = localRef.current;
-      if (!toSend) {
-        return;
-      }
-      updatePermissions.mutate(
-        { roleId, decisionPermissions: toSend },
-        {
-          onSettled: (_data, error) => {
-            if (!flush.isPending()) {
-              setLocalPermissions(null);
-            }
-            if (error) {
-              toast.error(t('decisions.updateRoleError'));
-            } else {
-              toast.success(t('decisions.updateRoleSuccess'));
-            }
-            utils.profile.getDecisionRole.invalidate({ roleId, profileId });
-          },
-        },
-      );
-    },
-    DEBOUNCE_MS,
-    { leading: false, trailing: true },
-  );
-
-  // Flush pending changes on unmount so edits aren't lost on navigation
-  useEffect(() => {
-    return () => {
-      flush.flush();
-    };
-  }, [flush]);
-
-  const togglePermission = (key: DecisionRoleKey) => {
-    const base = localPermissions ?? serverPermissions;
-    if (!base) {
-      return;
-    }
-    setLocalPermissions({ ...base, [key]: !base[key] });
-    flush();
-  };
-
-  return {
-    optimisticPermissions: localPermissions ?? serverPermissions ?? null,
-    togglePermission,
-  };
-}
-
 function DecisionRoleCheckboxes({
-  roleId,
+  role,
+  decisionPermissions,
   profileId,
 }: {
-  roleId: string;
+  role: RoleRecord;
+  decisionPermissions?: DecisionRolePermissions;
   profileId: string;
 }) {
-  const { optimisticPermissions, togglePermission } = usePermissionToggle(
-    roleId,
+  const togglePermission = useDecisionPermissionToggle({
+    roleId: role.id,
     profileId,
-  );
+  });
 
   return PERMISSION_COLUMNS.map(({ key, label }) => (
     <TableCell key={key} className="p-0 text-center">
       <div className="flex justify-center">
         <Checkbox
-          checked={optimisticPermissions?.[key] ?? false}
+          checked={decisionPermissions?.[key] ?? false}
           onCheckedChange={() => togglePermission(key)}
+          disabled={role.isUnsaved}
           aria-label={`${label} permission`}
         />
       </div>
@@ -562,29 +395,32 @@ function DecisionRoleCheckboxes({
 }
 
 function MobileDecisionRoles({
-  roleId,
+  role,
+  decisionPermissions,
   profileId,
 }: {
-  roleId: string;
+  role: RoleRecord;
+  decisionPermissions?: DecisionRolePermissions;
   profileId: string;
 }) {
   const t = useTranslations();
-  const { optimisticPermissions, togglePermission } = usePermissionToggle(
-    roleId,
+  const togglePermission = useDecisionPermissionToggle({
+    roleId: role.id,
     profileId,
-  );
+  });
 
   return (
     <div className="flex flex-col gap-2">
       {PERMISSION_COLUMNS.map(({ key, label }) => (
         <Field key={key} orientation="horizontal">
           <Checkbox
-            id={`mobile-perm-${roleId}-${key}`}
-            checked={optimisticPermissions?.[key] ?? false}
+            id={`mobile-perm-${role.id}-${key}`}
+            checked={decisionPermissions?.[key] ?? false}
             onCheckedChange={() => togglePermission(key)}
+            disabled={role.isUnsaved}
             aria-label={`${label} permission`}
           />
-          <FieldLabel htmlFor={`mobile-perm-${roleId}-${key}`}>
+          <FieldLabel htmlFor={`mobile-perm-${role.id}-${key}`}>
             {t(label)}
           </FieldLabel>
         </Field>
@@ -595,14 +431,16 @@ function MobileDecisionRoles({
 
 function MobileRoleCard({
   role,
+  decisionPermissions,
   profileId,
   onDelete,
   onEdit,
 }: {
-  role: Role;
+  role: RoleRecord;
+  decisionPermissions?: DecisionRolePermissions;
   profileId: string;
-  onDelete?: (role: Role) => void;
-  onEdit?: (role: Role) => void;
+  onDelete?: (role: RoleRecord) => void;
+  onEdit?: (role: RoleRecord) => void;
 }) {
   const t = useTranslations();
 
@@ -618,6 +456,7 @@ function MobileRoleCard({
                   variant="outline"
                   size="icon-sm"
                   aria-label={t('decisions.processBuilder.roleOptionsLabel')}
+                  disabled={role.isUnsaved}
                 >
                   <LuEllipsis className="size-4" />
                 </Button>
@@ -644,34 +483,37 @@ function MobileRoleCard({
         )}
       </div>
 
-      <MobileDecisionRoles roleId={role.id} profileId={profileId} />
+      <MobileDecisionRoles
+        role={role}
+        decisionPermissions={decisionPermissions}
+        profileId={profileId}
+      />
     </div>
   );
 }
 
 function MobileRoleFormCard({
   role,
+  decisionPermissions,
   profileId,
   onComplete,
   onDelete,
 }: {
-  role: Role;
+  role: RoleRecord;
+  decisionPermissions?: DecisionRolePermissions;
   profileId: string;
   onComplete: () => void;
-  onDelete?: (role: Role) => void;
+  onDelete?: (role: RoleRecord) => void;
 }) {
   const t = useTranslations();
   const [roleName, setRoleName] = useState(role.name);
-  const { save, isPending } = useRoleMutation({
-    role,
-    profileId,
-    onComplete,
-  });
+  const { renameRole } = useRoleActions(profileId);
 
   const handleSave = () => {
     const trimmed = roleName.trim();
     if (trimmed) {
-      save(trimmed);
+      renameRole({ roleId: role.id, name: trimmed });
+      onComplete();
     }
   };
 
@@ -698,7 +540,7 @@ function MobileRoleFormCard({
           variant="outline"
           size="icon-sm"
           onClick={handleSave}
-          disabled={!roleName.trim() || isPending}
+          disabled={!roleName.trim()}
           aria-label={t('decisions.processBuilder.saveRoleAction')}
         >
           <LuCheck className="size-4" />
@@ -716,7 +558,11 @@ function MobileRoleFormCard({
         )}
       </div>
 
-      <MobileDecisionRoles roleId={role.id} profileId={profileId} />
+      <MobileDecisionRoles
+        role={role}
+        decisionPermissions={decisionPermissions}
+        profileId={profileId}
+      />
     </div>
   );
 }
@@ -731,16 +577,13 @@ function AddRoleRow({
   const t = useTranslations();
   const [roleName, setRoleName] = useState('');
   const { permissions, togglePermission } = useNewRolePermissions();
-
-  const { save, isPending } = useRoleMutation({
-    profileId,
-    onComplete,
-  });
+  const { createRole } = useRoleActions(profileId);
 
   const handleSave = () => {
     const trimmed = roleName.trim();
     if (trimmed) {
-      save(trimmed, permissions);
+      createRole({ name: trimmed, permissions });
+      onComplete();
     }
   };
 
@@ -771,7 +614,7 @@ function AddRoleRow({
             variant="outline"
             size="icon-sm"
             onClick={handleSave}
-            disabled={!roleName.trim() || isPending}
+            disabled={!roleName.trim()}
             aria-label={t('decisions.processBuilder.saveRoleAction')}
             className="ms-auto"
           >
@@ -795,28 +638,24 @@ function RolesTable({
   onAddComplete: () => void;
 }) {
   const t = useTranslations();
-  const utils = trpc.useUtils();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
-  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
-  const [roleToEdit, setRoleToEdit] = useState<Role | null>(null);
+  const [roleToDelete, setRoleToDelete] = useState<RoleRecord | null>(null);
+  const [roleToEdit, setRoleToEdit] = useState<RoleRecord | null>(null);
 
-  const [{ items: roles }] = trpc.profile.listRoles.useSuspenseQuery({
-    profileId: decisionProfileId,
-    zoneName: 'decisions',
-  });
+  const { deleteRole } = useRoleActions(decisionProfileId);
+  const collections = useRoleCollections(decisionProfileId);
+  const { data: rows } = useLiveSuspenseQuery((q) =>
+    q
+      .from({ role: collections.roles })
+      .join(
+        { access: collections.decisionPermissions },
+        ({ role, access }) => eq(role.id, access.roleId),
+        'left',
+      )
+      .orderBy(({ role }) => role.name),
+  );
 
-  const deleteRoleMutation = trpc.profile.deleteRole.useMutation({
-    onSuccess: () => {
-      toast.success(t('decisions.processBuilder.deleteRoleSuccess'));
-      utils.profile.listRoles.invalidate();
-      setRoleToDelete(null);
-    },
-    onError: () => {
-      toast.error(t('decisions.processBuilder.deleteRoleError'));
-    },
-  });
-
-  if (roles.length === 0 && !isAdding) {
+  if (rows.length === 0 && !isAdding) {
     return (
       <Empty>
         <EmptyHeader>
@@ -836,18 +675,20 @@ function RolesTable({
       return;
     }
 
-    deleteRoleMutation.mutate({ roleId: roleToDelete.id });
+    deleteRole(roleToDelete.id);
+    setRoleToDelete(null);
   };
 
   return (
     <>
       {isMobile ? (
         <div className="flex flex-col gap-4">
-          {roles.map((role) =>
+          {rows.map(({ role, access }) =>
             roleToEdit?.id === role.id ? (
               <MobileRoleFormCard
                 key={role.id}
                 role={role}
+                decisionPermissions={access?.decisionPermissions}
                 profileId={decisionProfileId}
                 onComplete={() => setRoleToEdit(null)}
                 onDelete={setRoleToDelete}
@@ -856,6 +697,7 @@ function RolesTable({
               <MobileRoleCard
                 key={role.id}
                 role={role}
+                decisionPermissions={access?.decisionPermissions}
                 profileId={decisionProfileId}
                 onDelete={setRoleToDelete}
                 onEdit={setRoleToEdit}
@@ -883,10 +725,11 @@ function RolesTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {roles.map((role) => (
+              {rows.map(({ role, access }) => (
                 <RoleRow
                   key={role.id}
                   role={role}
+                  decisionPermissions={access?.decisionPermissions}
                   profileId={decisionProfileId}
                   onDelete={setRoleToDelete}
                 />
@@ -930,11 +773,8 @@ function RolesTable({
             <AlertDialogAction
               variant="destructive"
               onClick={handleDeleteConfirm}
-              disabled={deleteRoleMutation.isPending}
             >
-              {deleteRoleMutation.isPending
-                ? t('removingProgress')
-                : t('Remove')}
+              {t('Remove')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
