@@ -20,7 +20,7 @@
   "dependencies": {
     "@op/core": "workspace:*",
     "@op/types": "workspace:*",
-    "nodemailer": "^6.10.0",
+    "nodemailer": "^10.1.4",
     "react": "^19.0.0",
     "react-email": "^6.11.16",
     "resend": "^6.0.2",
@@ -30,7 +30,7 @@
     "@op/typescript-config": "workspace:*",
     "@op/vitest-config": "workspace:*",
     "@react-email/ui": "^6.11.16",
-    "@types/nodemailer": "^6.4.17",
+    "@types/nodemailer": "^8.0.2",
     "@types/react": "19.0.10",
     "@vitest/coverage-istanbul": "catalog:",
     "typescript": "7.0.2",
