@@ -11,47 +11,65 @@ describe('isPhaseReady', () => {
   const emptyForm = { properties: {} };
 
   it('needs both dates', () => {
-    expect(isPhaseReady({ ...dated, endDate: undefined }, {})).toBe(false);
-    expect(isPhaseReady({ ...dated, startDate: undefined }, {})).toBe(false);
-    expect(isPhaseReady(dated, {})).toBe(true);
+    expect(
+      isPhaseReady({ phase: { ...dated, endDate: undefined }, decision: {} }),
+    ).toBe(false);
+    expect(
+      isPhaseReady({ phase: { ...dated, startDate: null }, decision: {} }),
+    ).toBe(false);
+    expect(isPhaseReady({ phase: dated, decision: {} })).toBe(true);
   });
 
   it("takes a collecting phase's own form first, then the decision's", () => {
     const collecting = { ...dated, rules: { proposals: { submit: true } } };
 
-    expect(isPhaseReady(collecting, {})).toBe(false);
-    expect(isPhaseReady(collecting, { proposalTemplate: form })).toBe(true);
-    expect(isPhaseReady({ ...collecting, proposalTemplate: form }, {})).toBe(
-      true,
-    );
+    expect(isPhaseReady({ phase: collecting, decision: {} })).toBe(false);
     expect(
-      isPhaseReady(
-        { ...collecting, proposalTemplate: emptyForm },
-        { proposalTemplate: form },
-      ),
+      isPhaseReady({ phase: collecting, decision: { proposalTemplate: form } }),
+    ).toBe(true);
+    expect(
+      isPhaseReady({
+        phase: { ...collecting, proposalTemplate: form },
+        decision: {},
+      }),
+    ).toBe(true);
+    expect(
+      isPhaseReady({
+        phase: { ...collecting, proposalTemplate: emptyForm },
+        decision: { proposalTemplate: form },
+      }),
     ).toBe(false);
   });
 
   it('needs a field in the form, not just a form', () => {
+    const developing = { ...dated, rules: { proposals: { develop: true } } };
+
     expect(
-      isPhaseReady(
-        { ...dated, rules: { proposals: { develop: true } } },
-        { proposalTemplate: emptyForm },
-      ),
+      isPhaseReady({
+        phase: developing,
+        decision: { proposalTemplate: emptyForm },
+      }),
     ).toBe(false);
+    expect(
+      isPhaseReady({ phase: developing, decision: { proposalTemplate: form } }),
+    ).toBe(true);
   });
 
   it('does not count the title as a question', () => {
     const collecting = { ...dated, rules: { proposals: { submit: true } } };
 
     expect(
-      isPhaseReady(collecting, {
-        proposalTemplate: { properties: { title: {} } },
+      isPhaseReady({
+        phase: collecting,
+        decision: { proposalTemplate: { properties: { title: {} } } },
       }),
     ).toBe(false);
     expect(
-      isPhaseReady(collecting, {
-        proposalTemplate: { properties: { title: {}, budget: {} } },
+      isPhaseReady({
+        phase: collecting,
+        decision: {
+          proposalTemplate: { properties: { title: {}, budget: {} } },
+        },
       }),
     ).toBe(true);
   });
@@ -59,8 +77,35 @@ describe('isPhaseReady', () => {
   it('needs a criterion on a review phase', () => {
     const reviewing = { ...dated, rules: { reviews: { submit: true } } };
 
-    expect(isPhaseReady(reviewing, { proposalTemplate: form })).toBe(false);
-    expect(isPhaseReady(reviewing, { rubricTemplate: form })).toBe(true);
+    expect(
+      isPhaseReady({ phase: reviewing, decision: { proposalTemplate: form } }),
+    ).toBe(false);
+    expect(
+      isPhaseReady({
+        phase: reviewing,
+        decision: { rubricTemplate: emptyForm },
+      }),
+    ).toBe(false);
+    expect(
+      isPhaseReady({ phase: reviewing, decision: { rubricTemplate: form } }),
+    ).toBe(true);
+  });
+
+  it("takes a review phase's own rubric over the decision's", () => {
+    const reviewing = { ...dated, rules: { reviews: { submit: true } } };
+
+    expect(
+      isPhaseReady({
+        phase: { ...reviewing, rubricTemplate: emptyForm },
+        decision: { rubricTemplate: form },
+      }),
+    ).toBe(false);
+    expect(
+      isPhaseReady({
+        phase: { ...reviewing, rubricTemplate: form },
+        decision: {},
+      }),
+    ).toBe(true);
   });
 
   it('needs both forms on a phase that collects proposals and reviews them', () => {
@@ -69,16 +114,26 @@ describe('isPhaseReady', () => {
       rules: { proposals: { submit: true }, reviews: { submit: true } },
     };
 
-    expect(isPhaseReady(both, { rubricTemplate: form })).toBe(false);
-    expect(isPhaseReady(both, { proposalTemplate: form })).toBe(false);
     expect(
-      isPhaseReady(both, { proposalTemplate: form, rubricTemplate: form }),
+      isPhaseReady({ phase: both, decision: { rubricTemplate: form } }),
+    ).toBe(false);
+    expect(
+      isPhaseReady({ phase: both, decision: { proposalTemplate: form } }),
+    ).toBe(false);
+    expect(
+      isPhaseReady({
+        phase: both,
+        decision: { proposalTemplate: form, rubricTemplate: form },
+      }),
     ).toBe(true);
   });
 
   it('needs no form on a voting phase', () => {
     expect(
-      isPhaseReady({ ...dated, rules: { voting: { submit: true } } }, {}),
+      isPhaseReady({
+        phase: { ...dated, rules: { voting: { submit: true } } },
+        decision: {},
+      }),
     ).toBe(true);
   });
 });

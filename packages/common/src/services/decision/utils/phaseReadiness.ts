@@ -1,24 +1,26 @@
 import type { PhaseRules } from '../schemas/types';
 import { isDevelopPhase, isReviewPhase, isSubmitPhase } from './phaseSettings';
 
-type FieldsTemplate =
-  | { properties?: Record<string, unknown> }
-  | null
-  | undefined;
+const PROPOSAL_TITLE_FIELD = 'title';
+
+type FieldsTemplate = { properties?: Record<string, unknown> } | undefined;
 
 interface PhaseTemplates {
   proposalTemplate?: FieldsTemplate;
   rubricTemplate?: FieldsTemplate;
 }
 
-export function isPhaseReady(
+export function isPhaseReady({
+  phase,
+  decision,
+}: {
   phase: PhaseTemplates & {
     startDate?: string | null;
     endDate?: string | null;
     rules?: PhaseRules;
-  },
-  decision: PhaseTemplates,
-): boolean {
+  };
+  decision: PhaseTemplates;
+}): boolean {
   if (!phase.startDate || !phase.endDate) {
     return false;
   }
@@ -45,5 +47,7 @@ function hasFields(template: FieldsTemplate): boolean {
 }
 
 function hasQuestions(template: FieldsTemplate): boolean {
-  return Object.keys(template?.properties ?? {}).some((key) => key !== 'title');
+  return Object.keys(template?.properties ?? {}).some(
+    (key) => key !== PROPOSAL_TITLE_FIELD,
+  );
 }
