@@ -594,7 +594,7 @@
     "allTimePeriod": "All-time",
     "scopeStatus": "Showing: All processes · {period}",
     "dataAsOfStatus": "Data as of <time>{date}</time>",
-    "growthHeading": "Platform growth: new in the selected period",
+    "growthHeading": "Platform growth",
     "newUsersLabel": "New users",
     "newOrganizationsLabel": "New organizations",
     "newProcessesLabel": "New processes",

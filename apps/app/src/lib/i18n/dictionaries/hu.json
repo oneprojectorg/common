@@ -594,7 +594,7 @@
     "allTimePeriod": "Indulás óta",
     "scopeStatus": "Megjelenítve: Minden folyamat · {period}",
     "dataAsOfStatus": "Adatok állapota: <time>{date}</time>",
-    "growthHeading": "Platformnövekedés: új a kiválasztott időszakban",
+    "growthHeading": "Platformnövekedés",
     "newUsersLabel": "Új felhasználók",
     "newOrganizationsLabel": "Új szervezetek",
     "newProcessesLabel": "Új folyamatok",

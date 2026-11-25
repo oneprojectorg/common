@@ -594,7 +594,7 @@
     "allTimePeriod": "শুরু থেকে",
     "scopeStatus": "দেখানো হচ্ছে: সব প্রক্রিয়া · {period}",
     "dataAsOfStatus": "ডেটা <time>{date}</time> পর্যন্ত",
-    "growthHeading": "প্ল্যাটফর্মের বৃদ্ধি: নির্বাচিত সময়কালে নতুন",
+    "growthHeading": "প্ল্যাটফর্মের বৃদ্ধি",
     "newUsersLabel": "নতুন ব্যবহারকারী",
     "newOrganizationsLabel": "নতুন সংগঠন",
     "newProcessesLabel": "নতুন প্রক্রিয়া",

@@ -594,7 +594,7 @@
     "allTimePeriod": "Depuis le lancement",
     "scopeStatus": "Affichage : Tous les processus · {period}",
     "dataAsOfStatus": "Données au <time>{date}</time>",
-    "growthHeading": "Croissance de la plateforme : nouveaux sur la période sélectionnée",
+    "growthHeading": "Croissance de la plateforme",
     "newUsersLabel": "Nouveaux utilisateurs",
     "newOrganizationsLabel": "Nouvelles organisations",
     "newProcessesLabel": "Nouveaux processus",

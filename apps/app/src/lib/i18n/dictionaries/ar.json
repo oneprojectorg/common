@@ -594,7 +594,7 @@
     "allTimePeriod": "منذ الإطلاق",
     "scopeStatus": "المعروض: جميع العمليات · {period}",
     "dataAsOfStatus": "البيانات حتى <time>{date}</time>",
-    "growthHeading": "نمو المنصة: الجديد في الفترة المحددة",
+    "growthHeading": "نمو المنصة",
     "newUsersLabel": "مستخدمون جدد",
     "newOrganizationsLabel": "مؤسسات جديدة",
     "newProcessesLabel": "عمليات جديدة",
