@@ -10,7 +10,7 @@ import { getTranslations } from '@/lib/i18n';
 
 import { CommonDashboard } from '@/components/screens/CommonDashboard';
 
-import { assertOpStaffViewer } from '../assertOpStaffViewer';
+import { assertStaffViewer } from '../assertStaffViewer';
 
 interface MetricsPageProps {
   params: Promise<{ locale: string }>;
@@ -19,7 +19,7 @@ interface MetricsPageProps {
 export async function generateMetadata({
   params,
 }: MetricsPageProps): Promise<Metadata> {
-  await assertOpStaffViewer();
+  await assertStaffViewer();
   const { locale } = await params;
   const t = await getTranslations({ namespace: 'commonDashboard', locale });
 
@@ -27,7 +27,7 @@ export async function generateMetadata({
 }
 
 export default async function MetricsPage() {
-  await assertOpStaffViewer();
+  await assertStaffViewer();
 
   // Best effort: on failure the client refetches under its own boundary.
   const { utils, queryClient } = await createServerUtils();
