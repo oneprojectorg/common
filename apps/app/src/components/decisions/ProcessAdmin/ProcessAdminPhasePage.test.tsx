@@ -101,12 +101,16 @@ describe('ProcessAdminPhasePage', () => {
     query.phases = [review];
     const { rerender } = renderPage('a1b2c3d4');
 
-    expect(document.title).toBe(`⁨Review⁩ · ⁨Community Fund⁩ | ${APP_NAME}`);
+    expect(document.title).toBe(
+      `\u2068Review\u2069 · \u2068Community Fund\u2069 | ${APP_NAME}`,
+    );
 
     query.phases = [{ ...review, name: 'Shortlist' }];
     rerender(page('a1b2c3d4'));
 
-    expect(document.title).toBe(`⁨Shortlist⁩ · ⁨Community Fund⁩ | ${APP_NAME}`);
+    expect(document.title).toBe(
+      `\u2068Shortlist\u2069 · \u2068Community Fund\u2069 | ${APP_NAME}`,
+    );
   });
 
   it('says the phase no longer exists when a refetch has removed it', () => {
