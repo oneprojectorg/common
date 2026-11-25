@@ -137,7 +137,7 @@ overrides:
   d3-selection: ^3.0.0
   dotenv: ^16.4.7
   js-yaml: ^4.1.0
-  lodash: ^4.17.21
+  lodash: ^4.18.1
   motion: 12.4.7
   nanoid@<3.3.18: 3.3.18
   postcss: ^8.5.3
@@ -271,8 +271,8 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0
       lodash:
-        specifier: ^4.17.21
-        version: 4.17.21
+        specifier: ^4.18.1
+        version: 4.18.1
       motion:
         specifier: 12.4.7
         version: 12.4.7(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -8513,8 +8513,8 @@ packages:
   lodash.once@4.1.1:
     resolution: {integrity: sha512-Sb487aTOCr9drQVL8pIxOzVhafOjZN9UU54hiN8PU3uAiSV7lx1yYNpbNmex2PK6dSJoNTSJUUswT651yww3Mg==}
 
-  lodash@4.17.21:
-    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
+  lodash@4.18.1:
+    resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
 
   log-symbols@7.0.1:
     resolution: {integrity: sha512-ja1E3yCr9i/0hmBVaM0bfwDjnGy8I/s6PP4DFp+yP+a+mrHO4Rm7DtmnqROTUkHIkqffC84YY7AeqX6oFk0WFg==}
@@ -13938,7 +13938,7 @@ snapshots:
     dependencies:
       json-schema-merge-allof: 0.8.1
       jsonpointer: 5.0.1
-      lodash: 4.17.21
+      lodash: 4.18.1
       lodash-es: 4.17.21
       react: 19.2.1
       react-is: 18.3.1
@@ -13948,7 +13948,7 @@ snapshots:
       '@x0k/json-schema-merge': 1.0.2
       fast-uri: 3.1.0
       jsonpointer: 5.0.1
-      lodash: 4.17.21
+      lodash: 4.18.1
       lodash-es: 4.17.23
       react: 19.2.1
       react-is: 18.3.1
@@ -16230,7 +16230,7 @@ snapshots:
       is-core-module: 2.16.1
       js-yaml: 4.1.0
       json5: 2.2.3
-      lodash: 4.17.21
+      lodash: 4.18.1
       minimatch: 7.4.6
       multimatch: 5.0.0
       please-upgrade-node: 3.2.0
@@ -17453,13 +17453,13 @@ snapshots:
 
   json-schema-compare@0.2.2:
     dependencies:
-      lodash: 4.17.21
+      lodash: 4.18.1
 
   json-schema-merge-allof@0.8.1:
     dependencies:
       compute-lcm: 1.1.2
       json-schema-compare: 0.2.2
-      lodash: 4.17.21
+      lodash: 4.18.1
 
   json-schema-to-zod@2.8.1: {}
 
@@ -17627,7 +17627,7 @@ snapshots:
 
   lodash.once@4.1.1: {}
 
-  lodash@4.17.21: {}
+  lodash@4.18.1: {}
 
   log-symbols@7.0.1:
     dependencies:
