@@ -64,8 +64,8 @@ export const handleProposalCommentPosted = inngest.createFunction(
     await step.run('fan-out', async () =>
       fanOutNotifications({
         activityId: activity.id,
-        userIds: recipients.map(({ authUserId }) => authUserId),
-        category: 'proposalComment',
+        authUserIds: recipients.map(({ authUserId }) => authUserId),
+        category: 'proposalsAndComments',
       }),
     );
 
@@ -79,7 +79,7 @@ export const handleProposalCommentPosted = inngest.createFunction(
         recipients.map(({ authUserId, email }) => [authUserId, email]),
       );
       const sendable = undelivered.flatMap((notification) => {
-        const email = emailByUserId.get(notification.userId);
+        const email = emailByUserId.get(notification.authUserId);
         return email ? [{ notification, email }] : [];
       });
 

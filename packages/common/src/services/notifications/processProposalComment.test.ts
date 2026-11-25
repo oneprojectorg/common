@@ -123,13 +123,13 @@ describe('fanOutNotifications', () => {
 
     const first = await fanOutNotifications({
       activityId,
-      userIds: [setup.user.id],
-      category: 'proposalComment',
+      authUserIds: [setup.user.id],
+      category: 'proposalsAndComments',
     });
     const second = await fanOutNotifications({
       activityId,
-      userIds: [setup.user.id],
-      category: 'proposalComment',
+      authUserIds: [setup.user.id],
+      category: 'proposalsAndComments',
     });
 
     expect(first.inserted).toBe(1);
@@ -140,8 +140,8 @@ describe('fanOutNotifications', () => {
       .from(notifications)
       .where(eq(notifications.activityId, activityId));
     expect(rows).toHaveLength(1);
-    expect(rows[0]!.userId).toBe(setup.user.id);
-    expect(rows[0]!.category).toBe('proposalComment');
+    expect(rows[0]!.authUserId).toBe(setup.user.id);
+    expect(rows[0]!.category).toBe('proposalsAndComments');
     expect(rows[0]!.actionRequired).toBe(false);
     expect(rows[0]!.readAt).toBeNull();
   });
@@ -163,8 +163,8 @@ describe('notification deliveries', () => {
     const activityId = recorded!.activity.id;
     await fanOutNotifications({
       activityId,
-      userIds: [setup.user.id],
-      category: 'proposalComment',
+      authUserIds: [setup.user.id],
+      category: 'proposalsAndComments',
     });
 
     const before = await listUndeliveredNotifications({
