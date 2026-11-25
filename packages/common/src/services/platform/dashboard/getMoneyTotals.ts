@@ -12,8 +12,10 @@ import type { SQL } from 'drizzle-orm';
 
 import {
   EXPECTED_CURRENCY,
+  MAX_COUNTED_AMOUNT,
   MAX_LOGGED_PROCESS_INSTANCE_IDS,
   MAX_REPORTED_CURRENCIES,
+  OTHER_CURRENCY,
 } from './constants';
 import {
   isActiveInPeriodSql,
@@ -85,7 +87,7 @@ export const getMoneyTotals = async ({
       select
         latest_results.process_instance_id,
         coalesce(
-          ${selection.allocated},
+          ${countedAmountSql(sql`${selection.allocated}`)},
           ${proposalBudgetAmountSql(sql`${proposal.proposalData} -> 'budget'`)},
           0
         ) as amount,
@@ -160,32 +162,43 @@ export const getMoneyTotals = async ({
 
 // The currency of a proposal budget `{ amount, currency }`, trimmed and in
 // upper case, when it is set and is not `EXPECTED_CURRENCY`. Otherwise null.
+// It reaches the page and the logs, so anything but a three-letter code is
+// reported as `OTHER_CURRENCY`.
 const unexpectedCurrencySql = (budget: SQL): SQL => sql`case
   when jsonb_typeof(${budget} -> 'currency') = 'string'
     and upper(btrim(${budget} ->> 'currency')) not in ('', ${EXPECTED_CURRENCY})
-  then upper(btrim(${budget} ->> 'currency'))
+  then case
+    when upper(btrim(${budget} ->> 'currency')) ~ '^[A-Z]{3}$'
+    then upper(btrim(${budget} ->> 'currency'))
+    else ${OTHER_CURRENCY}
+  end
+end`;
+
+// A numeric amount, or null when it is beyond `MAX_COUNTED_AMOUNT`.
+const countedAmountSql = (amount: SQL): SQL => sql`case
+  when abs(${amount}) <= ${MAX_COUNTED_AMOUNT}::numeric then ${amount}
 end`;
 
 // SQL does not promise to evaluate `and` operands in order, so each cast sits
 // in the `then` of a `case` whose condition makes it valid.
 const numberAmountSql = (value: SQL): SQL =>
-  sql`case when jsonb_typeof(${value}) = 'number' then (${value})::numeric end`;
+  sql`case when jsonb_typeof(${value}) = 'number' then ${countedAmountSql(sql`(${value})::numeric`)} end`;
 
 // The shapes `extractBudgetValue` reads: a number, a numeric string, or
 // `{ amount, currency }`. Anything else is null.
 const proposalBudgetAmountSql = (
   budget: SQL,
 ): SQL => sql`case jsonb_typeof(${budget})
-  when 'number' then (${budget})::numeric
+  when 'number' then ${countedAmountSql(sql`(${budget})::numeric`)}
   when 'string' then case
     when (${budget} #>> '{}')
       ~ '^[[:space:]]*[+-]?([0-9]{1,100}([.][0-9]{0,100})?|[.][0-9]{1,100})([eE][+-]?[0-9]{1,3})?[[:space:]]*$'
-    then (${budget} #>> '{}')::numeric
+    then ${countedAmountSql(sql`(${budget} #>> '{}')::numeric`)}
   end
   when 'object' then case
     when jsonb_typeof(${budget} -> 'amount') = 'number'
       and jsonb_typeof(${budget} -> 'currency') = 'string'
-    then (${budget} -> 'amount')::numeric
+    then ${countedAmountSql(sql`(${budget} -> 'amount')::numeric`)}
   end
 end`;
 

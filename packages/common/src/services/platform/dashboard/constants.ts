@@ -17,6 +17,13 @@ export const MIN_SURVEY_RESPONSES = 10;
 /** Every money figure is in this currency, in upper case. */
 export const EXPECTED_CURRENCY = 'USD';
 
+/** A currency that is not a three-letter code is reported as this text. */
+export const OTHER_CURRENCY = 'OTHER';
+
+// No real budget is near this, and a sum of such amounts stays far inside the
+// float8 range, so a larger amount is treated as unreadable.
+export const MAX_COUNTED_AMOUNT = 1e12;
+
 /** The most currency codes a money warning lists. */
 export const MAX_REPORTED_CURRENCIES = 5;
 
@@ -30,3 +37,6 @@ export const TEST_EMAIL_DOMAINS = ['test.local'];
 export const DASHBOARD_METRICS_CACHE_VERSION = 2;
 
 export const DASHBOARD_METRICS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+// A currency warning clears soon after the data is fixed.
+export const DASHBOARD_METRICS_WARNING_CACHE_TTL_MS = 10 * 60 * 1000;

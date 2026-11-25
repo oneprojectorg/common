@@ -179,7 +179,9 @@ const memCache = new LRUCache<string, MemCacheEntry>({
  * @param fetch - Function to call on cache miss
  * @param options.skipMemCache - Skip in-memory cache layer
  * @param options.storeNulls - Cache null results to avoid repeated DB lookups
- * @param options.ttl - Time-to-live in milliseconds
+ * @param options.ttl - Time-to-live in milliseconds, or a function of the fetched
+ *                      value that returns it. With a function, an entry copied
+ *                      from Redis into memory keeps the default memory TTL.
  * @param options.skipCacheWrite - Predicate to conditionally skip caching based on result.
  *                            When returns true, the result is NOT stored in cache.
  *                            Useful for skipping cache on draft/incomplete data.
@@ -198,7 +200,7 @@ export const cache = async <T>({
   options?: {
     skipMemCache?: boolean;
     storeNulls?: boolean;
-    ttl?: number;
+    ttl?: number | ((result: Awaited<T>) => number);
     skipCacheWrite?: (result: Awaited<T>) => boolean;
   };
 }): Promise<Awaited<T>> => {
@@ -208,7 +210,8 @@ export const cache = async <T>({
   // caller-supplied `ttl` (ms) overrides the default on write. Use `||` (not
   // `??`) so a falsy `ttl` of 0 falls back to the default rather than becoming
   // an immortal entry — matching the Redis-side `ttl ? …` guard below.
-  const memTtl = ttl || MEMCACHE_EXPIRE;
+  const fixedTtl = typeof ttl === 'function' ? undefined : ttl;
+  const memTtl = fixedTtl || MEMCACHE_EXPIRE;
 
   // try memcache first — the LRU returns `undefined` for entries that have
   // expired or been evicted, so a stale read simply falls through to Redis.
@@ -254,10 +257,17 @@ export const cache = async <T>({
   const shouldSkipCache = options.skipCacheWrite?.(newData) ?? false;
 
   if (newData && !shouldSkipCache) {
-    memCache.set(cacheKey, { data: newData }, { ttl: memTtl });
+    const writeTtl = typeof ttl === 'function' ? ttl(newData) : ttl;
+    memCache.set(
+      cacheKey,
+      { data: newData },
+      { ttl: writeTtl || MEMCACHE_EXPIRE },
+    );
     // don't cache if we couldn't find the record (?)
     // TTL in redis is in seconds
-    waitUntil(set(cacheKey, newData, ttl ? ttl / 1000 : 72 * 60 * 60)); // 72h default cache
+    waitUntil(
+      set(cacheKey, newData, writeTtl ? writeTtl / 1000 : 72 * 60 * 60),
+    ); // 72h default cache
   } else if (storeNulls && !shouldSkipCache) {
     // This allows us to store negative values in the memcache to improve rejections as well (and avoid DB calls for repeated rejections)
     memCache.set(cacheKey, { data: null }, { ttl: memTtl });
@@ -271,18 +281,21 @@ export const invalidate = async ({
   appKey,
   params,
   data,
+  ttl,
 }: {
   type: keyof typeof TypeMap;
   appKey?: string;
   params: CacheParams;
   data?: unknown;
+  /** Time-to-live in milliseconds for `data`. Omit for the defaults. */
+  ttl?: number;
 }) => {
   const cacheKey = getCacheKey(type, appKey, params);
 
   // TODO: support invalidating entire trees
   if (data) {
-    memCache.set(cacheKey, { data });
-    await set(cacheKey, data);
+    memCache.set(cacheKey, { data }, { ttl: ttl || MEMCACHE_EXPIRE });
+    await set(cacheKey, data, ttl ? ttl / 1000 : undefined);
   } else {
     memCache.delete(cacheKey);
     // Await the Redis del — callers that `await invalidate(...)` (rather than

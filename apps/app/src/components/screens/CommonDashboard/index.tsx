@@ -567,12 +567,13 @@ const MetricFigure = ({
 
   if (metric.status === 'unexpectedCurrency') {
     // The paragraph keeps a numeral's line height, so the columns stay level.
+    // An inline block wraps its own lines at the body line height.
     return (
       <p
         className={cn('font-serif text-headline font-light', className)}
         {...props}
       >
-        <span className="font-sans text-base font-normal">
+        <span className="inline-block font-sans text-base font-normal">
           {t.rich('currencyWarningDescription', {
             amountCount: metric.amountCount,
             processCount: metric.processCount,
