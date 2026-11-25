@@ -7,8 +7,14 @@ import {
   profiles,
   proposals,
 } from '@op/db/schema';
+import { logger } from '@op/logging';
 import type { SQL } from 'drizzle-orm';
 
+import {
+  EXPECTED_CURRENCY,
+  MAX_LOGGED_PROCESS_INSTANCE_IDS,
+  MAX_REPORTED_CURRENCIES,
+} from './constants';
 import {
   isActiveInPeriodSql,
   launchedProcessesSql,
@@ -16,6 +22,7 @@ import {
   timestampSql,
 } from './dashboardSql';
 import {
+  type MoneyTotal,
   type PeriodRecord,
   type PeriodWindow,
   resolvePeriodRows,
@@ -30,9 +37,11 @@ const phaseProfile = aliasedTable(profiles, 'pr');
 const livePhase = aliasedTable(processPhases, 'live_phase');
 
 /**
- * Money in launched processes. Every stored amount is USD.
- * - `moneyMoved`: the funded amounts of the selections of completed processes.
+ * Money in launched processes, in `EXPECTED_CURRENCY`.
+ * - `moneyMoved`: the funded amounts of the selections of completed processes,
+ *   with the selections whose proposal budget names another currency.
  * - `activeProcessBudgets`: the budgets of the processes active in each period.
+ *   A phase budget is a plain number with no currency.
  */
 export const getMoneyTotals = async ({
   tx,
@@ -43,21 +52,27 @@ export const getMoneyTotals = async ({
   dataAsOf: Date;
   windows: PeriodRecord<PeriodWindow>;
 }): Promise<{
-  moneyMoved: number;
+  moneyMoved: MoneyTotal;
   activeProcessBudgets: PeriodRecord<number>;
 }> => {
   // A failed run also writes a result row, and a re-run writes another, so
   // only the newest successful run counts. Its total is the one
   // `getResultsStats` shows: `allocated`, or else the proposal's budget.
+  // `allocated` has no currency of its own, so it takes the proposal's.
   // Raw SQL: the query builder cannot join the `VALUES` list of period windows.
   const rows = await tx.execute<{
     period: string;
     active_process_budgets: number;
     money_moved: number;
+    unexpected_amount_count: number;
+    unexpected_process_count: number;
+    unexpected_currencies: string[] | null;
+    unexpected_process_instance_ids: string[] | null;
   }>(sql`
     with launched as (${launchedProcessesSql(dataAsOf)}),
     latest_results as (
-      select distinct on (${result.processInstanceId}) ${result.id}
+      select distinct on (${result.processInstanceId})
+        ${result.id}, ${result.processInstanceId}
       from ${decisionProcessResults} ${result}
       join launched on launched.id = ${result.processInstanceId}
       where launched.is_completed
@@ -66,29 +81,75 @@ export const getMoneyTotals = async ({
         and ${result.executedAt} <= ${timestampSql(dataAsOf)}
       order by ${result.processInstanceId}, ${result.executedAt} desc, ${result.id} desc
     ),
-    budgeted as (${processBudgetsSql})
-    select
-      w.period,
-      coalesce(sum(budgeted.budget) filter (
-        where ${isActiveInPeriodSql('budgeted')}
-      ), 0)::float8 as active_process_budgets,
-      (select coalesce(sum(coalesce(
+    moved_selections as (
+      select
+        latest_results.process_instance_id,
+        coalesce(
           ${selection.allocated},
           ${proposalBudgetAmountSql(sql`${proposal.proposalData} -> 'budget'`)},
           0
-        )), 0)
-        from latest_results
-        join ${decisionProcessResultSelections} ${selection}
-          on ${selection.processResultId} = latest_results.id
-        join ${proposals} ${proposal} on ${proposal.id} = ${selection.proposalId}
-      )::float8 as money_moved
-    from ${periodWindowsSql(windows)}
-    left join budgeted on true
-    group by w.period
+        ) as amount,
+        ${unexpectedCurrencySql(sql`${proposal.proposalData} -> 'budget'`)} as unexpected_currency
+      from latest_results
+      join ${decisionProcessResultSelections} ${selection}
+        on ${selection.processResultId} = latest_results.id
+      join ${proposals} ${proposal} on ${proposal.id} = ${selection.proposalId}
+    ),
+    money_moved as (
+      select
+        coalesce(sum(amount), 0)::float8 as money_moved,
+        count(*) filter (where unexpected_currency is not null)::int
+          as unexpected_amount_count,
+        count(distinct process_instance_id) filter (
+          where unexpected_currency is not null
+        )::int as unexpected_process_count,
+        (array_agg(distinct unexpected_currency order by unexpected_currency)
+          filter (where unexpected_currency is not null)
+        )[1:${MAX_REPORTED_CURRENCIES}::int] as unexpected_currencies,
+        (array_agg(distinct process_instance_id::text order by process_instance_id::text)
+          filter (where unexpected_currency is not null)
+        )[1:${MAX_LOGGED_PROCESS_INSTANCE_IDS}::int] as unexpected_process_instance_ids
+      from moved_selections
+    ),
+    budgeted as (${processBudgetsSql}),
+    period_budgets as (
+      select
+        w.period,
+        coalesce(sum(budgeted.budget) filter (
+          where ${isActiveInPeriodSql('budgeted')}
+        ), 0)::float8 as active_process_budgets
+      from ${periodWindowsSql(windows)}
+      left join budgeted on true
+      group by w.period
+    )
+    select period_budgets.period, period_budgets.active_process_budgets, money_moved.*
+    from period_budgets
+    cross join money_moved
   `);
 
+  // Every row carries the same single `money_moved` aggregate.
+  const moved = rows[0];
+  const moneyMoved: MoneyTotal = {
+    amount: moved?.money_moved ?? 0,
+    unexpectedAmountCount: moved?.unexpected_amount_count ?? 0,
+    unexpectedProcessCount: moved?.unexpected_process_count ?? 0,
+    unexpectedCurrencies: moved?.unexpected_currencies ?? [],
+  };
+
+  if (moneyMoved.unexpectedAmountCount > 0) {
+    logger.warn(
+      'Dashboard money figure has amounts in an unexpected currency',
+      {
+        figure: 'moneyMoved',
+        amountCount: moneyMoved.unexpectedAmountCount,
+        processInstanceIds: moved?.unexpected_process_instance_ids ?? [],
+        currencies: moneyMoved.unexpectedCurrencies,
+      },
+    );
+  }
+
   return {
-    moneyMoved: rows[0]?.money_moved ?? 0,
+    moneyMoved,
     activeProcessBudgets: resolvePeriodRows({
       rows,
       resolve: (row) => row.active_process_budgets,
@@ -96,6 +157,14 @@ export const getMoneyTotals = async ({
     }),
   };
 };
+
+// The currency of a proposal budget `{ amount, currency }`, trimmed and in
+// upper case, when it is set and is not `EXPECTED_CURRENCY`. Otherwise null.
+const unexpectedCurrencySql = (budget: SQL): SQL => sql`case
+  when jsonb_typeof(${budget} -> 'currency') = 'string'
+    and upper(btrim(${budget} ->> 'currency')) not in ('', ${EXPECTED_CURRENCY})
+  then upper(btrim(${budget} ->> 'currency'))
+end`;
 
 // SQL does not promise to evaluate `and` operands in order, so each cast sits
 // in the `then` of a `case` whose condition makes it valid.

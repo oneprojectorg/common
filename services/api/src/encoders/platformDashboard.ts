@@ -1,5 +1,6 @@
 export type {
   DashboardMetric,
+  DashboardMoneyMetric,
   DashboardMetrics,
   DashboardPeriod,
   DashboardSurveyResult,

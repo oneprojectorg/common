@@ -641,6 +641,8 @@
     "countingRulesNote": "لا تُحتسب العمليات التي يتضمن اسمها “test” أو “example”. ولا تُحتسب الحسابات على نطاقات البريد الإلكتروني الخاصة بـ OP والحسابات المجهولة ضمن المستخدمين.",
     "placeholderBadgeLabel": "قريبًا",
     "placeholderDescription": "لا توجد بيانات حقيقية بعد",
+    "currencyWarningBadgeLabel": "يحتاج إلى تصحيح",
+    "currencyWarningDescription": "{amountCount, plural, zero {# مبلغ} one {مبلغ واحد} two {مبلغان} few {# مبالغ} many {# مبلغًا} other {# مبلغ}} بعملة <currency>{currencies}</currency> في {processCount, plural, zero {# عملية} one {عملية واحدة} two {عمليتين} few {# عمليات} many {# عملية} other {# عملية}}. الإجمالي مخفي حتى يتم تصحيح ذلك.",
     "notEnoughDataStatus": "لا توجد بيانات كافية",
     "notEnoughResponsesStatus": "لا توجد ردود كافية",
     "loadError": "تعذّر تحميل لوحة المعلومات. حاول مرة أخرى لاحقًا."

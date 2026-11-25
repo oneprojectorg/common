@@ -641,6 +641,8 @@
     "countingRulesNote": "Os processos com “test” ou “example” no nome não são contados. As contas em domínios de e-mail da OP e as contas anónimas não são contadas como utilizadores.",
     "placeholderBadgeLabel": "Em breve",
     "placeholderDescription": "Ainda não há dados reais",
+    "currencyWarningBadgeLabel": "Precisa de correção",
+    "currencyWarningDescription": "{amountCount, plural, one {# valor} other {# valores}} em <currency>{currencies}</currency> em {processCount, plural, one {# processo} other {# processos}}. O total fica oculto até que isto seja corrigido.",
     "notEnoughDataStatus": "Dados insuficientes",
     "notEnoughResponsesStatus": "Respostas insuficientes",
     "loadError": "Não foi possível carregar o painel. Tente novamente mais tarde."

@@ -641,6 +641,8 @@
     "countingRulesNote": "Processes with “test” or “example” in the name are not counted. Accounts on OP email domains and anonymous accounts are not counted as users.",
     "placeholderBadgeLabel": "Soon",
     "placeholderDescription": "No real data yet",
+    "currencyWarningBadgeLabel": "Needs a fix",
+    "currencyWarningDescription": "{amountCount, plural, one {# amount} other {# amounts}} in <currency>{currencies}</currency> in {processCount, plural, one {# process} other {# processes}}. The total is hidden until this is corrected.",
     "notEnoughDataStatus": "Not enough data",
     "notEnoughResponsesStatus": "Not enough responses",
     "loadError": "The dashboard could not load. Try again later."

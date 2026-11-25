@@ -641,6 +641,8 @@
     "countingRulesNote": "A „test” vagy „example” szót tartalmazó nevű folyamatokat nem számoljuk. Az OP e-mail-domainjein lévő fiókokat és az anonim fiókokat nem számoljuk felhasználóként.",
     "placeholderBadgeLabel": "Hamarosan",
     "placeholderDescription": "Még nincsenek valós adatok",
+    "currencyWarningBadgeLabel": "Javítást igényel",
+    "currencyWarningDescription": "{amountCount, plural, one {# összeg} other {# összeg}} <currency>{currencies}</currency> pénznemben, {processCount, plural, one {# folyamatban} other {# folyamatban}}. Az összesítés rejtve marad, amíg ezt nem javítják.",
     "notEnoughDataStatus": "Nincs elég adat",
     "notEnoughResponsesStatus": "Nincs elég válasz",
     "loadError": "Az irányítópult nem töltődött be. Próbálja újra később."

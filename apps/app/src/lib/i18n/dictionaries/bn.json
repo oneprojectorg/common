@@ -641,6 +641,8 @@
     "countingRulesNote": "নামে “test” বা “example” থাকা প্রক্রিয়াগুলো গণনা করা হয় না। OP ইমেল ডোমেনের অ্যাকাউন্ট এবং বেনামী অ্যাকাউন্টগুলো ব্যবহারকারী হিসেবে গণনা করা হয় না।",
     "placeholderBadgeLabel": "শীঘ্রই",
     "placeholderDescription": "এখনও কোনো আসল ডেটা নেই",
+    "currencyWarningBadgeLabel": "ঠিক করা প্রয়োজন",
+    "currencyWarningDescription": "<currency>{currencies}</currency> মুদ্রায় {amountCount, plural, one {#টি পরিমাণ} other {#টি পরিমাণ}}, {processCount, plural, one {#টি প্রক্রিয়ায়} other {#টি প্রক্রিয়ায়}}। এটি ঠিক না হওয়া পর্যন্ত মোট লুকানো থাকবে।",
     "notEnoughDataStatus": "যথেষ্ট ডেটা নেই",
     "notEnoughResponsesStatus": "যথেষ্ট উত্তর নেই",
     "loadError": "ড্যাশবোর্ড লোড হয়নি। পরে আবার চেষ্টা করুন।"

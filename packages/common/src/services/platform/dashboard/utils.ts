@@ -7,6 +7,7 @@ import {
 import type {
   DashboardMetric,
   DashboardMetrics,
+  DashboardMoneyMetric,
   DashboardPeriod,
   DashboardPeriodMetrics,
   DashboardSurveyResult,
@@ -16,6 +17,14 @@ import type {
 export type PeriodWindow = { start: Date };
 
 export type PeriodRecord<T> = Record<DashboardPeriod, T>;
+
+/** A money total, and the amounts in it that are not in the expected currency. */
+export type MoneyTotal = {
+  amount: number;
+  unexpectedAmountCount: number;
+  unexpectedProcessCount: number;
+  unexpectedCurrencies: string[];
+};
 
 export type SurveyCounts = {
   responseCount: number;
@@ -49,7 +58,7 @@ type SectionCounts = {
     draftProposals: number;
   };
   money: {
-    moneyMoved: number;
+    moneyMoved: MoneyTotal;
     activeProcessBudgets: PeriodRecord<number>;
   };
   feedback: { netPromoterScore: PeriodRecord<SurveyCounts> };
@@ -116,6 +125,21 @@ const resolvePeopleCountMetric = (count: number): DashboardMetric =>
   count <= MAX_SUPPRESSED_PEOPLE_COUNT
     ? { status: 'suppressed' }
     : { status: 'available', value: count };
+
+const resolveMoneyMetric = ({
+  amount,
+  unexpectedAmountCount,
+  unexpectedProcessCount,
+  unexpectedCurrencies,
+}: MoneyTotal): DashboardMoneyMetric =>
+  unexpectedAmountCount > 0
+    ? {
+        status: 'unexpectedCurrency',
+        amountCount: unexpectedAmountCount,
+        processCount: unexpectedProcessCount,
+        currencies: unexpectedCurrencies,
+      }
+    : { status: 'available', value: amount };
 
 /** `part` as a whole-number percentage of `whole`. */
 const resolveShareMetric = ({
@@ -192,7 +216,7 @@ export const resolveDashboardMetrics = ({
       organizations: resolveCountMetric(growth.totalOrganizations),
       processes: resolveCountMetric(processes.totalProcesses),
       completedProcesses: resolveCountMetric(processes.totalCompletedProcesses),
-      moneyMoved: { status: 'available', value: money.moneyMoved },
+      moneyMoved: resolveMoneyMetric(money.moneyMoved),
     },
     activeProcesses: resolveCountMetric(processes.activeProcesses),
     draftProposals: resolveCountMetric(proposals.draftProposals),

@@ -25,11 +25,16 @@ export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
   }
 
   const params = ['dashboardMetrics', DASHBOARD_METRICS_CACHE_VERSION];
-  const cached = await cache<unknown>({
+  const cached: unknown = await cache<DashboardMetrics>({
     type: 'platform',
     params,
     fetch: getLiveDashboardMetrics,
-    options: { ttl: DASHBOARD_METRICS_CACHE_TTL_MS },
+    options: {
+      ttl: DASHBOARD_METRICS_CACHE_TTL_MS,
+      // Not stored, so the page shows the total soon after the data is fixed.
+      skipCacheWrite: (metrics) =>
+        metrics.totals.moneyMoved.status === 'unexpectedCurrency',
+    },
   });
 
   const parsed = dashboardMetricsSchema.safeParse(cached);

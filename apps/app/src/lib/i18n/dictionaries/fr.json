@@ -641,6 +641,8 @@
     "countingRulesNote": "Les processus dont le nom contient « test » ou « example » ne sont pas comptés. Les comptes sur les domaines e-mail d'OP et les comptes anonymes ne sont pas comptés comme utilisateurs.",
     "placeholderBadgeLabel": "Bientôt",
     "placeholderDescription": "Pas encore de données réelles",
+    "currencyWarningBadgeLabel": "À corriger",
+    "currencyWarningDescription": "{amountCount, plural, one {# montant} other {# montants}} en <currency>{currencies}</currency> dans {processCount, plural, one {# processus} other {# processus}}. Le total est masqué jusqu’à ce que ce soit corrigé.",
     "notEnoughDataStatus": "Pas assez de données",
     "notEnoughResponsesStatus": "Pas assez de réponses",
     "loadError": "Le tableau de bord n'a pas pu se charger. Réessayez plus tard."

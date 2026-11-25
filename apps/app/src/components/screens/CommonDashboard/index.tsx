@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import type {
   DashboardMetric,
   DashboardMetrics,
+  DashboardMoneyMetric,
   DashboardPeriod,
 } from '@op/api/encoders';
 import {
@@ -528,7 +529,7 @@ const StatColumn = ({
 }: {
   label: string;
   tag: string;
-  metric: DashboardMetric;
+  metric: DashboardMetric | DashboardMoneyMetric;
   /** How to format an available value. Omit for a plain number. */
   numberFormat?: Intl.NumberFormatOptions;
   hint?: string;
@@ -540,6 +541,7 @@ const StatColumn = ({
         {tag}
       </Badge>
       <PlaceholderBadge metric={metric} />
+      <CurrencyWarningBadge metric={metric} />
     </div>
     <MetricFigure metric={metric} numberFormat={numberFormat} />
     {hint ? <p className="text-sm text-muted-foreground">{hint}</p> : null}
@@ -553,13 +555,34 @@ const MetricFigure = ({
   className,
   ...props
 }: Omit<ComponentProps<'p'>, 'children'> & {
-  metric: DashboardMetric;
+  metric: DashboardMetric | DashboardMoneyMetric;
   /** Copy for a suppressed value. Omit for "Not enough data". */
   suppressedText?: string;
   /** How to format an available value. Omit for a plain number. */
   numberFormat?: Intl.NumberFormatOptions;
 }) => {
+  const t = useTranslations('commonDashboard');
+  const format = useFormatter();
   const resolveMetricText = useMetricText();
+
+  if (metric.status === 'unexpectedCurrency') {
+    // The paragraph keeps a numeral's line height, so the columns stay level.
+    return (
+      <p
+        className={cn('font-serif text-headline font-light', className)}
+        {...props}
+      >
+        <span className="font-sans text-base font-normal">
+          {t.rich('currencyWarningDescription', {
+            amountCount: metric.amountCount,
+            processCount: metric.processCount,
+            currencies: format.list(metric.currencies),
+            currency: (chunks) => <bdi>{chunks}</bdi>,
+          })}
+        </span>
+      </p>
+    );
+  }
 
   if (metric.status === 'unavailable') {
     // The dash keeps a real numeral's size; the placeholder badge names it.
@@ -604,7 +627,11 @@ const MetricFigure = ({
 };
 
 /** Marks a figure that has no real data source yet. Renders nothing otherwise. */
-const PlaceholderBadge = ({ metric }: { metric: DashboardMetric }) => {
+const PlaceholderBadge = ({
+  metric,
+}: {
+  metric: DashboardMetric | DashboardMoneyMetric;
+}) => {
   const t = useTranslations('commonDashboard');
 
   if (metric.status !== 'unavailable') {
@@ -615,6 +642,25 @@ const PlaceholderBadge = ({ metric }: { metric: DashboardMetric }) => {
     <Badge variant="warning" className="font-normal">
       {t('placeholderBadgeLabel')}{' '}
       <span className="sr-only">{t('placeholderDescription')}</span>
+    </Badge>
+  );
+};
+
+/** Marks a money figure hidden for an unexpected currency. Renders nothing otherwise. */
+const CurrencyWarningBadge = ({
+  metric,
+}: {
+  metric: DashboardMetric | DashboardMoneyMetric;
+}) => {
+  const t = useTranslations('commonDashboard');
+
+  if (metric.status !== 'unexpectedCurrency') {
+    return null;
+  }
+
+  return (
+    <Badge variant="warning" className="font-normal">
+      {t('currencyWarningBadgeLabel')}
     </Badge>
   );
 };

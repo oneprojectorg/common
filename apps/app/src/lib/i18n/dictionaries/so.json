@@ -641,6 +641,8 @@
     "countingRulesNote": "Hababka magacoodu ku jiro “test” ama “example” lama tiriyo. Akoonnada ku jira domain-yada iimaylka OP iyo akoonnada aan la magacaabin looma tiriyo isticmaaleyaal.",
     "placeholderBadgeLabel": "Dhowaan",
     "placeholderDescription": "Weli xog dhab ah ma jirto",
+    "currencyWarningBadgeLabel": "Sixid ayuu u baahan yahay",
+    "currencyWarningDescription": "{amountCount, plural, one {# qaddar} other {# qaddar}} oo ku jira <currency>{currencies}</currency> {processCount, plural, one {# hab} other {# hab}} gudahooda. Wadarta waa la qariyay ilaa tan la saxo.",
     "notEnoughDataStatus": "Xog ku filan ma jirto",
     "notEnoughResponsesStatus": "Jawaabo ku filan ma jiraan",
     "loadError": "Dashboard-ka lama soo dejin karin. Mar kale isku day goor dambe."

@@ -489,6 +489,7 @@ export {
   dashboardPeriodSchema,
   type DashboardMetric,
   type DashboardMetrics,
+  type DashboardMoneyMetric,
   type DashboardPeriod,
   type DashboardSurveyResult,
 } from './services/platform/dashboard/schemas';
