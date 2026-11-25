@@ -1,5 +1,10 @@
+import { cache } from '@op/cache';
 import { db } from '@op/db/client';
 
+import {
+  DASHBOARD_METRICS_CACHE_TTL_MS,
+  DASHBOARD_METRICS_CACHE_VERSION,
+} from './constants';
 import { getFeedbackCounts } from './getFeedbackCounts';
 import { getGrowthCounts } from './getGrowthCounts';
 import { getMoneyTotals } from './getMoneyTotals';
@@ -14,6 +19,20 @@ import { resolveDashboardMetrics, resolvePeriodWindows } from './utils';
  * one `dataAsOf`, so switching the period never refetches.
  */
 export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
+  // Outside production, seed scripts and data checks need fresh numbers.
+  if (process.env.NODE_ENV !== 'production') {
+    return getLiveDashboardMetrics();
+  }
+
+  return cache<DashboardMetrics>({
+    type: 'platform',
+    params: ['dashboardMetrics', DASHBOARD_METRICS_CACHE_VERSION],
+    fetch: getLiveDashboardMetrics,
+    options: { ttl: DASHBOARD_METRICS_CACHE_TTL_MS },
+  });
+};
+
+const getLiveDashboardMetrics = async (): Promise<DashboardMetrics> => {
   const dataAsOf = new Date();
   const windows = resolvePeriodWindows(dataAsOf);
 

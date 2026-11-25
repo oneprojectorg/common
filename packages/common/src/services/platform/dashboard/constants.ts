@@ -16,3 +16,8 @@ export const MIN_SURVEY_RESPONSES = 10;
 
 // Accounts on these domains are seeded test data, not people.
 export const TEST_EMAIL_DOMAINS = ['test.local'];
+
+// Increase when the payload shape or a counting rule changes.
+export const DASHBOARD_METRICS_CACHE_VERSION = 1;
+
+export const DASHBOARD_METRICS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
