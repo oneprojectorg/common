@@ -16,7 +16,6 @@ import {
 import { Badge } from '@op/sense/Badge';
 import { Card, CardContent, CardHeader } from '@op/sense/Card';
 import { Header1, Header2, Header3 } from '@op/sense/Header';
-import { SegmentedProgress } from '@op/sense/SegmentedProgress';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
 import { cn } from '@op/sense/lib/utils';
@@ -42,11 +41,6 @@ type MetricTextResolver = (
 // From `md`, each card's header and content share the row tracks of the grid,
 // so the figures of neighbouring cards start at the same height.
 const CARD_ROWS_CLASS_NAME = 'md:row-span-2 md:grid md:grid-rows-subgrid';
-
-const SKELETON_GRID_COLUMNS_CLASS_NAMES = {
-  2: 'md:grid-cols-2',
-  3: 'md:grid-cols-3',
-} as const;
 
 const WHOLE_USD_FORMAT: Intl.NumberFormatOptions = {
   style: 'currency',
@@ -79,12 +73,9 @@ export const CommonDashboardSkeleton = () => (
     </div>
     <SkeletonCardGrid cardCount={3} />
     <SkeletonCardGrid cardCount={3} />
-    <SkeletonCardGrid cardCount={2} />
-    <div className="flex flex-col gap-4">
-      <SkeletonCardGrid cardCount={3} />
-      <Skeleton className="h-72 w-full" />
-    </div>
-    <SkeletonCardGrid cardCount={2} />
+    <SkeletonCardGrid cardCount={1} />
+    <SkeletonCardGrid cardCount={3} />
+    <SkeletonCardGrid cardCount={1} />
   </div>
 );
 
@@ -123,7 +114,7 @@ const CommonDashboardSuspense = () => {
         >
           <GrowthSection metrics={metrics} period={option} />
           <PeopleSection metrics={metrics} period={option} />
-          <MoneySection metrics={metrics} period={option} />
+          <MoneySection metrics={metrics} />
           <ProcessesSection metrics={metrics} period={option} />
           <FeedbackSection metrics={metrics} period={option} />
         </TabsContent>
@@ -284,18 +275,12 @@ const PeopleSection = ({
   );
 };
 
-const MoneySection = ({
-  metrics,
-  period,
-}: {
-  metrics: DashboardMetrics;
-  period: DashboardPeriod;
-}) => {
+const MoneySection = ({ metrics }: { metrics: DashboardMetrics }) => {
   const t = useTranslations('commonDashboard');
 
   return (
     <DashboardSection heading={t('moneyHeading')}>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <StatCard
           label={t('totalMoneyMovedLabel')}
           tag={t('toDateTag')}
@@ -304,12 +289,6 @@ const MoneySection = ({
         >
           <StatHint>{t('totalMoneyMovedHint')}</StatHint>
         </StatCard>
-        <StatCard
-          label={t('activeProcessBudgetsLabel')}
-          tag={t('inPeriodTag')}
-          metric={metrics.periods[period].activeProcessBudgets}
-          numberFormat={WHOLE_USD_FORMAT}
-        />
       </div>
     </DashboardSection>
   );
@@ -325,28 +304,6 @@ const ProcessesSection = ({
   const t = useTranslations('commonDashboard');
   const resolveMetricText = useMetricText();
   const periodMetrics = metrics.periods[period];
-
-  const votingFunnelFigures = [
-    { label: t('eligibleParticipantsLabel') },
-    { label: t('acceptedLabel') },
-    { label: t('votedLabel') },
-    { label: t('turnoutLabel'), hint: t('turnoutHint') },
-  ];
-  const votingFunnelLegend = [
-    { label: t('votedLegendLabel'), swatchClassName: 'bg-primary' },
-    {
-      label: t('acceptedVotingOpenLegendLabel'),
-      swatchClassName: 'border border-primary bg-primary/30',
-    },
-    {
-      label: t('acceptedVotingClosedLegendLabel'),
-      swatchClassName: 'bg-muted-foreground/50',
-    },
-    {
-      label: t('eligibleNotAcceptedLegendLabel'),
-      swatchClassName: 'border border-border bg-background',
-    },
-  ];
 
   return (
     <DashboardSection heading={t('processesHeading')}>
@@ -389,53 +346,6 @@ const ProcessesSection = ({
           ) : null}
         </StatCard>
       </div>
-      <Card>
-        <CardContent className="flex flex-col gap-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <Header3 className="font-sans text-base font-strong">
-              {t('votingFunnelHeading')}
-            </Header3>
-            <PlaceholderBadge metric={periodMetrics.participation} />
-          </div>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:divide-x">
-            {votingFunnelFigures.map(({ label, hint }) => (
-              <div
-                key={label}
-                className="row-span-4 grid min-w-0 grid-rows-subgrid gap-y-1 md:px-6 md:first:ps-0 md:last:pe-0"
-              >
-                <p className="text-sm font-strong">{label}</p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <PlaceholderBadge metric={periodMetrics.participation} />
-                </div>
-                <MetricFigure metric={periodMetrics.participation} />
-                {hint ? (
-                  <p className="text-sm text-muted-foreground">{hint}</p>
-                ) : null}
-              </div>
-            ))}
-          </div>
-          <SegmentedProgress
-            segments={[]}
-            aria-label={t('votingFunnelBarLabel')}
-            getAriaValueText={() => t('placeholderDescription')}
-          />
-          <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-            {votingFunnelLegend.map(({ label, swatchClassName }) => (
-              <li key={label} className="flex items-center gap-2">
-                <span
-                  aria-hidden
-                  className={cn('size-3 shrink-0 rounded-sm', swatchClassName)}
-                />
-                {label}
-              </li>
-            ))}
-          </ul>
-          <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-            <p>{t('participationCountingNote')}</p>
-            <p>{t('turnoutNote')}</p>
-          </div>
-        </CardContent>
-      </Card>
     </DashboardSection>
   );
 };
@@ -448,8 +358,7 @@ const FeedbackSection = ({
   period: DashboardPeriod;
 }) => {
   const t = useTranslations('commonDashboard');
-  const { netPromoterScore, easeOfUse } = metrics.periods[period];
-  const notEnoughResponses = t('notEnoughResponsesStatus');
+  const { netPromoterScore } = metrics.periods[period];
 
   const { responseCount, processCount } = netPromoterScore;
   const sampleHint =
@@ -462,7 +371,7 @@ const FeedbackSection = ({
 
   return (
     <DashboardSection heading={t('feedbackHeading')}>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card className={CARD_ROWS_CLASS_NAME}>
           <CardHeader className="justify-items-start gap-2">
             <Header3 className="font-sans text-base font-strong">
@@ -473,25 +382,11 @@ const FeedbackSection = ({
           <CardContent className="flex min-w-0 flex-col gap-1">
             <MetricFigure
               metric={netPromoterScore.score}
-              suppressedText={notEnoughResponses}
+              suppressedText={t('notEnoughResponsesStatus')}
             />
             {sampleHint ? (
               <p className="text-sm text-muted-foreground">{sampleHint}</p>
             ) : null}
-          </CardContent>
-        </Card>
-        <Card className={CARD_ROWS_CLASS_NAME}>
-          <CardHeader className="justify-items-start gap-2">
-            <Header3 className="font-sans text-base font-strong">
-              {t('easeOfUseLabel')}
-            </Header3>
-            <PlaceholderBadge metric={easeOfUse.score} />
-          </CardHeader>
-          <CardContent className="min-w-0">
-            <MetricFigure
-              metric={easeOfUse.score}
-              suppressedText={notEnoughResponses}
-            />
           </CardContent>
         </Card>
       </div>
@@ -558,13 +453,8 @@ const StatHint = ({ children }: { children: ReactNode }) => (
   <p className="text-sm text-muted-foreground">{children}</p>
 );
 
-const SkeletonCardGrid = ({ cardCount }: { cardCount: 2 | 3 }) => (
-  <div
-    className={cn(
-      'grid grid-cols-1 gap-4',
-      SKELETON_GRID_COLUMNS_CLASS_NAMES[cardCount],
-    )}
-  >
+const SkeletonCardGrid = ({ cardCount }: { cardCount: number }) => (
+  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
     {[...Array(cardCount)].map((_, index) => (
       <Skeleton key={index} className="h-36 w-full" />
     ))}
