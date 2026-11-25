@@ -66,7 +66,7 @@ export const AddResourceLinkForm = ({
   const fallbackTitle = urlValid
     ? hostnameForDisplay(normalizedUrl, RESOURCE_TITLE_MAX_LEN)
     : '';
-  const title = titleInput ?? (previewTitle || fallbackTitle);
+  const displayTitle = previewTitle || fallbackTitle;
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -74,14 +74,11 @@ export const AddResourceLinkForm = ({
       setUrlError(t('validUrlError'));
       return;
     }
-    if (!title.trim()) {
-      return;
-    }
     createLink.mutate(
       {
         target: { kind: 'profile', profileId },
         linkUrl: normalizedUrl,
-        title: title.trim(),
+        title: titleInput?.trim() || undefined,
         description: description.trim() ? description.trim() : null,
       },
       { onSuccess },
@@ -126,15 +123,13 @@ export const AddResourceLinkForm = ({
         <Field>
           <FieldLabel htmlFor="resource-title">
             {t('resources.titleLabel')}
-            <RequiredAsterisk />
           </FieldLabel>
           <Input
             id="resource-title"
-            value={title}
+            value={titleInput ?? ''}
             onChange={(event) => setTitleInput(event.target.value)}
-            required
             maxLength={RESOURCE_TITLE_MAX_LEN}
-            placeholder={t('resources.titlePlaceholder')}
+            placeholder={displayTitle || t('resources.titlePlaceholder')}
           />
         </Field>
         <Field>
@@ -161,7 +156,7 @@ export const AddResourceLinkForm = ({
         </Button>
         <Button
           type="submit"
-          disabled={!urlValid || !title.trim() || submitting}
+          disabled={!urlValid || submitting}
           className="flex-1 justify-center"
         >
           {submitting

@@ -24,7 +24,7 @@ const inputSchema = z.object({
       collectionId: z.string().uuid(),
     }),
   ]),
-  title: z.string().trim().min(1).max(RESOURCE_TITLE_MAX_LEN),
+  title: z.string().trim().max(RESOURCE_TITLE_MAX_LEN).optional(),
   description: z
     .string()
     .max(RESOURCE_DESCRIPTION_MAX_LEN)
