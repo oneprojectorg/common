@@ -1,9 +1,6 @@
 import { NotFoundError, getCategoryDevelopmentRecipients } from '@op/common';
 import { OPURLConfig } from '@op/core';
-import {
-  CategoryDevelopmentConfirmedAdminEmail,
-  CategoryDevelopmentConfirmedReviewerEmail,
-} from '@op/emails';
+import { CategoryDevelopmentConfirmedAdminEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 
 import { sendNotificationEmails } from './sendNotificationEmails';
@@ -56,7 +53,6 @@ export const sendCategoryDevelopmentConfirmedNotification =
         decisionSlug,
         advancingCount,
         adminEmails,
-        reviewerEmails,
       } = recipientsResult.recipients;
 
       if (!isComplete) {
@@ -91,28 +87,8 @@ export const sendCategoryDevelopmentConfirmedNotification =
         );
       }
 
-      if (reviewerEmails.length > 0) {
-        await step.run('send-reviewer-emails', async () =>
-          sendNotificationEmails({
-            emails: reviewerEmails.map((email) => ({
-              to: email,
-              subject: CategoryDevelopmentConfirmedReviewerEmail.subject(
-                categoryName,
-                processName,
-              ),
-              component: () =>
-                CategoryDevelopmentConfirmedReviewerEmail(emailProps),
-            })),
-            failureMessage: 'category development confirmed reviewer emails',
-            context,
-            idempotencyKeyPrefix: `category-development-confirmed/${runId}/reviewers`,
-          }),
-        );
-      }
-
       return {
         adminCount: adminEmails.length,
-        reviewerCount: reviewerEmails.length,
       };
     },
   );

@@ -76,7 +76,7 @@ describe('sendCategoryDevelopmentConfirmedNotification', () => {
     });
   });
 
-  it('lists the decision admins and the other category reviewers apart once every reviewer confirms', async ({
+  it('lists the decisions admins as recipients once every reviewer confirms', async ({
     task,
     onTestFinished,
   }) => {
@@ -134,8 +134,10 @@ describe('sendCategoryDevelopmentConfirmedNotification', () => {
           setup.userEmail,
           adminReviewer.email,
         ]),
-        reviewerEmails: [reviewer.email],
       },
+    });
+    expect(result).not.toMatchObject({
+      recipients: { adminEmails: expect.arrayContaining([reviewer.email]) },
     });
   });
 });

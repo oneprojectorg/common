@@ -2,7 +2,6 @@ import { render } from 'react-email';
 import { describe, expect, it } from 'vitest';
 
 import { CategoryDevelopmentConfirmedAdminEmail } from './CategoryDevelopmentConfirmedAdminEmail';
-import { CategoryDevelopmentConfirmedReviewerEmail } from './CategoryDevelopmentConfirmedReviewerEmail';
 import { DecisionResultEmail } from './DecisionResultEmail';
 import { DecisionUpdateNotificationEmail } from './DecisionUpdateNotificationEmail';
 import { PhaseTransitionEmail } from './PhaseTransitionEmail';
@@ -80,10 +79,6 @@ describe('email render determinism', () => {
       name: 'CategoryDevelopmentConfirmedAdminEmail',
       Email: CategoryDevelopmentConfirmedAdminEmail,
     },
-    {
-      name: 'CategoryDevelopmentConfirmedReviewerEmail',
-      Email: CategoryDevelopmentConfirmedReviewerEmail,
-    },
   ])('renders $name identically for identical props', async ({ Email }) => {
     const props = {
       categoryName: 'Parks & Recreation',
@@ -102,10 +97,6 @@ describe('email render determinism', () => {
     {
       name: 'CategoryDevelopmentConfirmedAdminEmail',
       Email: CategoryDevelopmentConfirmedAdminEmail,
-    },
-    {
-      name: 'CategoryDevelopmentConfirmedReviewerEmail',
-      Email: CategoryDevelopmentConfirmedReviewerEmail,
     },
   ])(
     'renders $name with one advancing proposal in the singular and the category name as escaped text',
