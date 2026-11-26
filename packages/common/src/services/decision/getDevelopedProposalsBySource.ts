@@ -22,8 +22,8 @@ import {
  * members of the entry's own profile, a hidden or flagged entry also for an
  * instance admin.
  *
- * `isComplete` runs the submit checks on each draft entry (one document read
- * each); it is `null` for an entry that is not a draft.
+ * `isSubmittable` runs the submit checks on each draft entry (one document
+ * read each); an entry that is not a draft is never submittable.
  */
 export async function getDevelopedProposalsBySource({
   processInstanceId,
@@ -65,7 +65,7 @@ export async function getDevelopedProposalsBySource({
     orderBy: { sourceProposalId: 'asc', createdAt: 'asc', id: 'asc' },
   });
 
-  const completeness = await getDraftCompleteness({
+  const submittableIds = await getSubmittableDraftIds({
     processInstanceId,
     proposals: edges.map(({ targetProposal }) => targetProposal),
   });
@@ -76,7 +76,7 @@ export async function getDevelopedProposalsBySource({
       id: targetProposal.id,
       profileId: targetProposal.profileId,
       status: targetProposal.status,
-      isComplete: completeness.get(targetProposal.id) ?? null,
+      isSubmittable: submittableIds.has(targetProposal.id),
     });
     const entries = bySource.get(sourceProposalId);
     if (entries) {
@@ -89,8 +89,8 @@ export async function getDevelopedProposalsBySource({
   return bySource;
 }
 
-/** Whether each draft can be submitted, by proposal id. Non-drafts have no key. */
-async function getDraftCompleteness({
+/** The ids of the drafts that pass the submit checks. */
+async function getSubmittableDraftIds({
   processInstanceId,
   proposals,
 }: {
@@ -102,12 +102,12 @@ async function getDraftCompleteness({
     proposalData: unknown;
     profile: { name: string };
   }>;
-}): Promise<Map<string, boolean>> {
+}): Promise<Set<string>> {
   const drafts = proposals.filter(
     (proposal) => proposal.status === ProposalStatus.DRAFT,
   );
   if (drafts.length === 0) {
-    return new Map();
+    return new Set();
   }
 
   const instance = await db.query.processInstances.findFirst({
@@ -127,10 +127,10 @@ async function getDraftCompleteness({
           proposal,
           instance: { ...instance, profileId },
         });
-        return [proposal.id, true] as const;
+        return proposal.id;
       } catch (error) {
         if (error instanceof ValidationError) {
-          return [proposal.id, false] as const;
+          return null;
         }
         throw error;
       }
@@ -138,5 +138,5 @@ async function getDraftCompleteness({
     { concurrency: 10 },
   );
 
-  return new Map(results);
+  return new Set(results.filter((id) => id !== null));
 }

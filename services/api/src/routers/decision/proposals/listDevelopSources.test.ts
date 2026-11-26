@@ -223,7 +223,7 @@ async function developEntry({
     id: proposal.id,
     profileId: proposal.profileId,
     status,
-    isComplete: status === ProposalStatus.DRAFT ? false : null,
+    isSubmittable: false,
   };
 }
 
@@ -657,7 +657,7 @@ describe.concurrent('decision.listDevelopSources developedProposals', () => {
     }
   });
 
-  it('marks a draft entry complete only when it passes the submit checks, and leaves a submitted entry unchecked', async ({
+  it('marks an entry submittable only when it is a draft that passes the submit checks', async ({
     task,
     onTestFinished,
   }) => {
@@ -733,12 +733,12 @@ describe.concurrent('decision.listDevelopSources developedProposals', () => {
     });
 
     expect(developedBySource(page).get(source.id)).toEqual([
-      expect.objectContaining({ id: noBudget.id, isComplete: false }),
-      expect.objectContaining({ id: complete.id, isComplete: true }),
+      expect.objectContaining({ id: noBudget.id, isSubmittable: false }),
+      expect.objectContaining({ id: complete.id, isSubmittable: true }),
       expect.objectContaining({
         id: submitted.id,
         status: ProposalStatus.SUBMITTED,
-        isComplete: null,
+        isSubmittable: false,
       }),
     ]);
   });
