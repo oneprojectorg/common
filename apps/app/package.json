@@ -44,7 +44,6 @@
     "@opentelemetry/semantic-conventions": "^1.39.0",
     "@posthog/cli": "^0.4.8",
     "@posthog/nextjs-config": "^1.12.2",
-    "@rjsf/utils": "^5.24.12",
     "@svgr/plugin-jsx": "^8.1.0",
     "@tanstack/react-form": "^1.6.2",
     "@tiptap-pro/extension-snapshot": "^3.6.1",

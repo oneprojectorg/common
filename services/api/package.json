@@ -64,7 +64,6 @@
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
     "@op/vitest-config": "workspace:*",
-    "@rjsf/utils": "^6.3.1",
     "@types/jsonwebtoken": "^9.0.10",
     "@vitest/coverage-istanbul": "catalog:",
     "jsonwebtoken": "^9.0.2",

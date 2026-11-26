@@ -1,7 +1,6 @@
 /**
  * Instance data creation helpers for DecisionSchemaDefinition templates.
  */
-import type { UiSchema } from '@rjsf/utils';
 import type { JSONContent } from '@tiptap/core';
 import type { JSONSchema7 } from 'json-schema';
 
@@ -10,6 +9,7 @@ import { CommonError, ValidationError } from '../../../utils';
 import { schemaValidator } from '../schemaValidator';
 import type { SelectionPipeline } from '../selectionPipeline/types';
 import type { ProposalTemplateSchema, RubricTemplateSchema } from '../types';
+import type { UiSchema } from './types';
 import type {
   DecisionSchemaDefinition,
   PhaseRules,
@@ -59,7 +59,7 @@ export const assertSettingsMatchSchema = ({
   settingsSchema: PhaseSettingsSchema;
   phaseLabel: string;
 }): void => {
-  // Ajv's strict mode rejects the RJSF `ui` key.
+  // Ajv's strict mode rejects the `ui` key.
   const { ui: _ui, ...schema } = settingsSchema;
   const result = schemaValidator.validate(schema, settings);
   if (!result.valid) {

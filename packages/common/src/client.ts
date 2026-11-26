@@ -324,6 +324,7 @@ export {
   phaseReviewSettingsSchema,
   type PhaseReviewSettings,
   type ReviewsScope,
+  type UiSchema,
   type VoterEnrolmentRule,
 } from './services/decision/schemas/types';
 export {
