@@ -1,6 +1,8 @@
 import type { Proposal } from '@op/db/schema';
 
-export function getPipelineScores(proposal: Proposal): Record<string, unknown> {
+export function getPipelineMetadata(
+  proposal: Proposal,
+): Record<string, unknown> {
   if (!('metadata' in proposal)) {
     return {};
   }

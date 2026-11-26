@@ -15,7 +15,7 @@ export interface SelectionCandidate extends Proposal {
   /** The inbound selection pipeline chose it; the transition awaits approval. */
   selectedByPipeline: boolean;
   /** What that pipeline computed for it, e.g. rankPoints, position, cost; null unless selected. */
-  pipelineScores: Record<string, unknown> | null;
+  pipelineMetadata: Record<string, unknown> | null;
 }
 
 export interface SelectionCandidates {
@@ -128,7 +128,7 @@ export async function listSelectionCandidates({
     items: items.map((item) => ({
       ...item,
       selectedByPipeline: pipelineSelection.has(item.id),
-      pipelineScores: pipelineSelection.get(item.id) ?? null,
+      pipelineMetadata: pipelineSelection.get(item.id) ?? null,
     })),
     totalCandidates,
   };
@@ -136,7 +136,7 @@ export async function listSelectionCandidates({
 
 /**
  * The proposals the pipeline attached to the latest inbound transition while
- * it awaits approval, with their scores. Empty once confirmed, or when the
+ * it awaits approval, with their pipeline metadata. Empty once confirmed, or when the
  * phase was entered without a pipeline.
  */
 async function resolveHeldSelection({
@@ -156,7 +156,7 @@ async function resolveHeldSelection({
     orderBy: { transitionedAt: 'desc' },
     columns: { selectionConfirmedAt: true },
     with: {
-      transitionProposals: { columns: { proposalId: true, scores: true } },
+      transitionProposals: { columns: { proposalId: true, metadata: true } },
     },
   });
   if (!inbound || inbound.selectionConfirmedAt !== null) {
@@ -165,7 +165,7 @@ async function resolveHeldSelection({
   return new Map(
     inbound.transitionProposals.map((row) => [
       row.proposalId,
-      row.scores ?? {},
+      row.metadata ?? {},
     ]),
   );
 }

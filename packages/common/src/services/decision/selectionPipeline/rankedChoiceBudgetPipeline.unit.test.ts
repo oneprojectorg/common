@@ -4,7 +4,7 @@ import {
   buildProposalRow,
   buildVoteAggregation,
 } from '../../../../testing/helpers/proposalRows';
-import { getPipelineScores } from './getPipelineScores';
+import { getPipelineMetadata } from './getPipelineMetadata';
 import { executeSelectionPipeline } from './pipelineEngine';
 import { rankedChoiceBudgetPipeline } from './rankedChoiceBudgetPipeline';
 import type { ExecutionContext } from './types';
@@ -55,7 +55,9 @@ describe('rankedChoiceBudgetPipeline', () => {
       context,
     );
 
-    expect(getPipelineScores(selected!).rankPoints).toBe(5 + 4 + 3 + 2 + 1 + 1);
+    expect(getPipelineMetadata(selected!).rankPoints).toBe(
+      5 + 4 + 3 + 2 + 1 + 1,
+    );
   });
 
   it('orders proposals by points and skips the ones the remaining budget cannot cover', async () => {

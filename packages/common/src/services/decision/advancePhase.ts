@@ -16,7 +16,7 @@ import {
   aggregateProposalMetrics,
   executeSelectionPipeline,
 } from './selectionPipeline';
-import { getPipelineScores } from './selectionPipeline/getPipelineScores';
+import { getPipelineMetadata } from './selectionPipeline/getPipelineMetadata';
 import type { ExecutionContext } from './selectionPipeline/types';
 import { usesBudgetBlock } from './selectionPipeline/usesBudgetBlock';
 import { needsSelectionApproval } from './utils/phaseSettings';
@@ -146,7 +146,7 @@ export async function advancePhase(
 
   // Default to pass-none; phases opt into pass-all via an empty-blocks pipeline.
   let selectedProposalIds: string[] = [];
-  let selectedScores: Map<string, Record<string, unknown>> | undefined;
+  let selectedMetadata: Map<string, Record<string, unknown>> | undefined;
 
   if (selectionPipeline) {
     const [proposalMetrics, proposalCosts] = await Promise.all([
@@ -169,7 +169,9 @@ export async function advancePhase(
     };
     const selected = await executeSelectionPipeline(selectionPipeline, context);
     selectedProposalIds = selected.map((p) => p.id);
-    selectedScores = new Map(selected.map((p) => [p.id, getPipelineScores(p)]));
+    selectedMetadata = new Map(
+      selected.map((p) => [p.id, getPipelineMetadata(p)]),
+    );
   }
 
   // An empty selection has nothing to approve; holding it would block the phase
@@ -240,7 +242,7 @@ export async function advancePhase(
     processInstanceId: instanceId,
     transitionHistoryId: insertedTransition.id,
     proposalIds: selectedProposalIds,
-    scores: selectedScores,
+    metadata: selectedMetadata,
   });
 
   return {

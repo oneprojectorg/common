@@ -357,7 +357,7 @@ describe.concurrent('advancePhase', () => {
     const attached = await db
       .select({
         proposalId: decisionTransitionProposals.proposalId,
-        scores: decisionTransitionProposals.scores,
+        metadata: decisionTransitionProposals.metadata,
       })
       .from(decisionTransitionProposals)
       .where(
@@ -368,7 +368,7 @@ describe.concurrent('advancePhase', () => {
       )
       .orderBy(decisionTransitionProposals.createdAt);
     expect(
-      new Map(attached.map((row) => [row.proposalId, row.scores])),
+      new Map(attached.map((row) => [row.proposalId, row.metadata])),
     ).toEqual(
       new Map([
         [
@@ -709,12 +709,12 @@ describe.concurrent('advancePhase', () => {
     expect(candidates.totalCandidates).toBe(3);
     const picks = candidates.items.filter((item) => item.selectedByPipeline);
     expect(picks).toHaveLength(2);
-    // A limit block writes no scores, so each pick carries an empty record.
-    expect(picks.map((item) => item.pipelineScores)).toEqual([{}, {}]);
+    // A limit block writes no metadata, so each pick carries an empty record.
+    expect(picks.map((item) => item.pipelineMetadata)).toEqual([{}, {}]);
     expect(
       candidates.items
         .filter((item) => !item.selectedByPipeline)
-        .map((item) => item.pipelineScores),
+        .map((item) => item.pipelineMetadata),
     ).toEqual([null]);
 
     // The admin's list replaces the held selection.

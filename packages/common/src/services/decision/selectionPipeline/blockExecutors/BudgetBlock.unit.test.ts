@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildProposalRow } from '../../../../../testing/helpers/proposalRows';
 import { ValidationError } from '../../../../utils';
-import { getPipelineScores } from '../getPipelineScores';
+import { getPipelineMetadata } from '../getPipelineMetadata';
 import type {
   BudgetBlock as BudgetBlockType,
   ExecutionContext,
@@ -36,7 +36,7 @@ describe('BudgetBlock', () => {
   it('records each proposal turn, cost and the budget available when its turn came', () => {
     const result = run(1000);
 
-    expect(result.proposals.map(getPipelineScores)).toEqual([
+    expect(result.proposals.map(getPipelineMetadata)).toEqual([
       { position: 1, cost: 400, budgetAvailable: 1000 },
       { position: 2, cost: 500, budgetAvailable: 600 },
       { position: 4, cost: 100, budgetAvailable: 100 },

@@ -13,7 +13,7 @@ const listSelectionCandidatesInputSchema = z.object({
 const listSelectionCandidatesOutputSchema = list(
   proposalSchema.extend({
     selectedByPipeline: z.boolean(),
-    pipelineScores: z.record(z.string(), z.unknown()).nullable(),
+    pipelineMetadata: z.record(z.string(), z.unknown()).nullable(),
   }),
 ).extend({
   totalCandidates: z.number().int().nonnegative(),
