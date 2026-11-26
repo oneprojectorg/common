@@ -17,14 +17,10 @@ export type CategoryDevelopmentRecipients = {
   processName: string;
   decisionSlug: string;
   advancingCount: number;
-  /** Every holder of decisions Admin on the instance profile. */
   adminEmails: string[];
 };
 
-/**
- * Who hears that the develop work of a category is confirmed, and what the
- * message names. No access check: the caller is a background function.
- */
+/** No access check: the caller is a background function. */
 export async function getCategoryDevelopmentRecipients({
   processInstanceId,
   phaseId,

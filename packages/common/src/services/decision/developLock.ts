@@ -236,7 +236,6 @@ export async function countAdvancingByCategory({
   return new Map(rows.map((row) => [row.taxonomyTermId, row.total]));
 }
 
-/** True for a category reviewer row whose develop work is confirmed. */
 export function isCategoryReviewerDevelopConfirmed(
   table: typeof categoryReviewers,
 ): SQL<boolean> {
