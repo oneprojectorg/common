@@ -187,7 +187,13 @@ function getUnfilledFields({
     });
 
   return [...targets]
-    .filter((field) => !Object.hasOwn(data, field))
+    .filter((field) => {
+      const value = data[field];
+      return (
+        !Object.hasOwn(data, field) ||
+        (Array.isArray(value) && value.length === 0)
+      );
+    })
     .map((field) => {
       const rules = applicableRules.filter(({ to }) => to === field);
       if (rules.length === 0) {
