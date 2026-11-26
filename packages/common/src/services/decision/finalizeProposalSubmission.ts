@@ -13,6 +13,7 @@ import { assertProposalSubmittable } from './assertProposalSubmittable';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import { normalizeProposalCategories } from './proposalDataSchema';
 import { reconcileReviewAssignments } from './reconcileReviewAssignments';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { setProposalCategories } from './setProposalCategories';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
@@ -35,14 +36,17 @@ export const finalizeProposalSubmission = async ({
   instance: Pick<ProcessInstance, 'id' | 'processId'> & { profileId: string };
   instanceData: DecisionInstanceData;
 }) => {
-  const { proposalTemplate, assembledData, location, collaborationDocId } =
+  const proposalTemplate = await resolveProposalTemplate(
+    instanceData,
+    instance.processId,
+    existingProposal.formSchemaId,
+  );
+
+  const { assembledData, location, collaborationDocId } =
     await assertProposalSubmittable({
       proposal: existingProposal,
-      instance: {
-        processId: instance.processId,
-        profileId: instance.profileId,
-        instanceData,
-      },
+      proposalTemplate,
+      instance: { profileId: instance.profileId },
     });
 
   // Stamp the latest TipTap version into proposalData so the history row

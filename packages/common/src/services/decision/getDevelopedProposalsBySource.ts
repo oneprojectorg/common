@@ -8,6 +8,7 @@ import {
   type ProposalReadContext,
   isProposalReadable,
 } from './proposalVisibility';
+import { resolveProposalTemplates } from './resolveProposalTemplate';
 import {
   type DevelopedProposal,
   developedProposalSchema,
@@ -118,6 +119,10 @@ async function getSubmittableDraftIds({
     throw new NotFoundError('Process instance', processInstanceId);
   }
   const { profileId } = instance;
+  const templateOf = await resolveProposalTemplates({
+    proposals: drafts,
+    instance,
+  });
 
   const results = await pMap(
     drafts,
@@ -125,7 +130,8 @@ async function getSubmittableDraftIds({
       try {
         await assertProposalSubmittable({
           proposal,
-          instance: { ...instance, profileId },
+          proposalTemplate: templateOf(proposal.id),
+          instance: { profileId },
         });
         return proposal.id;
       } catch (error) {

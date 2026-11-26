@@ -1,4 +1,4 @@
-import type { ProcessInstance, proposals } from '@op/db/schema';
+import type { proposals } from '@op/db/schema';
 
 import { ValidationError } from '../../utils';
 import {
@@ -7,13 +7,11 @@ import {
   parseProposalData,
 } from './proposalDataSchema';
 import { hasDecisionBoundaries, resolveBoundary } from './resolveBoundary';
-import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { templateCollectsLocation } from './templateLocation';
 import type { ProposalTemplateSchema } from './types';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 interface SubmittableProposal {
-  proposalTemplate: ProposalTemplateSchema | null;
   /** The assembled document values for a collab-doc proposal; `null` for a legacy proposal. */
   assembledData: Record<string, unknown> | null;
   location: LocationData | null;
@@ -28,22 +26,15 @@ interface SubmittableProposal {
  */
 export async function assertProposalSubmittable({
   proposal,
+  proposalTemplate,
   instance,
 }: {
-  proposal: Pick<
-    typeof proposals.$inferSelect,
-    'formSchemaId' | 'proposalData'
-  > & { profile: { name: string } };
-  instance: Pick<ProcessInstance, 'processId' | 'instanceData'> & {
-    profileId: string;
+  proposal: Pick<typeof proposals.$inferSelect, 'proposalData'> & {
+    profile: { name: string };
   };
+  proposalTemplate: ProposalTemplateSchema | null;
+  instance: { profileId: string };
 }): Promise<SubmittableProposal> {
-  const proposalTemplate = await resolveProposalTemplate(
-    instance.instanceData,
-    instance.processId,
-    proposal.formSchemaId,
-  );
-
   const parsed = parseProposalData(proposal.proposalData);
 
   // For collab-doc proposals the assembled fragment values are authoritative —
@@ -96,7 +87,6 @@ export async function assertProposalSubmittable({
   }
 
   return {
-    proposalTemplate,
     assembledData,
     location,
     collaborationDocId: parsed.collaborationDocId,
