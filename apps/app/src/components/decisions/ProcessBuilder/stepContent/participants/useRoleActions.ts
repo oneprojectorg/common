@@ -93,34 +93,29 @@ export function useRoleActions(profileId: string) {
       name: string;
       permissions: DecisionRolePermissions;
     }) =>
-      toastWhenSettled(createRoleAction(input), {
-        success: t('decisions.processBuilder.createRoleSuccess'),
-        error: t('decisions.processBuilder.createRoleError'),
-      }),
+      toastOnError(
+        createRoleAction(input),
+        t('decisions.processBuilder.createRoleError'),
+      ),
     renameRole: ({ roleId, name }: { roleId: string; name: string }) =>
-      toastWhenSettled(
+      toastOnError(
         roles.update(roleId, (draft) => {
           draft.name = name;
         }),
-        {
-          success: t('decisions.updateRoleSuccess'),
-          error: t('decisions.updateRoleError'),
-        },
+        t('decisions.updateRoleError'),
       ),
     deleteRole: (roleId: string) =>
-      toastWhenSettled(roles.delete(roleId), {
-        success: t('decisions.processBuilder.deleteRoleSuccess'),
-        error: t('decisions.processBuilder.deleteRoleError'),
-      }),
+      toastOnError(
+        roles.delete(roleId),
+        t('decisions.processBuilder.deleteRoleError'),
+      ),
   };
 }
 
-function toastWhenSettled<T extends object>(
+/** The optimistic row change confirms a write, so only a failure gets a toast. */
+function toastOnError<T extends object>(
   transaction: Transaction<T>,
-  messages: { success: string; error: string },
+  message: string,
 ) {
-  transaction.when('settled').then(
-    () => toast.success(messages.success),
-    () => toast.error(messages.error),
-  );
+  transaction.when('settled').catch(() => toast.error(message));
 }

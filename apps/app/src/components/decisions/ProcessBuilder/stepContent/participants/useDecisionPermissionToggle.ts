@@ -48,7 +48,6 @@ export function useDecisionPermissionToggle({
           ),
         );
         await decisionPermissions.utils.writeUpdate(savedRows);
-        toast.success(t('decisions.updateRoleSuccess'));
       } catch (error) {
         toast.error(t('decisions.updateRoleError'));
         throw error;
