@@ -81,6 +81,25 @@ describe('sendCategoryDevelopmentConfirmedNotification', () => {
     });
   });
 
+  it('reads the recipients for an event sent without a reviewer', async () => {
+    const { result } = await new InngestTestEngine({
+      function: sendCategoryDevelopmentConfirmedNotification,
+    }).executeStep('get-recipients', {
+      events: [
+        {
+          name: Events.categoryDevelopmentConfirmed.name,
+          data: {
+            processInstanceId: randomUUID(),
+            phaseId: 'final',
+            taxonomyTermId: randomUUID(),
+          },
+        },
+      ],
+    });
+
+    expect(result).toEqual({ ok: false });
+  });
+
   it('lists the decisions admins as recipients once every reviewer confirms', async ({
     task,
     onTestFinished,

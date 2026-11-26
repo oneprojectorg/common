@@ -21,8 +21,11 @@ export const sendCategoryDevelopmentConfirmedNotification =
     },
     { event: categoryDevelopmentConfirmed.name },
     async ({ event, step, runId }) => {
+      // Events sent before `reviewerProfileId` was added must still parse.
       const { processInstanceId, phaseId, taxonomyTermId } =
-        categoryDevelopmentConfirmed.schema.parse(event.data);
+        categoryDevelopmentConfirmed.schema
+          .omit({ reviewerProfileId: true })
+          .parse(event.data);
 
       const recipientsResult = await step.run('get-recipients', async () => {
         try {
