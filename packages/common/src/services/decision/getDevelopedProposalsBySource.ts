@@ -23,8 +23,7 @@ import {
  * members of the entry's own profile, a hidden or flagged entry also for an
  * instance admin.
  *
- * `isSubmittable` runs the submit checks on each draft entry (one document
- * read each); an entry that is not a draft is never submittable.
+ * Each draft entry costs one document read for `isSubmittable`.
  */
 export async function getDevelopedProposalsBySource({
   processInstanceId,
@@ -90,7 +89,6 @@ export async function getDevelopedProposalsBySource({
   return bySource;
 }
 
-/** The ids of the drafts that pass the submit checks. */
 async function getSubmittableDraftIds({
   processInstanceId,
   proposals,

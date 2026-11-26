@@ -26,11 +26,12 @@ export type ListDevelopSourcesInput = z.infer<
   typeof listDevelopSourcesInputSchema
 >;
 
-/** An entry developed from a source, as far as the caller may read it. `isSubmittable`: a draft that passes the submit checks. */
+/** An entry developed from a source, as far as the caller may read it. */
 export const developedProposalSchema = z.object({
   id: z.uuid(),
   profileId: z.uuid(),
   status: z.enum(ProposalStatus).nullable(),
+  /** A draft that passes the submit checks. */
   isSubmittable: z.boolean(),
 });
 

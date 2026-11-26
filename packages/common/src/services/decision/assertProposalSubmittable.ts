@@ -12,18 +12,12 @@ import type { ProposalTemplateSchema } from './types';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 interface SubmittableProposal {
-  /** The assembled document values for a collab-doc proposal; `null` for a legacy proposal. */
   assembledData: Record<string, unknown> | null;
   location: LocationData | null;
   collaborationDocId: string;
 }
 
-/**
- * Runs the submit checks on a proposal without changing it: the template
- * rules, the location rule and the collaboration document.
- *
- * @throws {ValidationError} when the proposal cannot be submitted
- */
+/** @throws {ValidationError} when the proposal cannot be submitted */
 export async function assertProposalSubmittable({
   proposal,
   proposalTemplate,
@@ -37,8 +31,7 @@ export async function assertProposalSubmittable({
 }): Promise<SubmittableProposal> {
   const parsed = parseProposalData(proposal.proposalData);
 
-  // For collab-doc proposals the assembled fragment values are authoritative —
-  // stored proposalData may lag the last autosave.
+  // The assembled fragment values are authoritative; stored proposalData may lag the autosave.
   let assembledData: Record<string, unknown> | null = null;
 
   if (proposalTemplate) {
@@ -55,10 +48,8 @@ export async function assertProposalSubmittable({
       assembledData ? assembledData.location : parsed.location,
     ) ?? null;
 
-  // When the template collects a location, it is mandatory. If boundaries are
-  // configured, the pin must fall inside one — the authoritative server-side
-  // enforcement of the picker's out-of-area check. When no boundaries exist,
-  // any location is valid (the pin can go anywhere).
+  // A template that collects a location requires one, inside a boundary when
+  // the decision has boundaries.
   if (templateCollectsLocation(proposalTemplate)) {
     if (!location) {
       throw new ValidationError(
