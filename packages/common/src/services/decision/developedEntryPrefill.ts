@@ -110,6 +110,7 @@ export async function getDevelopedEntryPrefill({
     logger.warn('Develop prefill left mapped fields empty', {
       ...context,
       unfilledFields,
+      sourceProposalIds: sourceProposalIds.join(','),
     });
   }
 
