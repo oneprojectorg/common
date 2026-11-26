@@ -1,13 +1,13 @@
-import { RJSFSchema } from '@rjsf/utils';
+import type { JSONSchema7 } from 'json-schema';
 
-// Extend RJSFSchema to support ajv-errors errorMessage property
+// Extend JSONSchema7 to support ajv-errors errorMessage property
 // This type allows errorMessage on the schema and all nested properties
-export type SchemaWithErrorMessage = RJSFSchema & {
+export type SchemaWithErrorMessage = JSONSchema7 & {
   errorMessage?: {
     [key: string]: string;
   };
   properties?: {
-    [key: string]: RJSFSchema & {
+    [key: string]: JSONSchema7 & {
       errorMessage?: {
         [key: string]: string;
       };

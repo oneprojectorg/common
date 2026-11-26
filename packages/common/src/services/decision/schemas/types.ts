@@ -1,13 +1,14 @@
 /**
  * Decision schema definition types.
- * Designed to work directly with RJSF.
  */
-import type { UiSchema } from '@rjsf/utils';
 import type { JSONSchema7 } from 'json-schema';
 import { z } from 'zod';
 
 import type { SelectionPipeline } from '../selectionPipeline/types';
 import type { ProposalTemplateSchema, RubricTemplateSchema } from '../types';
+
+/** Form hints keyed by field name, such as `'ui:widget'`; nested fields nest. */
+export type UiSchema = { [key: string]: string | boolean | UiSchema };
 
 /**
  * Phase behavior rules

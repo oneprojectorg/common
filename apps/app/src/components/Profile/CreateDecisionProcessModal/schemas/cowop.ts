@@ -1,4 +1,4 @@
-import { UiSchema } from '@rjsf/utils';
+import type { UiSchema } from '@op/common/client';
 
 import { SchemaWithErrorMessage } from './types';
 

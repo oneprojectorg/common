@@ -1,6 +1,5 @@
 /**
  * Decision schema definitions.
- * Each schema can be used directly with RJSF.
  */
 import type { DecisionSchemaDefinition } from './types';
 

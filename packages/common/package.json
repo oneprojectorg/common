@@ -49,7 +49,6 @@
     "@op/logging": "workspace:*",
     "@op/styles": "workspace:*",
     "@op/translation": "workspace:*",
-    "@rjsf/utils": "catalog:",
     "@tiptap/core": "catalog:",
     "@tiptap/extension-heading": "catalog:",
     "@tiptap/extension-image": "catalog:",
