@@ -3,7 +3,10 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { installMemoryStorage } from '../../testing/memoryStorage';
-import { useManualSelection } from './useManualSelection';
+import {
+  useManualSelection,
+  usePipelinePicksSeeded,
+} from './useManualSelection';
 
 const INSTANCE = 'instance-selection';
 const KEY = `@op/manual-selection:${INSTANCE}:final`;
@@ -20,6 +23,27 @@ describe('useManualSelection', () => {
 
     const second = renderHook(() => useManualSelection(INSTANCE, 'final'));
     expect(second.result.current[0]).toEqual(['solar', 'bike']);
+  });
+
+  it('starts a new visit to the phase from a clean draft', () => {
+    const reverted = renderHook(() =>
+      useManualSelection(INSTANCE, 'final', 'transition-1'),
+    );
+    act(() => reverted.result.current[1](['solar']));
+    const seeded = renderHook(() =>
+      usePipelinePicksSeeded(INSTANCE, 'final', 'transition-1'),
+    );
+    act(() => seeded.result.current[1](true));
+
+    const reentered = renderHook(() =>
+      useManualSelection(INSTANCE, 'final', 'transition-2'),
+    );
+    const reseeded = renderHook(() =>
+      usePipelinePicksSeeded(INSTANCE, 'final', 'transition-2'),
+    );
+
+    expect(reentered.result.current[0]).toEqual([]);
+    expect(reseeded.result.current[0]).toBe(false);
   });
 
   it('shares a write with another hook on the same key in this tab', () => {

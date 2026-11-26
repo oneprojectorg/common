@@ -360,6 +360,7 @@ export function ReviewSummaryView({
         <ReviewSummaryAdvanceFooter
           instanceId={instanceId}
           phaseId={phaseId}
+          visitId={instance.inboundTransitionId}
           proposal={proposal}
           proposalTitle={
             resolvePresentationFields({

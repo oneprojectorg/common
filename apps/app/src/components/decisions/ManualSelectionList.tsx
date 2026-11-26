@@ -35,7 +35,10 @@ import { SelectableProposalsTable } from './SelectableProposalsTable';
 import { SelectionFooter } from './SelectionFooter';
 import { ALL_CATEGORIES } from './proposalFilterQuery';
 import { useManualAwardDraft } from './useManualAwardDraft';
-import { useManualSelection } from './useManualSelection';
+import {
+  useManualSelection,
+  usePipelinePicksSeeded,
+} from './useManualSelection';
 import { useProposalAwards } from './useProposalAwards';
 
 interface ManualSelectionListProps {
@@ -91,11 +94,18 @@ export const ManualSelectionList = ({
   const candidates = candidatesQuery.data?.items;
   const totalCandidates = candidatesQuery.data?.totalCandidates ?? 0;
 
+  // Keyed by the inbound transition: a revert deletes it, so re-entering the
+  // phase starts from a clean draft and the new pipeline picks.
   const [selectedIds, setSelectedIds] = useManualSelection(
     instanceId,
     instance.currentStateId,
+    instance.inboundTransitionId,
   );
-  const awardDraft = useManualAwardDraft(instanceId, instance.currentStateId);
+  const awardDraft = useManualAwardDraft(
+    instanceId,
+    instance.currentStateId,
+    instance.inboundTransitionId,
+  );
   const [, setAwardDraft] = awardDraft;
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
@@ -133,6 +143,42 @@ export const ManualSelectionList = ({
       setSelectedIds(selectedIds.filter((id) => poolIds.has(id)));
     }
   }, [
+    candidates,
+    categoryId,
+    candidatesQuery.isFetching,
+    selectedIds,
+    setSelectedIds,
+  ]);
+
+  // A held pipeline selection is where the admin starts: tick its picks once
+  // per phase, from the settled unfiltered pool, unless a stored draft still
+  // holds a pick from that pool.
+  const [hasSeededPipelinePicks, setHasSeededPipelinePicks] =
+    usePipelinePicksSeeded(
+      instanceId,
+      instance.currentStateId,
+      instance.inboundTransitionId,
+    );
+  useEffect(() => {
+    if (
+      hasSeededPipelinePicks ||
+      !candidates ||
+      categoryId ||
+      candidatesQuery.isFetching
+    ) {
+      return;
+    }
+    setHasSeededPipelinePicks(true);
+    const poolIds = new Set(candidates.map((p) => p.id));
+    if (selectedIds.some((id) => poolIds.has(id))) return;
+    const pipelinePicks = candidates
+      .filter((proposal) => proposal.selectedByPipeline)
+      .map((proposal) => proposal.id);
+    if (pipelinePicks.length > 0) {
+      setSelectedIds(pipelinePicks);
+    }
+  }, [
+    hasSeededPipelinePicks,
     candidates,
     categoryId,
     candidatesQuery.isFetching,

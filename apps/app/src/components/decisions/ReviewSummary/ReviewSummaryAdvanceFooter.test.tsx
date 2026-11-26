@@ -46,6 +46,7 @@ const renderFooter = ({
       <ReviewSummaryAdvanceFooter
         instanceId={INSTANCE}
         phaseId={phaseId}
+        visitId={null}
         proposal={proposal}
         proposalTitle="Solar roof"
         awardsAmounts={awardsAmounts}

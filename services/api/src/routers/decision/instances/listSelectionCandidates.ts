@@ -10,7 +10,9 @@ const listSelectionCandidatesInputSchema = z.object({
   sortOrder: z.enum(['votes', 'newest', 'oldest']).default('votes'),
 });
 
-const listSelectionCandidatesOutputSchema = list(proposalSchema).extend({
+const listSelectionCandidatesOutputSchema = list(
+  proposalSchema.extend({ selectedByPipeline: z.boolean() }),
+).extend({
   totalCandidates: z.number().int().nonnegative(),
 });
 

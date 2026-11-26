@@ -65,12 +65,18 @@ export function ReviewSelectionList({
 
   // Persisted in localStorage so selection survives navigation to the
   // per-proposal review summary and back.
+  // Keyed by the inbound transition, so a revert and re-advance starts clean.
   const [advancingIds, setAdvancingIds] = useManualSelection(
     processInstanceId,
     previousPhaseId,
+    instance.inboundTransitionId,
   );
   const advancing = useMemo(() => new Set(advancingIds), [advancingIds]);
-  const awardDraft = useManualAwardDraft(processInstanceId, previousPhaseId);
+  const awardDraft = useManualAwardDraft(
+    processInstanceId,
+    previousPhaseId,
+    instance.inboundTransitionId,
+  );
   const [, setAwardDraft] = awardDraft;
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const awardsAmounts = isFinalPhase && showBudget;
