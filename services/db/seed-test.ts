@@ -123,7 +123,11 @@ const simpleVoting = {
       rules: {
         proposals: { submit: false },
         voting: { submit: true },
-        advancement: { method: 'date', endDate: '2026-01-03' },
+        advancement: {
+          method: 'date',
+          endDate: '2026-01-03',
+          needsApproval: false,
+        },
       },
       settings: {
         type: 'object',

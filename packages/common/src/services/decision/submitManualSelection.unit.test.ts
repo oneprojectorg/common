@@ -161,10 +161,9 @@ function happyPathResults() {
         toStateId: CURRENT_PHASE_ID,
         transitionData: null,
         triggeredByProfileId: 'someone',
+        selectionConfirmedAt: null,
       },
     ],
-    // attachedRows (no proposals attached yet)
-    [],
     // UPDATE stateTransitionHistory
     undefined,
     // latestHistoryRows (one per unique proposal)

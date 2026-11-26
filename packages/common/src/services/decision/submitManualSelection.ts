@@ -1,9 +1,5 @@
 import { db, desc, eq } from '@op/db/client';
-import {
-  ProcessStatus,
-  decisionTransitionProposals,
-  stateTransitionHistory,
-} from '@op/db/schema';
+import { ProcessStatus, stateTransitionHistory } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
@@ -184,6 +180,7 @@ export async function submitManualSelection({
         toStateId: stateTransitionHistory.toStateId,
         transitionData: stateTransitionHistory.transitionData,
         triggeredByProfileId: stateTransitionHistory.triggeredByProfileId,
+        selectionConfirmedAt: stateTransitionHistory.selectionConfirmedAt,
       })
       .from(stateTransitionHistory)
       .where(eq(stateTransitionHistory.processInstanceId, processInstanceId))
@@ -209,13 +206,8 @@ export async function submitManualSelection({
       );
     }
 
-    const attachedRows = await tx
-      .select({ proposalId: decisionTransitionProposals.proposalId })
-      .from(decisionTransitionProposals)
-      .where(eq(decisionTransitionProposals.transitionHistoryId, latestRow.id));
-
-    // Can't overwrite a pipeline-driven transition that already attached proposals.
-    if (attachedRows.length > 0) {
+    // Can't overwrite a selection that is already settled.
+    if (latestRow.selectionConfirmedAt !== null) {
       throw new ValidationError(
         'Manual selection is not available for this instance',
       );
@@ -258,6 +250,7 @@ export async function submitManualSelection({
       .update(stateTransitionHistory)
       .set({
         transitionData: nextTransitionData,
+        selectionConfirmedAt: new Date(now),
         ...(latestRow.triggeredByProfileId == null
           ? { triggeredByProfileId: byProfileId }
           : {}),

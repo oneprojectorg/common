@@ -168,6 +168,9 @@ export async function advancePhase(
       toStateId: toPhaseId,
       transitionData,
       triggeredByProfileId,
+      // Attached proposals settle the selection; none leaves it to an admin.
+      selectionConfirmedAt:
+        selectedProposalIds.length > 0 ? new Date(now) : null,
     })
     .returning({ id: stateTransitionHistory.id });
 

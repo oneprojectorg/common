@@ -42,7 +42,7 @@ const REVIEW_TO_VOTING_SCHEMA: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: true },
         voting: { submit: false },
-        advancement: { method: 'manual' },
+        advancement: { method: 'manual', needsApproval: false },
       },
       selectionPipeline: { version: '1.0.0', blocks: [] },
     },
@@ -52,7 +52,7 @@ const REVIEW_TO_VOTING_SCHEMA: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: false, review: true },
         voting: { submit: false },
-        advancement: { method: 'manual' },
+        advancement: { method: 'manual', needsApproval: false },
       },
       selectionPipeline: {
         version: '1.0.0',
@@ -214,6 +214,7 @@ async function seedMixedVersionReviews({
       fromStateId: 'submission',
       toStateId: 'review',
       transitionData: {},
+      selectionConfirmedAt: new Date(),
       transitionedAt: new Date(Date.now() - 60_000),
     })
     .returning();

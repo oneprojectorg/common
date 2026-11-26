@@ -2,7 +2,6 @@ import { db } from '@op/db/client';
 import type { DbClient } from '@op/db/client';
 
 import { isLegacyInstanceData } from './isLegacyInstance';
-import type { TransitionData } from './schemas/transitionData';
 
 export type InstanceForStatusResolution = {
   id: string;
@@ -19,9 +18,9 @@ export type ManualSelectionStatus =
  * Is the current phase's inbound transition still awaiting a manual selection?
  *
  * `selectionsAreConfirmed: false` means the UI should prompt an admin to pick
- * proposals — the transition exists but has zero attachments and no
- * `manualSelection` stamp. Any other shape (legacy instance, initial phase,
- * already-stamped, already-attached) resolves to `true`.
+ * proposals — the inbound transition has no `selectionConfirmedAt`. Any other
+ * shape (legacy instance, initial phase, confirmed selection) resolves to
+ * `true`.
  */
 export async function resolveManualSelectionStatus({
   instance,
@@ -59,28 +58,14 @@ export async function resolveManualSelectionStatus({
   const latestRow = await dbClient.query.stateTransitionHistory.findFirst({
     where: { processInstanceId: instance.id },
     orderBy: { transitionedAt: 'desc' },
-    columns: { id: true, toStateId: true, transitionData: true },
+    columns: { toStateId: true, selectionConfirmedAt: true },
   });
 
   if (!latestRow || latestRow.toStateId !== currentStateId) {
     return { selectionsAreConfirmed: true };
   }
 
-  const hasManualSelectionStamp = Boolean(
-    (latestRow.transitionData as TransitionData | null | undefined)
-      ?.manualSelection,
-  );
-
-  if (hasManualSelectionStamp) {
-    return { selectionsAreConfirmed: true };
-  }
-
-  const attached = await dbClient.query.decisionTransitionProposals.findFirst({
-    where: { transitionHistoryId: latestRow.id },
-    columns: { transitionHistoryId: true },
-  });
-
-  if (attached) {
+  if (latestRow.selectionConfirmedAt !== null) {
     return { selectionsAreConfirmed: true };
   }
 

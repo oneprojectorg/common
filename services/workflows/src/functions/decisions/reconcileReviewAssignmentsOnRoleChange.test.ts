@@ -40,7 +40,7 @@ const decisionSchemaWithReview = {
       description: 'Submit proposals',
       rules: {
         proposals: { submit: true },
-        advancement: { method: 'manual' as const },
+        advancement: { method: 'manual' as const, needsApproval: false },
       },
       selectionPipeline: { version: '1.0.0', blocks: [] },
     },

@@ -91,6 +91,10 @@ describe.concurrent('submitManualSelection', () => {
     await db
       .delete(decisionTransitionProposals)
       .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+    await db
+      .update(stateTransitionHistory)
+      .set({ selectionConfirmedAt: null })
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId));
 
     const [existingTransition] = await db
       .select({ id: stateTransitionHistory.id })
@@ -185,6 +189,10 @@ describe.concurrent('submitManualSelection', () => {
     await db
       .delete(decisionTransitionProposals)
       .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+    await db
+      .update(stateTransitionHistory)
+      .set({ selectionConfirmedAt: null })
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId));
 
     // A random valid-looking UUID that is NOT a candidate.
     const bogusId = '00000000-0000-4000-8000-000000000abc';
@@ -267,6 +275,10 @@ describe.concurrent('submitManualSelection', () => {
     await db
       .delete(decisionTransitionProposals)
       .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+    await db
+      .update(stateTransitionHistory)
+      .set({ selectionConfirmedAt: null })
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId));
 
     await caller.decision.submitManualSelection({
       processInstanceId: instanceId,
@@ -310,6 +322,10 @@ describe.concurrent('submitManualSelection', () => {
     await db
       .delete(decisionTransitionProposals)
       .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+    await db
+      .update(stateTransitionHistory)
+      .set({ selectionConfirmedAt: null })
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId));
 
     // First submission succeeds for phase 'review'.
     await caller.decision.submitManualSelection({
@@ -367,6 +383,10 @@ describe.concurrent('submitManualSelection', () => {
     await db
       .delete(decisionTransitionProposals)
       .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+    await db
+      .update(stateTransitionHistory)
+      .set({ selectionConfirmedAt: null })
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId));
 
     // Fire two submissions concurrently — the row lock must serialize them,
     // so exactly one succeeds and the other rejects with CONFLICT.
@@ -449,6 +469,10 @@ describe.concurrent('submitManualSelection', () => {
     await db
       .delete(decisionTransitionProposals)
       .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+    await db
+      .update(stateTransitionHistory)
+      .set({ selectionConfirmedAt: null })
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId));
 
     // Fire both operations concurrently. Whoever acquires the
     // `SELECT processInstances ... FOR UPDATE` lock first wins:
@@ -509,13 +533,15 @@ describe.concurrent('submitManualSelection', () => {
         {
           id: 'submission',
           name: 'Submission',
-          rules: {},
+          rules: {
+            advancement: { method: 'manual' as const, needsApproval: false },
+          },
           selectionPipeline: { version: '1.0.0', blocks: [] },
         },
         {
           id: 'review',
           name: 'Review',
-          rules: {},
+          rules: { advancement: { method: 'manual' as const } },
           selectionPipeline: {
             version: '1.0.0',
             blocks: [{ id: 'zero', type: 'limit', count: 0 }],
@@ -673,6 +699,10 @@ describe.concurrent('submitManualSelection', () => {
     await db
       .delete(decisionTransitionProposals)
       .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+    await db
+      .update(stateTransitionHistory)
+      .set({ selectionConfirmedAt: null })
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId));
 
     const mockSend = event.send as unknown as MockInstance;
 
@@ -736,6 +766,10 @@ describe.concurrent('submitManualSelection', () => {
     await db
       .delete(decisionTransitionProposals)
       .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+    await db
+      .update(stateTransitionHistory)
+      .set({ selectionConfirmedAt: null })
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId));
 
     // `review` is the last phase of the default schema, so this publishes.
     await caller.decision.submitManualSelection({
@@ -817,6 +851,10 @@ describe.concurrent('submitManualSelection', () => {
       await db
         .delete(decisionTransitionProposals)
         .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+      await db
+        .update(stateTransitionHistory)
+        .set({ selectionConfirmedAt: null })
+        .where(eq(stateTransitionHistory.processInstanceId, instanceId));
 
       await expect(
         caller.decision.submitManualSelection({
@@ -859,6 +897,10 @@ describe.concurrent('submitManualSelection', () => {
     await db
       .delete(decisionTransitionProposals)
       .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+    await db
+      .update(stateTransitionHistory)
+      .set({ selectionConfirmedAt: null })
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId));
 
     const mockSend = event.send as unknown as MockInstance;
 

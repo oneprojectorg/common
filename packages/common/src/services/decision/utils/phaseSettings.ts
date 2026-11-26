@@ -32,11 +32,6 @@ interface AdvancementPhase {
   rules?: Pick<PhaseRules, 'advancement'>;
 }
 
-/**
- * An admin confirms the selection pipeline's outcome before it attaches.
- * Absent means yes: a phase advances its pipeline's selection on its own only
- * when it says so.
- */
 export function needsSelectionApproval(phase: AdvancementPhase): boolean {
   return phase.rules?.advancement?.needsApproval !== false;
 }

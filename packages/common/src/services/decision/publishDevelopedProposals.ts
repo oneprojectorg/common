@@ -213,15 +213,17 @@ export async function publishDevelopedProposals({
         )
         .returning({ id: proposals.id });
 
+      const confirmedAt = new Date();
       const manualSelection: ManualSelectionAudit = {
         byProfileId,
-        at: new Date().toISOString(),
+        at: confirmedAt.toISOString(),
       };
 
       await tx
         .update(stateTransitionHistory)
         .set({
           transitionData: { ...existingTransitionData, manualSelection },
+          selectionConfirmedAt: confirmedAt,
           ...(latestRow.triggeredByProfileId == null
             ? { triggeredByProfileId: byProfileId }
             : {}),

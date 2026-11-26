@@ -38,7 +38,7 @@ const dateSchema = {
       name: 'Initial',
       rules: {
         proposals: { submit: true },
-        advancement: { method: 'date' },
+        advancement: { method: 'date', needsApproval: false },
       },
       selectionPipeline: passAll,
     },
@@ -59,14 +59,14 @@ const threeStepDateSchema = {
       name: 'First',
       rules: {
         proposals: { submit: true },
-        advancement: { method: 'date' },
+        advancement: { method: 'date', needsApproval: false },
       },
       selectionPipeline: passAll,
     },
     {
       id: 'second',
       name: 'Second',
-      rules: { advancement: { method: 'date' } },
+      rules: { advancement: { method: 'date', needsApproval: false } },
       selectionPipeline: passAll,
     },
     {
@@ -117,7 +117,7 @@ const reviewSchema = {
       name: 'Submission',
       rules: {
         proposals: { submit: true },
-        advancement: { method: 'manual' },
+        advancement: { method: 'manual', needsApproval: false },
       },
       selectionPipeline: passAll,
     },

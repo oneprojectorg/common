@@ -142,10 +142,8 @@ export const testMinimalSchema = {
       rules: {
         proposals: { submit: true },
         voting: { submit: false },
-        advancement: { method: 'manual' as const },
+        advancement: { method: 'manual' as const, needsApproval: false },
       },
-      // Explicit pass-all so every submitted proposal advances on transition.
-      // (advancePhase defaults to pass-none when no pipeline is configured.)
       selectionPipeline: { version: '1.0.0' as const, blocks: [] },
     },
     {

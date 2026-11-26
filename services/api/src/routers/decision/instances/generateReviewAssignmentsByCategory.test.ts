@@ -48,7 +48,7 @@ function schemaWithScope(scope: ReviewsScope): TestProcessSchema {
         description: 'Submit proposals',
         rules: {
           proposals: { submit: true },
-          advancement: { method: 'manual' },
+          advancement: { method: 'manual', needsApproval: false },
         },
         // Pass-all: every submitted proposal advances into review.
         selectionPipeline: { version: '1.0.0', blocks: [] },

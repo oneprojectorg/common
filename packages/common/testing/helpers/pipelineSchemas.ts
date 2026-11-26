@@ -16,7 +16,7 @@ export const dateAdvancementSchema = {
       name: 'Initial Phase',
       rules: {
         proposals: { submit: true },
-        advancement: { method: 'date' },
+        advancement: { method: 'date', needsApproval: false },
       },
       selectionPipeline: { version: '1.0.0', blocks: [] },
     },
@@ -41,7 +41,7 @@ export const schemaWithPipeline = {
     {
       id: 'submission',
       name: 'Submission',
-      rules: {},
+      rules: { advancement: { method: 'manual', needsApproval: false } },
       selectionPipeline: {
         version: '1.0.0',
         blocks: [{ id: 'limit-block', type: 'limit', count: 2 }],
@@ -49,7 +49,7 @@ export const schemaWithPipeline = {
     },
     { id: 'review', name: 'Review', rules: {} },
   ],
-};
+} satisfies DecisionSchemaDefinition;
 
 /**
  * Three-phase schema with a limiting selectionPipeline on each of the first two phases.
@@ -65,7 +65,7 @@ export const schemaWithThreePhasesAndPipelines = {
     {
       id: 'submission',
       name: 'Submission',
-      rules: {},
+      rules: { advancement: { method: 'manual', needsApproval: false } },
       selectionPipeline: {
         version: '1.0.0',
         blocks: [{ id: 'limit-1', type: 'limit', count: 3 }],
@@ -74,7 +74,7 @@ export const schemaWithThreePhasesAndPipelines = {
     {
       id: 'review',
       name: 'Review',
-      rules: {},
+      rules: { advancement: { method: 'manual', needsApproval: false } },
       selectionPipeline: {
         version: '1.0.0',
         blocks: [{ id: 'limit-2', type: 'limit', count: 2 }],
@@ -82,7 +82,7 @@ export const schemaWithThreePhasesAndPipelines = {
     },
     { id: 'final', name: 'Final', rules: {} },
   ],
-};
+} satisfies DecisionSchemaDefinition;
 
 /**
  * Same shape as schemaWithPipeline but with an explicit pass-all selectionPipeline
@@ -97,12 +97,12 @@ export const schemaWithoutPipeline = {
     {
       id: 'submission',
       name: 'Submission',
-      rules: {},
+      rules: { advancement: { method: 'manual', needsApproval: false } },
       selectionPipeline: { version: '1.0.0', blocks: [] },
     },
     { id: 'review', name: 'Review', rules: {} },
   ],
-};
+} satisfies DecisionSchemaDefinition;
 
 /**
  * Schema with no selectionPipeline at all. Use this to exercise the pass-none
@@ -115,7 +115,7 @@ export const schemaMissingPipeline = {
     { id: 'submission', name: 'Submission', rules: {} },
     { id: 'review', name: 'Review', rules: {} },
   ],
-};
+} satisfies DecisionSchemaDefinition;
 
 /**
  * Three-phase schema without any selectionPipeline. Lets a middle phase have
@@ -129,7 +129,7 @@ export const schemaWithThreePhases = {
     { id: 'review', name: 'Review', rules: {} },
     { id: 'final', name: 'Final', rules: {} },
   ],
-};
+} satisfies DecisionSchemaDefinition;
 
 /**
  * Four phases that all advance by date, each with a pass-all selectionPipeline
@@ -146,7 +146,7 @@ export const fourPhaseDateSchema = {
       name: 'Submission',
       rules: {
         proposals: { submit: true },
-        advancement: { method: 'date' },
+        advancement: { method: 'date', needsApproval: false },
       },
       selectionPipeline: { version: '1.0.0', blocks: [] },
     },
@@ -154,7 +154,7 @@ export const fourPhaseDateSchema = {
       id: 'review',
       name: 'Review',
       rules: {
-        advancement: { method: 'date' },
+        advancement: { method: 'date', needsApproval: false },
       },
       selectionPipeline: { version: '1.0.0', blocks: [] },
     },
@@ -163,7 +163,7 @@ export const fourPhaseDateSchema = {
       name: 'Voting',
       rules: {
         voting: { submit: true },
-        advancement: { method: 'date' },
+        advancement: { method: 'date', needsApproval: false },
       },
       selectionPipeline: { version: '1.0.0', blocks: [] },
     },

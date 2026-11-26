@@ -1,17 +1,7 @@
-import {
-  type SQL,
-  and,
-  db,
-  desc,
-  eq,
-  exists,
-  notExists,
-  sql,
-} from '@op/db/client';
+import { type SQL, and, db, desc, eq, exists, isNull } from '@op/db/client';
 import {
   ProcessStatus,
   categoryReviewers,
-  decisionTransitionProposals,
   processInstances,
   stateTransitionHistory,
 } from '@op/db/schema';
@@ -232,8 +222,9 @@ export function categoryDevelopRowsWhere({
 
 /**
  * The SQL twin of `isDevelopWindowOpen` once the phase is known to be a
- * develop phase: the latest transition of the instance goes into `phaseId`,
- * carries no `manualSelection` stamp and has no proposal attached.
+ * develop phase: the latest transition of the instance goes into `phaseId`
+ * and either holds a pipeline selection for approval, or carries no
+ * `manualSelection` stamp and has no proposal attached.
  */
 function developWindowOpenWhere({
   processInstanceId,
@@ -258,18 +249,7 @@ function developWindowOpenWhere({
         and(
           eq(latestTransition.id, latestTransitionId),
           eq(latestTransition.toStateId, phaseId),
-          sql`coalesce(jsonb_typeof(${latestTransition.transitionData} -> 'manualSelection'), 'null') = 'null'`,
-          notExists(
-            db
-              .select({ id: decisionTransitionProposals.transitionHistoryId })
-              .from(decisionTransitionProposals)
-              .where(
-                eq(
-                  decisionTransitionProposals.transitionHistoryId,
-                  latestTransition.id,
-                ),
-              ),
-          ),
+          isNull(latestTransition.selectionConfirmedAt),
         ),
       ),
   );

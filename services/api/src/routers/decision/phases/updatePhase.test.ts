@@ -546,6 +546,33 @@ describe.concurrent('updatePhase', () => {
     expect(result.data).toEqual({ selectionPipeline });
   });
 
+  it('sets and clears advancement approval in data', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phase, adminCaller } = await setupPhase(task, onTestFinished);
+
+    const flagged = await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: {
+        rules: { advancement: { method: 'manual', needsApproval: true } },
+      },
+    });
+    expect(flagged.data).toEqual({
+      rules: { advancement: { method: 'manual', needsApproval: true } },
+    });
+
+    const cleared = await adminCaller.decision.updatePhase({
+      phaseId: phase.id,
+      data: {
+        rules: { advancement: { method: 'manual', needsApproval: false } },
+      },
+    });
+    expect(cleared.data).toEqual({
+      rules: { advancement: { method: 'manual', needsApproval: false } },
+    });
+  });
+
   it('requires authentication', async () => {
     const caller = await createUnauthenticatedCaller();
 

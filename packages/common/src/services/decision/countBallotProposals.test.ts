@@ -16,7 +16,11 @@ const shortlistSchema: DecisionSchemaDefinition = {
     {
       id: 'submission',
       name: 'Submission',
-      rules: { proposals: { submit: true }, voting: { submit: false } },
+      rules: {
+        proposals: { submit: true },
+        voting: { submit: false },
+        advancement: { method: 'manual', needsApproval: false },
+      },
       selectionPipeline: {
         version: '1.0.0',
         blocks: [{ id: 'shortlist', type: 'limit', count: 2 }],

@@ -3,6 +3,7 @@ import {
   ProcessStatus,
   ProposalStatus,
   decisionTransitionProposals,
+  stateTransitionHistory,
 } from '@op/db/schema';
 
 import {
@@ -62,8 +63,9 @@ export async function createDevelopPhaseSetup({
 }
 
 /**
- * Detaches every proposal from the inbound transition, so the selections of
- * the current phase are pending and the develop window is open.
+ * Detaches every proposal from the inbound transition and clears its
+ * confirmation, so the selections of the current phase are pending and the
+ * develop window is open.
  */
 export async function openDevelopWindow({
   instanceId,
@@ -73,6 +75,10 @@ export async function openDevelopWindow({
   await db
     .delete(decisionTransitionProposals)
     .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+  await db
+    .update(stateTransitionHistory)
+    .set({ selectionConfirmedAt: null })
+    .where(eq(stateTransitionHistory.processInstanceId, instanceId));
 }
 
 /**

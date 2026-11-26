@@ -49,7 +49,10 @@ const reviewSchema = {
     {
       id: 'submission',
       name: 'Submission',
-      rules: { proposals: { submit: true } },
+      rules: {
+        proposals: { submit: true },
+        advancement: { method: 'manual', needsApproval: false },
+      },
       selectionPipeline: {
         version: '1.0.0',
         blocks: [{ id: 'limit-block', type: 'limit', count: 1 }],
@@ -58,7 +61,10 @@ const reviewSchema = {
     {
       id: 'review',
       name: 'Review',
-      rules: { proposals: { review: true } },
+      rules: {
+        proposals: { review: true },
+        advancement: { method: 'manual', needsApproval: false },
+      },
       selectionPipeline: { version: '1.0.0', blocks: [] },
     },
     { id: 'results', name: 'Results', rules: {} },

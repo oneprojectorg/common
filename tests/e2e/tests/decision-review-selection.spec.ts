@@ -32,7 +32,7 @@ const submissionPhase: PhaseDefinition = {
   rules: {
     proposals: { submit: true },
     voting: { submit: false },
-    advancement: { method: 'manual' },
+    advancement: { method: 'manual', needsApproval: false },
   },
   // Pass-all so submission→review carries every submitted proposal forward.
   selectionPipeline: { version: '1.0.0', blocks: [] },
@@ -44,6 +44,7 @@ const reviewPhase: PhaseDefinition = {
   rules: {
     proposals: { submit: false, review: true },
     voting: { submit: false },
+    // Needs approval, so the empty selection waits for the admin.
     advancement: { method: 'manual' },
   },
   // `limit: 0` forces a pass-none result on review's outbound transition so the
@@ -168,6 +169,7 @@ async function seedOnReviewPhase(
       fromStateId: 'submission',
       toStateId: 'review',
       transitionData: {},
+      selectionConfirmedAt: new Date(),
     })
     .returning();
   if (!reviewTransition) {
