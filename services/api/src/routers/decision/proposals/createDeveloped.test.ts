@@ -14,6 +14,7 @@ import {
   TEST_PERMISSION_BITS,
   TestDecisionsDataManager,
   createCategoryReviewerWithTerm,
+  createDecisionsAdmin,
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
   createProposalReview,
@@ -1326,6 +1327,97 @@ describe.concurrent('createDevelopedProposal', () => {
       await expect(
         createDraft([garden.id, benches.id]),
       ).resolves.not.toHaveProperty('budget');
+    });
+  });
+
+  describe('with admins of the decision', () => {
+    const readMemberAuthUserIds = async (profileId: string) => {
+      const members = await db.query.profileUsers.findMany({
+        where: { profileId },
+        columns: { authUserId: true },
+      });
+      return members.map((member) => member.authUserId);
+    };
+
+    it('adds each admin as a co-author who can read the draft and is offered the editor, and leaves out a plain member and another holder of Develop Proposals', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instanceId, source } = await createDevelopPhaseSetup({
+        testData,
+      });
+      const [developer, otherDeveloper, decisionsAdmin, participant] =
+        await Promise.all([
+          createDevelopProposalsMember({ testData, setup }),
+          createDevelopProposalsMember({ testData, setup }),
+          createDecisionsAdmin({ testData, setup }),
+          testData.createMemberUser({
+            organization: setup.organization,
+            instanceProfileIds: [setup.instance.profileId],
+          }),
+        ]);
+      const [developerCaller, otherDeveloperCaller, adminCaller] =
+        await Promise.all([
+          createAuthenticatedCaller(developer.email),
+          createAuthenticatedCaller(otherDeveloper.email),
+          createAuthenticatedCaller(decisionsAdmin.email),
+        ]);
+
+      const draft = await developerCaller.decision.createDevelopedProposal({
+        processInstanceId: instanceId,
+        sourceProposalIds: [source.id],
+        proposalData: { title: 'Developed' },
+      });
+      testData.trackProfileForCleanup(draft.profileId);
+
+      const memberAuthUserIds = await readMemberAuthUserIds(draft.profileId);
+      expect(memberAuthUserIds).toHaveLength(3);
+      expect(memberAuthUserIds).toEqual(
+        expect.arrayContaining([
+          developer.authUserId,
+          setup.user.id,
+          decisionsAdmin.authUserId,
+        ]),
+      );
+      expect(memberAuthUserIds).not.toContain(participant.authUserId);
+
+      const read = await adminCaller.decision.getProposal({
+        profileId: draft.profileId,
+      });
+      expect(read.id).toBe(draft.id);
+      expect(read.isEditable).toBe(true);
+
+      await expect(
+        otherDeveloperCaller.decision.getProposal({
+          profileId: draft.profileId,
+        }),
+      ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+    });
+
+    it('writes one membership row for an admin who creates the entry', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instanceId, source } = await createDevelopPhaseSetup({
+        testData,
+      });
+      const decisionsAdmin = await createDecisionsAdmin({ testData, setup });
+      const caller = await createAuthenticatedCaller(setup.userEmail);
+
+      const draft = await caller.decision.createDevelopedProposal({
+        processInstanceId: instanceId,
+        sourceProposalIds: [source.id],
+        proposalData: { title: 'Admin developed' },
+      });
+      testData.trackProfileForCleanup(draft.profileId);
+
+      const memberAuthUserIds = await readMemberAuthUserIds(draft.profileId);
+      expect(memberAuthUserIds).toHaveLength(2);
+      expect(memberAuthUserIds).toEqual(
+        expect.arrayContaining([setup.user.id, decisionsAdmin.authUserId]),
+      );
     });
   });
 });
