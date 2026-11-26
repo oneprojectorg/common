@@ -132,6 +132,7 @@ export * from './getDecisionReviewAssignments';
 export * from './getPhaseReviewAssignments';
 export * from './generateReviewAssignments';
 export * from './runGenerateReviewAssignments';
+export * from './backfillDevelopedProposalCoauthors';
 export * from './backfillReviewAssignments';
 export * from './pruneReviewAssignmentsForMember';
 export * from './reconcileReviewAssignments';

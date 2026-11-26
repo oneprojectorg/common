@@ -99,3 +99,27 @@ export async function createDevelopProposalsMember({
   });
   return member;
 }
+
+/**
+ * A member whose only decisions grant on the instance is a role with Read and
+ * Admin (no Update, no Develop Proposals), and Read on the profile zone.
+ */
+export async function createDecisionsAdmin({
+  testData,
+  setup,
+}: {
+  testData: TestDecisionsDataManager;
+  setup: Awaited<ReturnType<typeof createDevelopPhaseSetup>>['setup'];
+}) {
+  const admin = await testData.createMemberUser({
+    organization: setup.organization,
+  });
+  await grantInstanceRole({
+    instanceProfileId: setup.instance.profileId,
+    authUserId: admin.authUserId,
+    email: admin.email,
+    roleName: `Decisions Admin ${admin.authUserId}`,
+    decisionsPermission: TEST_PERMISSION_BITS.READ | TEST_PERMISSION_BITS.ADMIN,
+  });
+  return admin;
+}

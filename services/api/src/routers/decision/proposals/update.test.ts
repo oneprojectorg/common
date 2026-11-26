@@ -3,6 +3,7 @@ import { getInstancePhases, parseProposalData } from '@op/common';
 import {
   TestDecisionsDataManager,
   TestReviewsDataManager,
+  createDecisionsAdmin,
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
   createRevisionRequest,
@@ -1389,6 +1390,41 @@ describe.concurrent('updateProposal develop window', () => {
         data: { title: 'Refined entry' },
       }),
     ).rejects.toMatchObject({ cause: { statusCode: 403 } });
+  });
+
+  it('lets an admin of the decision who is not the creator edit the draft entry', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    await updateInstancePhases(instanceId, (phases) => [
+      ...phases,
+      { phaseId: 'results', name: 'Results', rules: {} },
+    ]);
+    const [developer, decisionsAdmin] = await Promise.all([
+      createDevelopProposalsMember({ testData, setup }),
+      createDecisionsAdmin({ testData, setup }),
+    ]);
+    const [developerCaller, adminCaller] = await Promise.all([
+      createAuthenticatedCaller(developer.email),
+      createAuthenticatedCaller(decisionsAdmin.email),
+    ]);
+    const entry = await developerCaller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: { title: 'Developed' },
+    });
+    testData.trackProfileForCleanup(entry.profileId);
+
+    const result = await adminCaller.decision.updateProposal({
+      proposalId: entry.id,
+      data: { title: 'Refined by an admin' },
+    });
+
+    expect(result.profile.name).toBe('Refined by an admin');
   });
 
   it('keeps a draft entry editable once selections are confirmed', async ({
