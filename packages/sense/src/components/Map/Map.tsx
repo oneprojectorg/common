@@ -21,6 +21,7 @@ import {
 export { Layer, Source };
 export type { LayerProps };
 
+import { prefersReducedMotion } from '../../hooks/use-reduced-motion';
 import { cn } from '../../lib/utils';
 
 // maplibre-gl v6 cannot find its worker from inside a bundle. This `new URL`
@@ -135,6 +136,7 @@ export function Map({
       padding: boundsPadding,
       maxZoom: BOUNDS_FIT_MAX_ZOOM,
       duration: 1000,
+      animate: !prefersReducedMotion(),
     });
   }, [stableBounds, boundsPadding]);
 
@@ -153,6 +155,7 @@ export function Map({
       center: [center.lng, center.lat],
       essential: true,
       duration: 3000,
+      animate: !prefersReducedMotion(),
     });
   }, [center.lng, center.lat, stableBounds]);
 

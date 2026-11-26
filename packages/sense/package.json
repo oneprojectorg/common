@@ -12,6 +12,7 @@
     "./lib/utils": "./src/lib/utils.ts",
     "./lib/textDirection": "./src/lib/textDirection.ts",
     "./hooks/use-mobile": "./src/hooks/use-mobile.ts",
+    "./hooks/use-reduced-motion": "./src/hooks/use-reduced-motion.ts",
     "./Accordion": "./src/components/ui/accordion.tsx",
     "./Alert": "./src/components/ui/alert.tsx",
     "./AlertDialog": "./src/components/ui/alert-dialog.tsx",
@@ -118,6 +119,8 @@
     "build": "storybook build",
     "dev": "pnpm --filter @op/styles build && storybook dev -p 3600 --no-open",
     "format:check": "oxfmt --check",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -156,6 +159,7 @@
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
+    "@op/vitest-config": "workspace:*",
     "@storybook/addon-a11y": "^10.6.7",
     "@storybook/addon-docs": "^10.6.7",
     "@storybook/addon-themes": "^10.6.7",
@@ -164,11 +168,14 @@
     "@tailwindcss/postcss": "4.1.18",
     "@types/node": "^22.13.5",
     "@types/react": "19.0.10",
+    "@vitest/coverage-istanbul": "catalog:",
+    "jsdom": "27.1.0",
     "postcss": "^8.5.3",
     "react-masonry-css": "^1.0.16",
     "storybook": "^10.6.7",
     "tailwindcss": "4.1.18",
     "typescript": "7.0.2",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "vitest": "catalog:"
   }
 }
