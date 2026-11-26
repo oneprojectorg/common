@@ -220,5 +220,7 @@ export * from './emails/ProposalMergedEmail';
 export * from './emails/ProposalMergedIntoYoursEmail';
 export * from './emails/ProposalRejectedEmail';
 export * from './emails/DecisionResultEmail';
+export * from './emails/CategoryDevelopmentConfirmedAdminEmail';
+export * from './emails/CategoryDevelopmentConfirmedReviewerEmail';
 
 export { render } from 'react-email';

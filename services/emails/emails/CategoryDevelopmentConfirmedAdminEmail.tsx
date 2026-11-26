@@ -1,0 +1,49 @@
+import { Text } from 'react-email';
+
+import { CtaButton } from '../components/CtaButton';
+import EmailTemplate from '../components/EmailTemplate';
+import {
+  categoryDevelopmentConfirmedSubject,
+  formatAdvancingSentence,
+} from './categoryDevelopmentConfirmedCopy';
+
+export const CategoryDevelopmentConfirmedAdminEmail = ({
+  categoryName,
+  processName,
+  advancingCount,
+  processUrl,
+}: {
+  categoryName: string;
+  processName: string;
+  advancingCount: number;
+  processUrl: string;
+}) => {
+  return (
+    <EmailTemplate
+      previewText={categoryDevelopmentConfirmedSubject(
+        categoryName,
+        processName,
+      )}
+    >
+      <Text className="my-8 text-lg">
+        All reviewers of <strong>{categoryName}</strong> confirmed their
+        selections. {formatAdvancingSentence(advancingCount)} You can open the
+        category now.
+      </Text>
+
+      <CtaButton href={processUrl}>Open {processName}</CtaButton>
+    </EmailTemplate>
+  );
+};
+
+CategoryDevelopmentConfirmedAdminEmail.subject =
+  categoryDevelopmentConfirmedSubject;
+
+CategoryDevelopmentConfirmedAdminEmail.PreviewProps = {
+  categoryName: 'Parks and Recreation',
+  processName: 'Participatory Budgeting 2026',
+  advancingCount: 4,
+  processUrl: 'https://common.oneproject.org/',
+} satisfies Parameters<typeof CategoryDevelopmentConfirmedAdminEmail>[0];
+
+export default CategoryDevelopmentConfirmedAdminEmail;
