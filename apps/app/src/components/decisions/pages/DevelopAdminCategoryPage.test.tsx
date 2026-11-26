@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { processInstanceWithSchemaEncoder } from '@op/api/encoders';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { randomUUID } from 'node:crypto';
 import type { ReactNode } from 'react';
@@ -10,7 +10,10 @@ import messages from '../../../lib/i18n/dictionaries/en.json';
 import { DevelopAdminCategoryPage } from './DevelopAdminCategoryPage';
 
 let lock: 'windowClosed' | null = null;
+let categoryStatus = buildCategoryStatus({});
 const prepareMutate = vi.fn();
+const confirmMutate = vi.fn();
+const unconfirmMutate = vi.fn();
 const submitMutate = vi.fn();
 const unsubmitMutate = vi.fn();
 const listDevelopSources = vi.fn();
@@ -21,9 +24,7 @@ function idleMutation(mutate: () => void) {
 
 vi.mock('@op/api/client', () => ({
   trpc: {
-    useSuspenseQueries: () => [
-      [{ items: [{ category: { id: 'parks', name: 'Parks' } }] }, { lock }],
-    ],
+    useSuspenseQueries: () => [[{ items: [categoryStatus] }, { lock }]],
     decision: {
       listDevelopSources: {
         useSuspenseInfiniteQuery: (input: unknown) => {
@@ -46,6 +47,12 @@ vi.mock('@op/api/client', () => ({
       },
       unsubmitDevelopedProposal: {
         useMutation: () => idleMutation(unsubmitMutate),
+      },
+      confirmCategoryDevelopment: {
+        useMutation: () => idleMutation(confirmMutate),
+      },
+      unconfirmCategoryDevelopment: {
+        useMutation: () => idleMutation(unconfirmMutate),
       },
     },
   },
@@ -156,9 +163,31 @@ function renderPage() {
   );
 }
 
+function buildCategoryStatus({
+  advancingCount = 1,
+  reviewers = [{ developConfirmedAt: null }],
+}: {
+  advancingCount?: number;
+  reviewers?: { developConfirmedAt: string | null }[];
+}) {
+  return {
+    category: { id: 'parks', name: 'Parks', termUri: 'parks' },
+    reviewers,
+    sourceCount: 3,
+    advancingCount,
+  };
+}
+
+function getFooterAction(name: string) {
+  return within(screen.getByRole('contentinfo')).queryByRole('button', {
+    name,
+  });
+}
+
 afterEach(() => {
   cleanup();
   lock = null;
+  categoryStatus = buildCategoryStatus({});
   vi.clearAllMocks();
 });
 
@@ -201,5 +230,63 @@ describe('DevelopAdminCategoryPage', () => {
     expect(screen.queryByRole('button', { name: /^Prepare / })).toBeNull();
     expect(screen.getByText('Advancing')).toBeTruthy();
     expect(screen.getAllByText('Not advanced')).toHaveLength(2);
+    expect(screen.queryByRole('contentinfo')).toBeNull();
+  });
+
+  it('confirms the whole category by its taxonomy term after the dialog', async () => {
+    renderPage();
+
+    expect(screen.getByRole('contentinfo').textContent).toContain(
+      '1 proposal advancing',
+    );
+    getFooterAction('Confirm selections')?.click();
+    const dialog = await screen.findByRole('dialog');
+    within(dialog).getByRole('button', { name: 'Confirm selections' }).click();
+
+    expect(confirmMutate).toHaveBeenCalledWith({
+      processInstanceId: instance.id,
+      taxonomyTermId: 'parks',
+    });
+  });
+
+  it('disables Confirm while nothing in the category advances', () => {
+    categoryStatus = buildCategoryStatus({ advancingCount: 0 });
+    renderPage();
+
+    expect(getFooterAction('Confirm selections')).toHaveProperty(
+      'disabled',
+      true,
+    );
+  });
+
+  it('offers Unconfirm once every reviewer of the category confirmed', async () => {
+    categoryStatus = buildCategoryStatus({
+      reviewers: [{ developConfirmedAt: '2026-11-20T00:00:00.000Z' }],
+    });
+    renderPage();
+
+    // The rows stay editable for the admin after the confirm.
+    expect(
+      screen.getByRole('button', { name: 'Advance Draft source' }),
+    ).toBeTruthy();
+    expect(getFooterAction('Confirm selections')).toBeNull();
+    getFooterAction('Unconfirm selections')?.click();
+    const dialog = await screen.findByRole('dialog');
+    within(dialog)
+      .getByRole('button', { name: 'Unconfirm selections' })
+      .click();
+
+    expect(unconfirmMutate).toHaveBeenCalledWith({
+      processInstanceId: instance.id,
+      taxonomyTermId: 'parks',
+    });
+  });
+
+  it('offers no confirm for a category without reviewers', () => {
+    categoryStatus = buildCategoryStatus({ reviewers: [] });
+    renderPage();
+
+    expect(getFooterAction('Confirm selections')).toBeNull();
+    expect(getFooterAction('Unconfirm selections')).toBeNull();
   });
 });

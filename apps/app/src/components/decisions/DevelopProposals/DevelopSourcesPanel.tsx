@@ -351,10 +351,12 @@ function useDevelopSourcesPage({
 }: SourcesTableProps) {
   const [data, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
     trpc.decision.listDevelopSources.useSuspenseInfiniteQuery(
-      {
-        ...getDevelopSourcesInput({ processInstanceId, sourcePhaseId, scope }),
-        categoryIds: category ? [category.id] : undefined,
-      },
+      getDevelopSourcesInput({
+        processInstanceId,
+        sourcePhaseId,
+        scope,
+        categoryId: category?.id,
+      }),
       { getNextPageParam: nextCursor },
     );
 

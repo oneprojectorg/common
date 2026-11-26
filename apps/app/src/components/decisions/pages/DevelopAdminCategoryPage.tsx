@@ -9,11 +9,16 @@ import { LuArrowLeft } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { DevelopAdminCategoryFooter } from '../DevelopProposals/DevelopAdminCategoryFooter';
 import {
   DevelopSourcesPanel,
   DevelopSourcesReadOnlyPanel,
   DevelopSourcesTableSkeleton,
 } from '../DevelopProposals/DevelopSourcesPanel';
+import {
+  getDevelopSourceScope,
+  getDevelopSourcesInput,
+} from '../DevelopProposals/developSources';
 import { ProposalsLoadError } from '../ProposalsLoadError';
 import { DevelopPageContent } from './DevelopPageShell';
 
@@ -28,8 +33,9 @@ interface DevelopAdminCategoryPageProps {
 
 /**
  * One category of the admin's develop screen: its sources with the author's
- * Prepare, Edit and Advance while the develop window is open, and whether
- * each one advances once it closed.
+ * Prepare, Edit and Advance, and a footer to confirm or unconfirm the
+ * category, while the develop window is open; once it closed, only whether
+ * each source advances.
  */
 export function DevelopAdminCategoryPage(props: DevelopAdminCategoryPageProps) {
   const t = useTranslations();
@@ -69,10 +75,8 @@ function DevelopAdminCategorySourcesSuspense({
     q.decision.listCategoryReviewerStatus({ processInstanceId: instance.id }),
     q.decision.getDevelopConfirmState({ processInstanceId: instance.id }),
   ]);
-  const category = items.find(
-    (status) => status.category.id === categoryId,
-  )?.category;
-  const isKnownCategory = Boolean(category);
+  const status = items.find((item) => item.category.id === categoryId);
+  const isKnownCategory = Boolean(status);
 
   // The id comes from the URL: go back when it names no category.
   useEffect(() => {
@@ -81,7 +85,7 @@ function DevelopAdminCategorySourcesSuspense({
     }
   }, [isKnownCategory, onBack]);
 
-  if (!category) {
+  if (!status) {
     return null;
   }
 
@@ -89,13 +93,31 @@ function DevelopAdminCategorySourcesSuspense({
     instance,
     sourcePhase,
     decisionSlug,
-    category: { id: category.id, name: category.name },
+    category: { id: status.category.id, name: status.category.name },
   };
 
   // An admin has no confirm lock, so only the closed window locks them.
-  return lock === null ? (
-    <DevelopSourcesPanel {...panelProps} />
-  ) : (
-    <DevelopSourcesReadOnlyPanel {...panelProps} />
+  if (lock !== null) {
+    return <DevelopSourcesReadOnlyPanel {...panelProps} />;
+  }
+
+  return (
+    <>
+      <DevelopSourcesPanel {...panelProps} />
+      <DevelopAdminCategoryFooter
+        processInstanceId={instance.id}
+        status={status}
+        sourcesInput={
+          sourcePhase
+            ? getDevelopSourcesInput({
+                processInstanceId: instance.id,
+                sourcePhaseId: sourcePhase.phaseId,
+                scope: getDevelopSourceScope(instance),
+                categoryId: status.category.id,
+              })
+            : undefined
+        }
+      />
+    </>
   );
 }
