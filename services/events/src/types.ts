@@ -6,6 +6,14 @@ import { z } from 'zod';
 // union so it flows cleanly through the service layer without enum coercion.
 const moderationItemType = z.enum(['proposal', 'post', 'user']);
 
+// A `decision_category_reviewers` row of a develop phase.
+const categoryAssignmentSchema = z.object({
+  processInstanceId: z.string().uuid(),
+  phaseId: z.string().min(1),
+  taxonomyTermId: z.string().uuid(),
+  reviewerProfileId: z.string().uuid(),
+});
+
 export const Events = {
   // Carries only the item ref: the workflow resolves the item's current text
   // and attachments itself at review time. Snapshotting content into the
@@ -111,15 +119,16 @@ export const Events = {
       toPhaseId: z.string().min(1),
     }),
   },
-  // Sent on every confirm, also when other rows of the category are not
-  // confirmed yet. The consumer reads the rows to know if it is complete.
+  // One per confirmed category assignment, also when other assignments of
+  // the category are not confirmed yet. The consumer reads the rows to know
+  // if the category is complete.
   categoryDevelopmentConfirmed: {
     name: 'decision/category-development-confirmed' as const,
-    schema: z.object({
-      processInstanceId: z.string().uuid(),
-      phaseId: z.string().min(1),
-      taxonomyTermId: z.string().uuid(),
-    }),
+    schema: categoryAssignmentSchema,
+  },
+  categoryDevelopmentUnconfirmed: {
+    name: 'decision/category-development-unconfirmed' as const,
+    schema: categoryAssignmentSchema,
   },
   // Refs only, both addressed by id: a revert retires the result row, and any
   // later transition would hide the copy. The message bodies live on the

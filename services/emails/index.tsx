@@ -221,5 +221,7 @@ export * from './emails/ProposalMergedIntoYoursEmail';
 export * from './emails/ProposalRejectedEmail';
 export * from './emails/DecisionResultEmail';
 export * from './emails/CategoryDevelopmentConfirmedAdminEmail';
+export * from './emails/CategoryAssignmentConfirmedEmail';
+export * from './emails/CategoryAssignmentUnconfirmedEmail';
 
 export { render } from 'react-email';

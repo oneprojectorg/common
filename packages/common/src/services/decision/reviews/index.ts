@@ -8,3 +8,4 @@ export * from './listCategoryReviewerStatus';
 export * from './confirmCategoryDevelopment';
 export * from './unconfirmCategoryDevelopment';
 export * from './getCategoryDevelopmentRecipients';
+export * from './getCategoryAssignmentReceipt';

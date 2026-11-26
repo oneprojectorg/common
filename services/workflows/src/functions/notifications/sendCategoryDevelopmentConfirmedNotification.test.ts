@@ -23,7 +23,12 @@ const createEvent = ({
   taxonomyTermId: string;
 }) => ({
   name: Events.categoryDevelopmentConfirmed.name,
-  data: { processInstanceId, phaseId: 'final', taxonomyTermId },
+  data: {
+    processInstanceId,
+    phaseId: 'final',
+    taxonomyTermId,
+    reviewerProfileId: randomUUID(),
+  },
 });
 
 describe('sendCategoryDevelopmentConfirmedNotification', () => {

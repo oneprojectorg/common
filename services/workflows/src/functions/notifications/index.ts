@@ -18,3 +18,5 @@ export * from './sendDecisionResultNotifications';
 export * from './handleUnknownSmsSignup';
 export * from './handleSMSCommand';
 export * from './sendCategoryDevelopmentConfirmedNotification';
+export * from './sendCategoryAssignmentConfirmedNotification';
+export * from './sendCategoryAssignmentUnconfirmedNotification';
