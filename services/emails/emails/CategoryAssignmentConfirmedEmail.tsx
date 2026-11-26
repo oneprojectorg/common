@@ -21,13 +21,18 @@ export const CategoryAssignmentConfirmedEmail = ({
       previewText={CategoryAssignmentConfirmedEmail.subject(categoryName)}
     >
       <Text className="my-8 text-lg">
-        Your selections for <strong>{categoryName}</strong> in {processName}{' '}
-        were confirmed.{' '}
+        Your selections for{' '}
+        <strong>
+          <bdi>{categoryName}</bdi>
+        </strong>{' '}
+        in <bdi>{processName}</bdi> were confirmed.{' '}
         {formatConfirmedSentence({ confirmedCount, assignmentCount })} This
         message is a record of the confirm.
       </Text>
 
-      <CtaButton href={processUrl}>Open {processName}</CtaButton>
+      <CtaButton href={processUrl}>
+        Open <bdi>{processName}</bdi>
+      </CtaButton>
     </EmailTemplate>
   );
 };

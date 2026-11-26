@@ -17,11 +17,17 @@ export const CategoryAssignmentUnconfirmedEmail = ({
       previewText={CategoryAssignmentUnconfirmedEmail.subject(categoryName)}
     >
       <Text className="my-8 text-lg">
-        Your selections for <strong>{categoryName}</strong> in {processName}{' '}
-        were unconfirmed. You can change them and confirm again.
+        Your selections for{' '}
+        <strong>
+          <bdi>{categoryName}</bdi>
+        </strong>{' '}
+        in <bdi>{processName}</bdi> were unconfirmed. You can change them and
+        confirm again.
       </Text>
 
-      <CtaButton href={processUrl}>Open {processName}</CtaButton>
+      <CtaButton href={processUrl}>
+        Open <bdi>{processName}</bdi>
+      </CtaButton>
     </EmailTemplate>
   );
 };
