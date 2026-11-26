@@ -75,12 +75,20 @@ interface DevelopSourcesPanelProps {
   instance: ProcessInstance;
   sourcePhase: InstancePhaseData | null;
   decisionSlug: string;
+  /** Lists only the sources in this category. Omit for every source in scope. */
+  category?: DevelopSourcesCategory;
+}
+
+interface DevelopSourcesCategory {
+  id: string;
+  name: string;
 }
 
 interface SourcesTableProps {
   processInstanceId: string;
   sourcePhaseId: string;
   scope: DevelopSourceScope;
+  category?: DevelopSourcesCategory;
   /** Show the overall-recommendation column: the caller may read the reviews. */
   showRecommendations: boolean;
   decisionSlug: string;
@@ -156,6 +164,7 @@ function SourcesPanelShell({
   instance,
   sourcePhase,
   decisionSlug,
+  category,
   renderTable,
 }: DevelopSourcesPanelProps & {
   renderTable: (props: SourcesTableProps) => ReactNode;
@@ -197,6 +206,7 @@ function SourcesPanelShell({
         processInstanceId: instance.id,
         sourcePhaseId: sourcePhase.phaseId,
         scope,
+        category,
         showRecommendations: canReadReviews,
         decisionSlug,
       })}
@@ -337,10 +347,14 @@ function useDevelopSourcesPage({
   processInstanceId,
   sourcePhaseId,
   scope,
+  category,
 }: SourcesTableProps) {
   const [data, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
     trpc.decision.listDevelopSources.useSuspenseInfiniteQuery(
-      getDevelopSourcesInput({ processInstanceId, sourcePhaseId, scope }),
+      {
+        ...getDevelopSourcesInput({ processInstanceId, sourcePhaseId, scope }),
+        categoryIds: category ? [category.id] : undefined,
+      },
       { getNextPageParam: nextCursor },
     );
 
@@ -370,6 +384,7 @@ function useDevelopSourcesPage({
 
 function SourcesTable({
   scope,
+  category,
   showRecommendations,
   sourcesPage,
   renderTitle,
@@ -388,7 +403,13 @@ function SourcesTable({
           across tabs. */}
       <div aria-live="polite" className="flex min-h-11 items-center">
         <Header2 className="text-title font-normal">
-          {t('develop.sourcesCount', { count: total })}
+          {category
+            ? t.rich('develop.sourcesInCategoryCount', {
+                count: total,
+                category: category.name,
+                bdi: (chunks) => <bdi>{chunks}</bdi>,
+              })
+            : t('develop.sourcesCount', { count: total })}
         </Header2>
       </div>
 
@@ -473,7 +494,7 @@ function SourcesTable({
 }
 
 /** Creates an entry of this phase from a source that has none yet. */
-export function PrepareEntryButton({
+function PrepareEntryButton({
   title,
   disabled,
   loading,
@@ -516,13 +537,7 @@ function PrepareEntryLink({ title, href }: { title: string; href: string }) {
 }
 
 /** Opens the entry already developed from a source, draft or submitted. */
-export function EditEntryLink({
-  title,
-  href,
-}: {
-  title: string;
-  href: string;
-}) {
+function EditEntryLink({ title, href }: { title: string; href: string }) {
   const t = useTranslations('decisions.develop');
 
   return (
@@ -574,12 +589,12 @@ function SourceDecisionBadge({ advancing }: { advancing: boolean }) {
 }
 
 /** The actions or the decision of a source, side by side at the row's end. */
-export function EntryActions({ children }: { children: ReactNode }) {
+function EntryActions({ children }: { children: ReactNode }) {
   return <div className="flex items-center justify-end gap-2">{children}</div>;
 }
 
 /** Submits a source's draft entry, or un-advances it once submitted. */
-export function AdvanceEntryButton({
+function AdvanceEntryButton({
   entry,
   title,
   disabled,

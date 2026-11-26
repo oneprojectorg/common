@@ -3,6 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type { CategoryWithReviewerStatusSchema } from '@op/common/client';
+import { Button } from '@op/sense/Button';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@op/sense/Empty';
 import { Header2 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
@@ -24,10 +25,13 @@ import { useTranslations } from '@/lib/i18n';
 
 import { getCategoryConfirmedAt } from './developCategoryStatus';
 
+/** Each category's row opens that category's page through `onOpenCategory`. */
 export function DevelopAdminCategoriesPanel({
   processInstanceId,
+  onOpenCategory,
 }: {
   processInstanceId: string;
+  onOpenCategory: (categoryId: string) => void;
 }) {
   return (
     <div className="flex flex-col gap-10">
@@ -44,7 +48,10 @@ export function DevelopAdminCategoriesPanel({
 
       <APIErrorBoundary fallbacks={{ default: () => <CategoriesLoadError /> }}>
         <Suspense fallback={<CategoriesTableSkeleton />}>
-          <CategoriesTableSuspense processInstanceId={processInstanceId} />
+          <CategoriesTableSuspense
+            processInstanceId={processInstanceId}
+            onOpenCategory={onOpenCategory}
+          />
         </Suspense>
       </APIErrorBoundary>
     </div>
@@ -72,8 +79,10 @@ function CategoriesCountSuspense({
 
 function CategoriesTableSuspense({
   processInstanceId,
+  onOpenCategory,
 }: {
   processInstanceId: string;
+  onOpenCategory: (categoryId: string) => void;
 }) {
   const [{ items }] = trpc.decision.listCategoryReviewerStatus.useSuspenseQuery(
     {
@@ -89,7 +98,11 @@ function CategoriesTableSuspense({
     <CategoriesTable>
       <TableBody>
         {items.map((status) => (
-          <CategoryRow key={status.category.id} status={status} />
+          <CategoryRow
+            key={status.category.id}
+            status={status}
+            onOpen={() => onOpenCategory(status.category.id)}
+          />
         ))}
       </TableBody>
     </CategoriesTable>
@@ -123,7 +136,13 @@ function CategoriesTable({ children }: { children: ReactNode }) {
   );
 }
 
-function CategoryRow({ status }: { status: CategoryWithReviewerStatusSchema }) {
+function CategoryRow({
+  status,
+  onOpen,
+}: {
+  status: CategoryWithReviewerStatusSchema;
+  onOpen: () => void;
+}) {
   const t = useTranslations('decisions.develop');
   const { category, sourceCount, advancingCount } = status;
   const isConfirmed = getCategoryConfirmedAt(status) !== null;
@@ -131,7 +150,14 @@ function CategoryRow({ status }: { status: CategoryWithReviewerStatusSchema }) {
   return (
     <TableRow>
       <TableRowHeader className="py-4 whitespace-normal">
-        <bdi>{category.name}</bdi>
+        <Button
+          variant="link"
+          size="inline"
+          onClick={onOpen}
+          className="justify-start text-start whitespace-normal text-foreground"
+        >
+          <bdi>{category.name}</bdi>
+        </Button>
       </TableRowHeader>
       <TableCell className="py-4 tabular-nums">{sourceCount}</TableCell>
       <TableCell className="py-4 tabular-nums">

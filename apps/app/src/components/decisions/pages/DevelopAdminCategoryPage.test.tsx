@@ -1,17 +1,19 @@
 // @vitest-environment jsdom
-import type { InstancePhaseData } from '@op/api/encoders';
+import { processInstanceWithSchemaEncoder } from '@op/api/encoders';
 import { cleanup, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
+import { randomUUID } from 'node:crypto';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import messages from '../../../lib/i18n/dictionaries/en.json';
-import { DevelopAdminSourcesPanel } from './DevelopAdminSourcesPanel';
+import { DevelopAdminCategoryPage } from './DevelopAdminCategoryPage';
 
 let lock: 'windowClosed' | null = null;
 const prepareMutate = vi.fn();
 const submitMutate = vi.fn();
 const unsubmitMutate = vi.fn();
+const listDevelopSources = vi.fn();
 
 function idleMutation(mutate: () => void) {
   return { mutate, isPending: false, variables: undefined };
@@ -19,22 +21,22 @@ function idleMutation(mutate: () => void) {
 
 vi.mock('@op/api/client', () => ({
   trpc: {
+    useSuspenseQueries: () => [
+      [{ items: [{ category: { id: 'parks', name: 'Parks' } }] }, { lock }],
+    ],
     decision: {
-      getCategories: {
-        useSuspenseQuery: () => [{ items: [] }],
-      },
-      getDevelopConfirmState: {
-        useSuspenseQuery: () => [{ lock }],
-      },
       listDevelopSources: {
-        useSuspenseInfiniteQuery: () => [
-          { pages: [{ items: sources, total: sources.length }] },
-          {
-            fetchNextPage: vi.fn(),
-            hasNextPage: false,
-            isFetchingNextPage: false,
-          },
-        ],
+        useSuspenseInfiniteQuery: (input: unknown) => {
+          listDevelopSources(input);
+          return [
+            { pages: [{ items: sources, total: sources.length }] },
+            {
+              fetchNextPage: vi.fn(),
+              hasNextPage: false,
+              isFetchingNextPage: false,
+            },
+          ];
+        },
       },
       createDevelopedProposal: {
         useMutation: () => idleMutation(prepareMutate),
@@ -47,11 +49,6 @@ vi.mock('@op/api/client', () => ({
       },
     },
   },
-}));
-
-vi.mock('nuqs', () => ({
-  parseAsString: { withDefault: () => ({}) },
-  useQueryState: () => ['all-categories', vi.fn()],
 }));
 
 vi.mock('@/lib/i18n', async (importOriginal) => ({
@@ -78,15 +75,34 @@ vi.mock('../proposalReviewDecoration', () => ({
   useProposalReviewAggregates: () => ({ status: 'unavailable' }),
 }));
 
-vi.mock('../CategoryFilterSelect', () => ({
-  CategoryFilterSelect: () => null,
-}));
-
-const sourcePhase: InstancePhaseData = {
-  phaseId: 'review',
-  name: 'Review',
-  rules: {},
-};
+const instance = processInstanceWithSchemaEncoder.parse({
+  id: randomUUID(),
+  profileId: randomUUID(),
+  name: 'Decision',
+  description: null,
+  currentStateId: 'develop',
+  status: 'published',
+  createdAt: '2026-11-01T00:00:00.000Z',
+  updatedAt: '2026-11-01T00:00:00.000Z',
+  instanceData: {
+    phases: [
+      { phaseId: 'review', rules: {} },
+      { phaseId: 'develop', rules: { proposals: { develop: true } } },
+    ],
+  },
+  access: {
+    delete: true,
+    update: true,
+    read: true,
+    create: true,
+    admin: true,
+    inviteMembers: true,
+    review: false,
+    submitProposals: false,
+    vote: false,
+    developProposals: false,
+  },
+});
 
 const source = ({
   id,
@@ -101,7 +117,6 @@ const source = ({
   profileId: `${id}-profile`,
   profile: { name },
   submittedBy: null,
-  proposalData: { category: [] },
   developedProposals,
 });
 
@@ -124,20 +139,18 @@ const sources = [
       },
     ],
   }),
-  source({
-    id: 'empty-source',
-    name: 'Empty source',
-    developedProposals: [],
-  }),
+  source({ id: 'empty-source', name: 'Empty source', developedProposals: [] }),
 ];
 
-function renderPanel() {
+function renderPage() {
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
-      <DevelopAdminSourcesPanel
-        processInstanceId="instance"
-        sourcePhase={sourcePhase}
+      <DevelopAdminCategoryPage
+        instance={instance}
+        sourcePhase={{ phaseId: 'review', rules: {} }}
         decisionSlug="decision"
+        categoryId="parks"
+        onBack={vi.fn()}
       />
     </NextIntlClientProvider>,
   );
@@ -146,14 +159,19 @@ function renderPanel() {
 afterEach(() => {
   cleanup();
   lock = null;
-  prepareMutate.mockClear();
-  submitMutate.mockClear();
-  unsubmitMutate.mockClear();
+  vi.clearAllMocks();
 });
 
-describe('DevelopAdminSourcesPanel', () => {
-  it('offers the author actions on each entry while the develop window is open', () => {
-    renderPanel();
+describe('DevelopAdminCategoryPage', () => {
+  it('lists the sources of its category with the author actions while the develop window is open', () => {
+    renderPage();
+
+    expect(listDevelopSources).toHaveBeenCalledWith(
+      expect.objectContaining({ scope: 'all', categoryIds: ['parks'] }),
+    );
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toBe(
+      '3 proposals in Parks',
+    );
 
     expect(
       screen.getByRole('link', { name: 'Edit Draft source' }),
@@ -168,25 +186,20 @@ describe('DevelopAdminSourcesPanel', () => {
       proposalId: 'submitted-entry',
     });
 
-    // The title prepares too; the second control is the actions cell's.
-    const prepareControls = screen.getAllByRole('button', {
-      name: 'Prepare Empty source',
-    });
-    expect(prepareControls).toHaveLength(2);
-    prepareControls[1]?.click();
+    screen.getByRole('button', { name: 'Prepare Empty source' }).click();
     expect(prepareMutate).toHaveBeenCalledWith(
       expect.objectContaining({ sourceProposalIds: ['empty-source'] }),
     );
-    expect(screen.queryByText('Advancing')).toBeNull();
   });
 
-  it('shows only whether each source is advancing once the develop window closed', () => {
+  it('shows only whether each source advances once the develop window closed', () => {
     lock = 'windowClosed';
-    renderPanel();
+    renderPage();
 
     expect(screen.queryByRole('link', { name: /^Edit / })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Advance / })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Prepare / })).toBeNull();
     expect(screen.getByText('Advancing')).toBeTruthy();
-    expect(screen.getAllByText('Under consideration')).toHaveLength(2);
+    expect(screen.getAllByText('Not advanced')).toHaveLength(2);
   });
 });

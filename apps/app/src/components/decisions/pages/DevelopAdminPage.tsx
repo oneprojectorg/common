@@ -6,8 +6,8 @@ import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
 import { isVotingPhase } from '@op/common/client';
 import { BadgeNumber } from '@op/sense/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
-import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { Suspense } from 'react';
+import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
+import { Suspense, useCallback } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -15,6 +15,7 @@ import { DevelopAdminCategoriesPanel } from '../DevelopProposals/DevelopAdminCat
 import { DevelopAdminEntriesPanel } from '../DevelopProposals/DevelopAdminEntriesPanel';
 import { DevelopAdminPublishFooter } from '../DevelopProposals/DevelopAdminPublishFooter';
 import { DevelopAdminSourcesPanel } from '../DevelopProposals/DevelopAdminSourcesPanel';
+import { DevelopAdminCategoryPage } from './DevelopAdminCategoryPage';
 import { DevelopPageShell } from './DevelopPageShell';
 
 const DEVELOP_TABS = ['categories', 'proposals', 'entries'] as const;
@@ -22,6 +23,9 @@ const DEFAULT_DEVELOP_TAB = 'categories';
 
 // Not `tab`, which the review screen on this route reads.
 const DEVELOP_TAB_PARAM = 'developTab';
+
+// Not `category`, which the proposal lists on this route read.
+const DEVELOP_CATEGORY_PARAM = 'developCategory';
 
 const developTabParser = parseAsStringLiteral(DEVELOP_TABS);
 
@@ -37,6 +41,10 @@ export function DevelopAdminPage({
     DEVELOP_TAB_PARAM,
     developTabParser.withDefault(DEFAULT_DEVELOP_TAB),
   );
+  const [categoryId, setCategoryId] = useQueryState(
+    DEVELOP_CATEGORY_PARAM,
+    parseAsString,
+  );
   const phases = instance.instanceData.phases ?? [];
   const currentIndex = phases.findIndex(
     (phase) => phase.phaseId === instance.currentStateId,
@@ -48,6 +56,26 @@ export function DevelopAdminPage({
     nextPhase && isVotingPhase(nextPhase) ? nextPhase.startDate : undefined;
   const phaseId = instance.currentStateId ?? undefined;
   const entryName = t('develop.defaultEntryName');
+
+  // Pushed, so the browser's Back also returns to the categories.
+  const openCategory = (id: string) => {
+    void setCategoryId(id, { history: 'push', scroll: true });
+  };
+  const closeCategory = useCallback(() => {
+    void setCategoryId(null);
+  }, [setCategoryId]);
+
+  if (categoryId) {
+    return (
+      <DevelopAdminCategoryPage
+        instance={instance}
+        sourcePhase={sourcePhase}
+        decisionSlug={decisionSlug}
+        categoryId={categoryId}
+        onBack={closeCategory}
+      />
+    );
+  }
 
   const handleTabChange = (value: string) => {
     const next = developTabParser.parse(value);
@@ -83,7 +111,10 @@ export function DevelopAdminPage({
         </TabsList>
 
         <TabsContent value="categories">
-          <DevelopAdminCategoriesPanel processInstanceId={instance.id} />
+          <DevelopAdminCategoriesPanel
+            processInstanceId={instance.id}
+            onOpenCategory={openCategory}
+          />
         </TabsContent>
 
         <TabsContent value="proposals">
