@@ -19,9 +19,8 @@ export const CategoryDevelopmentConfirmedAdminEmail = ({
       previewText={`${categoryName} is confirmed in ${processName}`}
     >
       <Text className="my-8 text-lg">
-        All reviewers of <strong>{categoryName}</strong> confirmed their
-        selections. {formatAdvancingSentence(advancingCount)} You can open the
-        category now.
+        The selections for <strong>{categoryName}</strong> are confirmed.{' '}
+        {formatAdvancingSentence(advancingCount)} You can open the category now.
       </Text>
 
       <CtaButton href={processUrl}>Open {processName}</CtaButton>
@@ -45,6 +44,6 @@ export default CategoryDevelopmentConfirmedAdminEmail;
 
 function formatAdvancingSentence(advancingCount: number): string {
   return advancingCount === 1
-    ? '1 proposal advances.'
-    : `${advancingCount} proposals advance.`;
+    ? '1 proposal is advancing.'
+    : `${advancingCount} proposals are advancing.`;
 }

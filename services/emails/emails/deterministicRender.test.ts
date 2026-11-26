@@ -110,7 +110,7 @@ describe('email render determinism', () => {
         }),
       );
 
-      expect(html).toContain('1 proposal advances.');
+      expect(html).toContain('1 proposal is advancing.');
       expect(html).not.toContain('<b>north SIDE</b>');
       expect(html).toContain('&lt;b&gt;north SIDE&lt;/b&gt;');
     },
