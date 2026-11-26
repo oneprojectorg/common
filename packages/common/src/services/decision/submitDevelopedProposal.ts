@@ -14,7 +14,8 @@ export interface SubmitDevelopedProposalInput {
 
 /**
  * Submits a developed draft proposal. It is gated by the develop rule, not by
- * the Submit permission or the phase submit rule.
+ * the Submit permission or the phase submit rule. Also returns the source
+ * proposal ids and the instance owner, for analytics.
  */
 export const submitDevelopedProposal = async ({
   data,
@@ -44,13 +45,13 @@ export const submitDevelopedProposal = async ({
     );
   }
 
-  const instance = await assertDevelopedProposalAuthor({
+  const { instance, sourceProposalIds } = await assertDevelopedProposalAuthor({
     proposal,
     instance: proposal.processInstance,
     user,
   });
 
-  return finalizeProposalSubmission({
+  const submittedProposal = await finalizeProposalSubmission({
     proposal,
     instance: {
       id: instance.id,
@@ -59,4 +60,10 @@ export const submitDevelopedProposal = async ({
     },
     instanceData: instance.instanceData as DecisionInstanceData,
   });
+
+  return {
+    proposal: submittedProposal,
+    sourceProposalIds,
+    processOwnerProfileId: instance.ownerProfileId,
+  };
 };

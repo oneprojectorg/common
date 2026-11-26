@@ -1,4 +1,5 @@
 import {
+  trackDevelopCategoryConfirmed as trackDevelopCategoryConfirmedOriginal,
   trackEventWithContext,
   trackFundingToggle as trackFundingToggleOriginal,
   trackImageUpload as trackImageUploadOriginal,
@@ -163,6 +164,21 @@ export const trackManualTransitionConfirmed = (
   additionalProps?: Record<string, any>,
 ) => {
   return trackManualTransitionConfirmedOriginal(
+    ctx.user.id,
+    processId,
+    additionalProps,
+  );
+};
+
+/**
+ * Track a develop category confirm with automatic context injection
+ */
+export const trackDevelopCategoryConfirmed = (
+  ctx: AnalyticsContext,
+  processId: string,
+  additionalProps?: Record<string, unknown>,
+) => {
+  return trackDevelopCategoryConfirmedOriginal(
     ctx.user.id,
     processId,
     additionalProps,

@@ -15,10 +15,12 @@ export const submitDevelopedProposalRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
 
-      const proposal = await submitDevelopedProposal({
-        data: input,
-        user,
-      });
+      const { proposal, sourceProposalIds, processOwnerProfileId } =
+        await submitDevelopedProposal({
+          data: input,
+          user,
+        });
+      const submittedAt = Date.now();
 
       waitUntil(
         invalidate({
@@ -34,7 +36,14 @@ export const submitDevelopedProposalRouter = router({
 
       waitUntil(
         trackProposalSubmitted(ctx, proposal.processInstanceId, proposal.id, {
-          created_timestamp: Date.now(),
+          created_timestamp: submittedAt,
+          is_developed_entry: true,
+          source_proposal_ids: sourceProposalIds,
+          submitted_by_profile_id: proposal.submittedByProfileId,
+          process_owner_profile_id: processOwnerProfileId,
+          seconds_since_entry_created: proposal.createdAt
+            ? Math.round((submittedAt - Date.parse(proposal.createdAt)) / 1000)
+            : null,
         }),
       );
 

@@ -17,7 +17,8 @@ import {
  * develop phase. A non-admin stamps their own row of the category, or all
  * their own rows when no category is given. An admin names a category and
  * stamps one reviewer's row, or every row of the category when no reviewer is
- * given. A second confirm overwrites the time.
+ * given. A second confirm overwrites the time. Also returns the instance
+ * owner, for analytics.
  */
 export async function confirmCategoryDevelopment({
   processInstanceId,
@@ -29,7 +30,10 @@ export async function confirmCategoryDevelopment({
   taxonomyTermId?: string;
   reviewerProfileId?: string;
   user: User;
-}): Promise<{ reviewers: CategoryDevelopmentReviewerSchema[] }> {
+}): Promise<{
+  reviewers: CategoryDevelopmentReviewerSchema[];
+  processOwnerProfileId: string;
+}> {
   const access = await assertCategoryDevelopAccess({
     processInstanceId,
     taxonomyTermId,
@@ -82,5 +86,6 @@ export async function confirmCategoryDevelopment({
       reviewerProfileId,
       developConfirmedAt: now,
     })),
+    processOwnerProfileId: access.processOwnerProfileId,
   };
 }
