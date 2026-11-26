@@ -309,8 +309,13 @@ export async function assertProposalUpdateAccess({
     profileId: proposal.profileId,
   });
 
+  // A co-author holds the Member role on the proposal's profile, whose update
+  // bit is in the decisions zone; `getProposal`'s `isEditable` reads the same bit.
   if (
-    !checkPermission({ profile: permission.UPDATE }, proposalRoles) &&
+    !checkPermission(
+      [{ profile: permission.UPDATE }, { decisions: permission.UPDATE }],
+      proposalRoles,
+    ) &&
     !checkPermission({ decisions: permission.UPDATE }, instanceRoles)
   ) {
     throw new UnauthorizedError("You don't have access to do this");

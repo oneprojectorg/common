@@ -10,6 +10,7 @@ import {
   grantInstanceRole,
   testDevelopSchema,
 } from '../data/decision-data';
+import { createReviewAssignment } from '../data/review-data';
 import type { TestDecisionsDataManager } from './TestDecisionsDataManager';
 
 /**
@@ -98,4 +99,39 @@ export async function createDevelopProposalsMember({
       TEST_PERMISSION_BITS.READ | TEST_PERMISSION_BITS.DEVELOP_PROPOSALS,
   });
   return member;
+}
+
+/**
+ * A member assigned to review `sourceProposalId` in the source phase
+ * ("initial"), whose only decisions grant on the instance is a role with
+ * `decisionsPermission`: by default Read and Review (no Develop Proposals).
+ */
+export async function createAssignedSourceReviewer({
+  testData,
+  setup,
+  sourceProposalId,
+  decisionsPermission = TEST_PERMISSION_BITS.READ | TEST_PERMISSION_BITS.REVIEW,
+}: {
+  testData: TestDecisionsDataManager;
+  setup: Awaited<ReturnType<typeof createDevelopPhaseSetup>>['setup'];
+  sourceProposalId: string;
+  decisionsPermission?: number;
+}) {
+  const reviewer = await testData.createMemberUser({
+    organization: setup.organization,
+  });
+  await grantInstanceRole({
+    instanceProfileId: setup.instance.profileId,
+    authUserId: reviewer.authUserId,
+    email: reviewer.email,
+    roleName: `Reviewer ${reviewer.authUserId}`,
+    decisionsPermission,
+  });
+  await createReviewAssignment({
+    processInstanceId: setup.instance.instance.id,
+    proposalId: sourceProposalId,
+    reviewerProfileId: reviewer.profileId,
+    phaseId: 'initial',
+  });
+  return reviewer;
 }

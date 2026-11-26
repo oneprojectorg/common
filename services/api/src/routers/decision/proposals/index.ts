@@ -10,6 +10,7 @@ import { exportProposalsRouter } from './export';
 import { getProposalRouter } from './get';
 import { getCollabTokenRouter } from './getCollabToken';
 import { getDevelopConfirmStateRouter } from './getDevelopConfirmState';
+import { getDevelopEntryLockRouter } from './getDevelopEntryLock';
 import { getExportStatusRouter } from './getExportStatus';
 import { getLatestSelectionForProposalRouter } from './getLatestSelection';
 import { getProposalAdvanceTargetRouter } from './getProposalAdvanceTarget';
@@ -52,6 +53,7 @@ export const proposalsRouter = mergeRouters(
   listContributingProposalsRouter,
   listDevelopSourcesRouter,
   getDevelopConfirmStateRouter,
+  getDevelopEntryLockRouter,
   confirmCategoryDevelopmentRouter,
   unconfirmCategoryDevelopmentRouter,
   publishDevelopedProposalsRouter,

@@ -1,6 +1,13 @@
 import { mockCollab } from '@op/collab/testing';
 import type { DecisionInstanceData } from '@op/common';
-import { TestDecisionsDataManager, syncPhaseRows } from '@op/common/testing';
+import {
+  TEST_PERMISSION_BITS,
+  TestDecisionsDataManager,
+  createAssignedSourceReviewer,
+  createDevelopPhaseSetup,
+  createDevelopProposalsMember,
+  syncPhaseRows,
+} from '@op/common/testing';
 import {
   ProposalStatus,
   Visibility,
@@ -38,6 +45,52 @@ async function createAuthenticatedCaller(email: string) {
 }
 
 describe.concurrent('submitProposal', () => {
+  it('refuses a developed draft, even for a co-author with the Submit bit in a phase that takes submissions', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const [developer, coauthor] = await Promise.all([
+      createDevelopProposalsMember({ testData, setup }),
+      createAssignedSourceReviewer({
+        testData,
+        setup,
+        sourceProposalId: source.id,
+        decisionsPermission:
+          TEST_PERMISSION_BITS.READ |
+          TEST_PERMISSION_BITS.REVIEW |
+          TEST_PERMISSION_BITS.SUBMIT_PROPOSALS,
+      }),
+    ]);
+    const [developerCaller, coauthorCaller] = await Promise.all([
+      createAuthenticatedCaller(developer.email),
+      createAuthenticatedCaller(coauthor.email),
+    ]);
+    const draft = await developerCaller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: { title: 'Developed' },
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    await expect(
+      coauthorCaller.decision.submitProposal({ proposalId: draft.id }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message: expect.stringContaining('develop screen'),
+      },
+    });
+    const stored = await db.query.proposals.findFirst({
+      where: { id: draft.id },
+      columns: { status: true },
+    });
+    expect(stored?.status).toBe(ProposalStatus.DRAFT);
+  });
+
   it('should submit a draft proposal successfully', async ({
     task,
     onTestFinished,

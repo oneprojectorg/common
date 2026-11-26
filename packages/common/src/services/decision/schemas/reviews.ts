@@ -483,6 +483,13 @@ export type DevelopConfirmStateSchema = z.infer<
   typeof developConfirmStateSchema
 >;
 
+export const developEntryLockInputSchema = z.object({ proposalId: z.uuid() });
+
+/** The develop lock that holds a developed entry: see `getDevelopEntryLock`. */
+export const developEntryLockSchema = developConfirmStateSchema.pick({
+  lock: true,
+});
+
 export const removeCategoryReviewerResultSchema = z.object({
   removed: z.boolean(),
 });

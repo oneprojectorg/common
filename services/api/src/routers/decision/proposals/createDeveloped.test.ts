@@ -13,6 +13,7 @@ import {
 import {
   TEST_PERMISSION_BITS,
   TestDecisionsDataManager,
+  createAssignedSourceReviewer,
   createCategoryReviewerWithTerm,
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
@@ -29,6 +30,7 @@ import {
   ProposalReviewState,
   ProposalStatus,
   processInstances,
+  proposalReviewAssignments,
   proposals,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
@@ -1327,5 +1329,133 @@ describe.concurrent('createDevelopedProposal', () => {
         createDraft([garden.id, benches.id]),
       ).resolves.not.toHaveProperty('budget');
     });
+  });
+});
+
+describe.concurrent('createDevelopedProposal co-authors', () => {
+  it('makes each reviewer assigned to a source a co-author who can read and edit the draft, and leaves out an unassigned reviewer', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source, otherSources } =
+      await createDevelopPhaseSetup({ testData, sourceCount: 2 });
+    const otherSource = otherSources[0];
+    if (!otherSource) {
+      throw new Error('Expected a second source');
+    }
+    const [developer, assignedReviewer, otherSourceReviewer] =
+      await Promise.all([
+        createDevelopProposalsMember({ testData, setup }),
+        createAssignedSourceReviewer({
+          testData,
+          setup,
+          sourceProposalId: source.id,
+        }),
+        createAssignedSourceReviewer({
+          testData,
+          setup,
+          sourceProposalId: otherSource.id,
+        }),
+      ]);
+    const [developerCaller, assignedCaller, otherSourceCaller] =
+      await Promise.all([
+        createAuthenticatedCaller(developer.email),
+        createAuthenticatedCaller(assignedReviewer.email),
+        createAuthenticatedCaller(otherSourceReviewer.email),
+      ]);
+
+    const draft = await developerCaller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: { title: 'Developed' },
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    const members = await db.query.profileUsers.findMany({
+      where: { profileId: draft.profileId },
+      columns: { authUserId: true, isOwner: true },
+    });
+    expect(members).toHaveLength(2);
+    expect(members).toEqual(
+      expect.arrayContaining([
+        { authUserId: developer.authUserId, isOwner: true },
+        { authUserId: assignedReviewer.authUserId, isOwner: false },
+      ]),
+    );
+
+    const readByCoauthor = await assignedCaller.decision.getProposal({
+      profileId: draft.profileId,
+    });
+    expect(readByCoauthor.isEditable).toBe(true);
+
+    const assignedSources = await assignedCaller.decision.listDevelopSources({
+      processInstanceId: instanceId,
+      phaseIds: ['initial'],
+      scope: 'assigned',
+      limit: 10,
+    });
+    expect(
+      assignedSources.items.map((item) => ({
+        id: item.id,
+        entryIds: item.developedProposals.map((entry) => entry.id),
+      })),
+    ).toEqual([{ id: source.id, entryIds: [draft.id] }]);
+
+    // The document's editing token is minted under the `updateProposal` gate.
+    const { token } = await assignedCaller.decision.getCollabToken({
+      proposalProfileId: draft.profileId,
+    });
+    expect(token).toEqual(expect.any(String));
+
+    await expect(
+      otherSourceCaller.decision.getProposal({ profileId: draft.profileId }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+    await expect(
+      otherSourceCaller.decision.getCollabToken({
+        proposalProfileId: draft.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('adds no co-author for a removed assignment', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const [developer, removedReviewer] = await Promise.all([
+      createDevelopProposalsMember({ testData, setup }),
+      createAssignedSourceReviewer({
+        testData,
+        setup,
+        sourceProposalId: source.id,
+      }),
+    ]);
+    await db
+      .update(proposalReviewAssignments)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(
+        eq(
+          proposalReviewAssignments.reviewerProfileId,
+          removedReviewer.profileId,
+        ),
+      );
+    const developerCaller = await createAuthenticatedCaller(developer.email);
+
+    const draft = await developerCaller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: { title: 'Developed' },
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    const members = await db.query.profileUsers.findMany({
+      where: { profileId: draft.profileId },
+      columns: { authUserId: true },
+    });
+    expect(members).toEqual([{ authUserId: developer.authUserId }]);
   });
 });
