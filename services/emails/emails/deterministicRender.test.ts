@@ -159,9 +159,23 @@ describe('email render determinism', () => {
       }),
     );
 
-    expect(html).toContain('1<!-- --> of <!-- -->3<!-- --> assignments');
+    expect(html).toContain('1 of 3 people have confirmed this category.');
     expect(html).not.toContain('<b>north SIDE</b>');
     expect(html).toContain('&lt;b&gt;north SIDE&lt;/b&gt;');
+  });
+
+  it('renders a CategoryAssignmentConfirmedEmail for a single assignment in the singular', async () => {
+    const html = await render(
+      CategoryAssignmentConfirmedEmail({
+        categoryName: 'Parks & Recreation',
+        processName: 'Participatory Budgeting 2026',
+        confirmedCount: 1,
+        assignmentCount: 1,
+        processUrl: 'https://common.oneproject.org/decisions/pb-2026',
+      }),
+    );
+
+    expect(html).toContain('1 of 1 person has confirmed this category.');
   });
 
   it('renders markup in a ReviewReminderEmail message as escaped text', async () => {

@@ -22,8 +22,9 @@ export const CategoryAssignmentConfirmedEmail = ({
     >
       <Text className="my-8 text-lg">
         Your selections for <strong>{categoryName}</strong> in {processName}{' '}
-        were confirmed. {confirmedCount} of {assignmentCount} assignments of
-        this category are confirmed. This message is a record of the confirm.
+        were confirmed.{' '}
+        {formatConfirmedSentence({ confirmedCount, assignmentCount })} This
+        message is a record of the confirm.
       </Text>
 
       <CtaButton href={processUrl}>Open {processName}</CtaButton>
@@ -43,3 +44,15 @@ CategoryAssignmentConfirmedEmail.PreviewProps = {
 } satisfies Parameters<typeof CategoryAssignmentConfirmedEmail>[0];
 
 export default CategoryAssignmentConfirmedEmail;
+
+function formatConfirmedSentence({
+  confirmedCount,
+  assignmentCount,
+}: {
+  confirmedCount: number;
+  assignmentCount: number;
+}): string {
+  return assignmentCount === 1
+    ? `${confirmedCount} of 1 person has confirmed this category.`
+    : `${confirmedCount} of ${assignmentCount} people have confirmed this category.`;
+}
