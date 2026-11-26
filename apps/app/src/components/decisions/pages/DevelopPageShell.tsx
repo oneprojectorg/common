@@ -37,9 +37,16 @@ export function DevelopPageShell({
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-page px-4 pt-12 pb-32 sm:px-8">
-        {children}
-      </div>
+      <DevelopPageContent>{children}</DevelopPageContent>
+    </div>
+  );
+}
+
+/** The develop screen's content column, with room for the fixed footer bar. */
+export function DevelopPageContent({ children }: { children: ReactNode }) {
+  return (
+    <div className="mx-auto w-full max-w-page px-4 pt-12 pb-32 sm:px-8">
+      {children}
     </div>
   );
 }

@@ -109,10 +109,7 @@ export function useDevelopSources() {
   const { query } = useDevelopSourcesContext().meta;
   const [data, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
     trpc.decision.listDevelopSources.useSuspenseInfiniteQuery(
-      {
-        ...getDevelopSourcesInput(query),
-        categoryIds: query.categoryId ? [query.categoryId] : undefined,
-      },
+      getDevelopSourcesInput(query),
       { getNextPageParam: nextCursor },
     );
 

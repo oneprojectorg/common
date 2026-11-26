@@ -9,17 +9,9 @@ import {
 } from '@op/api/encoders';
 import type { DevelopConfirmStateSchema } from '@op/common/client';
 import { BadgeNumber } from '@op/sense/Badge';
-import {
-  FooterBar,
-  FooterBarCenter,
-  FooterBarEnd,
-  FooterBarStart,
-} from '@op/sense/FooterBar';
 import { Skeleton } from '@op/sense/Skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
-import { cn } from '@op/sense/lib/utils';
 import { Suspense, useState } from 'react';
-import { LuCircleCheck } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -27,6 +19,7 @@ import { ProposalsLoadError } from '../ProposalsLoadError';
 import { getSchemaName } from '../getSchemaName';
 import {
   ConfirmSelectionsAction,
+  DevelopConfirmFooter,
   UnconfirmSelectionsAction,
 } from './DevelopConfirmActions';
 import {
@@ -159,33 +152,14 @@ export function DevelopProposalsList({
         </TabsContent>
       </Tabs>
 
-      <FooterBar position="fixed">
-        <FooterBarStart>
-          <p aria-live="polite" className="flex items-center gap-2 text-base">
-            <LuCircleCheck
-              aria-hidden
-              className={cn(
-                'size-4 shrink-0',
-                advancing.total > 0 ? 'text-primary' : 'text-muted-foreground',
-              )}
-            />
-            {t('advancingCount', { count: advancing.total })}
-          </p>
-        </FooterBarStart>
-        <FooterBarCenter />
-        <FooterBarEnd>
-          {/* Polite, so the swap between Confirm and Unconfirm is
-              announced. */}
-          <div aria-live="polite">
-            <FooterConfirmAction
-              developState={developState}
-              processInstanceId={processInstanceId}
-              advancingCount={advancing.total}
-              sourcesInput={sourcesInput}
-            />
-          </div>
-        </FooterBarEnd>
-      </FooterBar>
+      <DevelopConfirmFooter advancingCount={advancing.total}>
+        <FooterConfirmAction
+          developState={developState}
+          processInstanceId={processInstanceId}
+          advancingCount={advancing.total}
+          sourcesInput={sourcesInput}
+        />
+      </DevelopConfirmFooter>
     </>
   );
 }

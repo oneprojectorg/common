@@ -19,15 +19,19 @@ export function getDevelopSourcesInput({
   processInstanceId,
   sourcePhaseId,
   scope,
+  categoryId,
 }: {
   processInstanceId: string;
   sourcePhaseId: string;
   scope: DevelopSourceScope;
+  /** Keeps the sources of one category. Omit for every source in scope. */
+  categoryId?: string;
 }) {
   return {
     processInstanceId,
     phaseIds: [sourcePhaseId],
     scope,
+    categoryIds: categoryId ? [categoryId] : undefined,
     limit: PROPOSALS_PAGE_LIMIT,
   };
 }

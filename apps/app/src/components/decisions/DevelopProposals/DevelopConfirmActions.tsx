@@ -15,10 +15,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@op/sense/Dialog';
+import {
+  FooterBar,
+  FooterBarCenter,
+  FooterBarEnd,
+  FooterBarStart,
+} from '@op/sense/FooterBar';
 import { Skeleton } from '@op/sense/Skeleton';
 import { toast } from '@op/sense/Toast';
-import { Suspense, useEffect, useState } from 'react';
-import { LuX } from 'react-icons/lu';
+import { cn } from '@op/sense/lib/utils';
+import { type ReactNode, Suspense, useEffect, useState } from 'react';
+import { LuCircleCheck, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -30,6 +37,22 @@ interface ConfirmActionProps {
   /** The caller's categories for the current phase; one names the dialog. */
   categoryNames: string[];
 }
+
+interface SelectionsDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: ReactNode;
+  /** The dialog's description, `DialogDescription` included. */
+  description: ReactNode;
+  isPending: boolean;
+  onSubmit: () => void;
+}
+
+// A type, not an interface, so it passes as the values of a translation.
+type AdvanceCounts = {
+  count: number;
+  notAdvancedCount: number;
+};
 
 /**
  * Confirms all of the caller's develop work for the current phase after a
@@ -48,7 +71,6 @@ export function ConfirmSelectionsAction({
   sourcesInput?: DevelopSourcesInput;
 }) {
   const t = useTranslations('decisions.develop');
-  const tShared = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
   const confirm = trpc.decision.confirmCategoryDevelopment.useMutation({
     onSuccess: () => {
@@ -67,59 +89,29 @@ export function ConfirmSelectionsAction({
   const categoryName = getSingleCategoryName(categoryNames);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger render={<Button disabled={advancingCount === 0} />}>
-        {t('confirmSelectionsAction')}
-      </DialogTrigger>
-      <DialogContent showCloseButton={false}>
-        <DialogHeader>
-          <DialogTitle>
-            {categoryName === null
-              ? t('confirmSelectionsTitle')
-              : t.rich('confirmCategorySelectionsTitle', {
-                  category: categoryName,
-                  bdi: (chunks) => <bdi>{chunks}</bdi>,
-                })}
-          </DialogTitle>
-          <div aria-live="polite">
-            {sourcesInput ? (
-              <APIErrorBoundary
-                fallbacks={{
-                  default: () => (
-                    <DialogDescription>
-                      {tShared('decisions.proposals.proposalsLoadError')}
-                    </DialogDescription>
-                  ),
-                }}
-              >
-                <Suspense fallback={<Skeleton className="h-12 w-full" />}>
-                  <ConfirmSelectionsDescription sourcesInput={sourcesInput} />
-                </Suspense>
-              </APIErrorBoundary>
-            ) : (
-              <DialogDescription>
-                {t('confirmSelectionsDescription', {
-                  count: 0,
-                  notAdvancedCount: 0,
-                })}
-              </DialogDescription>
-            )}
-          </div>
-        </DialogHeader>
-        <DialogCloseButton />
-        <DialogFooter>
-          <DialogClose render={<Button variant="outline" />}>
-            {tShared('Cancel')}
-          </DialogClose>
-          <Button
-            loading={confirm.isPending}
-            onClick={() => confirm.mutate({ processInstanceId })}
-          >
-            {t('confirmSelectionsAction')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmSelectionsDialog
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      disabled={advancingCount === 0}
+      title={
+        categoryName === null
+          ? t('confirmSelectionsTitle')
+          : t.rich('confirmCategorySelectionsTitle', {
+              category: categoryName,
+              bdi: (chunks) => <bdi>{chunks}</bdi>,
+            })
+      }
+      description={
+        <SourcesAdvanceDescription
+          sourcesInput={sourcesInput}
+          renderDescription={(counts) =>
+            t('confirmSelectionsDescription', counts)
+          }
+        />
+      }
+      isPending={confirm.isPending}
+      onSubmit={() => confirm.mutate({ processInstanceId })}
+    />
   );
 }
 
@@ -132,7 +124,6 @@ export function UnconfirmSelectionsAction({
   categoryNames,
 }: ConfirmActionProps) {
   const t = useTranslations('decisions.develop');
-  const tShared = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
   const unconfirm = trpc.decision.unconfirmCategoryDevelopment.useMutation({
     onSuccess: () => {
@@ -147,33 +138,127 @@ export function UnconfirmSelectionsAction({
   const categoryName = getSingleCategoryName(categoryNames);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger render={<Button variant="outline" />}>
-        {t('unconfirmSelectionsAction')}
+    <UnconfirmSelectionsDialog
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      title={
+        categoryName === null
+          ? t('unconfirmSelectionsTitle')
+          : t.rich('unconfirmCategorySelectionsTitle', {
+              category: categoryName,
+              bdi: (chunks) => <bdi>{chunks}</bdi>,
+            })
+      }
+      description={
+        <DialogDescription>
+          {t('unconfirmSelectionsDescription')}
+        </DialogDescription>
+      }
+      isPending={unconfirm.isPending}
+      onSubmit={() => unconfirm.mutate({ processInstanceId })}
+    />
+  );
+}
+
+/** The fixed footer of a develop screen: the advancing count and the confirm action. */
+export function DevelopConfirmFooter({
+  advancingCount,
+  children,
+}: {
+  advancingCount: number;
+  /** The confirm or unconfirm action. */
+  children: ReactNode;
+}) {
+  const t = useTranslations('decisions.develop');
+
+  return (
+    <FooterBar position="fixed">
+      <FooterBarStart>
+        <p aria-live="polite" className="flex items-center gap-2 text-base">
+          <LuCircleCheck
+            aria-hidden
+            className={cn(
+              'size-4 shrink-0',
+              advancingCount > 0 ? 'text-primary' : 'text-muted-foreground',
+            )}
+          />
+          {t('advancingCount', { count: advancingCount })}
+        </p>
+      </FooterBarStart>
+      <FooterBarCenter />
+      <FooterBarEnd>
+        {/* Polite, so the swap between Confirm and Unconfirm is announced. */}
+        <div aria-live="polite">{children}</div>
+      </FooterBarEnd>
+    </FooterBar>
+  );
+}
+
+/** Confirm selections, and the dialog that asks before it confirms. */
+export function ConfirmSelectionsDialog({
+  open,
+  onOpenChange,
+  disabled,
+  title,
+  description,
+  isPending,
+  onSubmit,
+}: SelectionsDialogProps & { disabled: boolean }) {
+  const t = useTranslations('decisions.develop');
+  const tShared = useTranslations();
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger render={<Button disabled={disabled} />}>
+        {t('confirmSelectionsAction')}
       </DialogTrigger>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>
-            {categoryName === null
-              ? t('unconfirmSelectionsTitle')
-              : t.rich('unconfirmCategorySelectionsTitle', {
-                  category: categoryName,
-                  bdi: (chunks) => <bdi>{chunks}</bdi>,
-                })}
-          </DialogTitle>
-          <DialogDescription>
-            {t('unconfirmSelectionsDescription')}
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <div aria-live="polite">{description}</div>
         </DialogHeader>
         <DialogCloseButton />
         <DialogFooter>
           <DialogClose render={<Button variant="outline" />}>
             {tShared('Cancel')}
           </DialogClose>
-          <Button
-            loading={unconfirm.isPending}
-            onClick={() => unconfirm.mutate({ processInstanceId })}
-          >
+          <Button loading={isPending} onClick={onSubmit}>
+            {t('confirmSelectionsAction')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Unconfirm selections, and the dialog that asks before it unconfirms. */
+export function UnconfirmSelectionsDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  isPending,
+  onSubmit,
+}: SelectionsDialogProps) {
+  const t = useTranslations('decisions.develop');
+  const tShared = useTranslations();
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger render={<Button variant="outline" />}>
+        {t('unconfirmSelectionsAction')}
+      </DialogTrigger>
+      <DialogContent showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          {description}
+        </DialogHeader>
+        <DialogCloseButton />
+        <DialogFooter>
+          <DialogClose render={<Button variant="outline" />}>
+            {tShared('Cancel')}
+          </DialogClose>
+          <Button loading={isPending} onClick={onSubmit}>
             {t('unconfirmSelectionsAction')}
           </Button>
         </DialogFooter>
@@ -183,15 +268,58 @@ export function UnconfirmSelectionsAction({
 }
 
 /**
- * How many of the caller's sources advance and how many do not. Both counts
+ * The dialog description built from how many of the listed sources advance
+ * and how many do not. Without sources, both counts are 0.
+ */
+export function SourcesAdvanceDescription({
+  sourcesInput,
+  renderDescription,
+}: {
+  /** The sources table's query input. Omit when the phase has no sources. */
+  sourcesInput?: DevelopSourcesInput;
+  renderDescription: (counts: AdvanceCounts) => string;
+}) {
+  const tShared = useTranslations();
+
+  if (!sourcesInput) {
+    return (
+      <DialogDescription>
+        {renderDescription({ count: 0, notAdvancedCount: 0 })}
+      </DialogDescription>
+    );
+  }
+
+  return (
+    <APIErrorBoundary
+      fallbacks={{
+        default: () => (
+          <DialogDescription>
+            {tShared('decisions.proposals.proposalsLoadError')}
+          </DialogDescription>
+        ),
+      }}
+    >
+      <Suspense fallback={<Skeleton className="h-12 w-full" />}>
+        <ConfirmSelectionsDescription
+          sourcesInput={sourcesInput}
+          renderDescription={renderDescription}
+        />
+      </Suspense>
+    </APIErrorBoundary>
+  );
+}
+
+/**
+ * How many of the listed sources advance and how many do not. Both counts
  * cover every source, so the pages the sources table has not loaded load here.
  */
 function ConfirmSelectionsDescription({
   sourcesInput,
+  renderDescription,
 }: {
   sourcesInput: DevelopSourcesInput;
+  renderDescription: (counts: AdvanceCounts) => string;
 }) {
-  const t = useTranslations('decisions.develop');
   const [
     data,
     {
@@ -226,7 +354,7 @@ function ConfirmSelectionsDescription({
 
   return (
     <DialogDescription>
-      {t('confirmSelectionsDescription', {
+      {renderDescription({
         count: advancingCount,
         notAdvancedCount: sources.length - advancingCount,
       })}

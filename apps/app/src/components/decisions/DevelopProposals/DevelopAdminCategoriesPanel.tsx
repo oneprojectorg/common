@@ -22,12 +22,17 @@ import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ButtonLink } from '@/components/ButtonLink';
+
 import { getCategoryConfirmedAt } from './developCategoryStatus';
 
+/** Each category's name links to that category's page at `getCategoryHref`. */
 export function DevelopAdminCategoriesPanel({
   processInstanceId,
+  getCategoryHref,
 }: {
   processInstanceId: string;
+  getCategoryHref: (categoryId: string) => string;
 }) {
   return (
     <div className="flex flex-col gap-10">
@@ -44,7 +49,10 @@ export function DevelopAdminCategoriesPanel({
 
       <APIErrorBoundary fallbacks={{ default: () => <CategoriesLoadError /> }}>
         <Suspense fallback={<CategoriesTableSkeleton />}>
-          <CategoriesTableSuspense processInstanceId={processInstanceId} />
+          <CategoriesTableSuspense
+            processInstanceId={processInstanceId}
+            getCategoryHref={getCategoryHref}
+          />
         </Suspense>
       </APIErrorBoundary>
     </div>
@@ -72,8 +80,10 @@ function CategoriesCountSuspense({
 
 function CategoriesTableSuspense({
   processInstanceId,
+  getCategoryHref,
 }: {
   processInstanceId: string;
+  getCategoryHref: (categoryId: string) => string;
 }) {
   const [{ items }] = trpc.decision.listCategoryReviewerStatus.useSuspenseQuery(
     {
@@ -89,7 +99,11 @@ function CategoriesTableSuspense({
     <CategoriesTable>
       <TableBody>
         {items.map((status) => (
-          <CategoryRow key={status.category.id} status={status} />
+          <CategoryRow
+            key={status.category.id}
+            status={status}
+            href={getCategoryHref(status.category.id)}
+          />
         ))}
       </TableBody>
     </CategoriesTable>
@@ -123,7 +137,13 @@ function CategoriesTable({ children }: { children: ReactNode }) {
   );
 }
 
-function CategoryRow({ status }: { status: CategoryWithReviewerStatusSchema }) {
+function CategoryRow({
+  status,
+  href,
+}: {
+  status: CategoryWithReviewerStatusSchema;
+  href: string;
+}) {
   const t = useTranslations('decisions.develop');
   const { category, sourceCount, advancingCount } = status;
   const isConfirmed = getCategoryConfirmedAt(status) !== null;
@@ -131,7 +151,14 @@ function CategoryRow({ status }: { status: CategoryWithReviewerStatusSchema }) {
   return (
     <TableRow>
       <TableRowHeader className="py-4 whitespace-normal">
-        <bdi>{category.name}</bdi>
+        <ButtonLink
+          variant="link"
+          size="inline"
+          href={href}
+          className="justify-start text-start whitespace-normal text-foreground"
+        >
+          <bdi>{category.name}</bdi>
+        </ButtonLink>
       </TableRowHeader>
       <TableCell className="py-4 tabular-nums">{sourceCount}</TableCell>
       <TableCell className="py-4 tabular-nums">
