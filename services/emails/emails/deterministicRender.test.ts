@@ -1,6 +1,8 @@
 import { render } from 'react-email';
 import { describe, expect, it } from 'vitest';
 
+import { CategoryAssignmentConfirmedEmail } from './CategoryAssignmentConfirmedEmail';
+import { CategoryAssignmentUnconfirmedEmail } from './CategoryAssignmentUnconfirmedEmail';
 import { CategoryDevelopmentConfirmedAdminEmail } from './CategoryDevelopmentConfirmedAdminEmail';
 import { DecisionResultEmail } from './DecisionResultEmail';
 import { DecisionUpdateNotificationEmail } from './DecisionUpdateNotificationEmail';
@@ -117,6 +119,66 @@ describe('email render determinism', () => {
       expect(html).toContain('<bdi>Participatory Budgeting 2026</bdi>');
     },
   );
+
+  it('renders CategoryAssignmentConfirmedEmail identically for identical props', async () => {
+    const props = {
+      categoryName: 'Parks & Recreation',
+      processName: 'Participatory Budgeting 2026',
+      confirmedCount: 1,
+      assignmentCount: 2,
+      processUrl: 'https://common.oneproject.org/decisions/pb-2026',
+    };
+
+    const first = await render(CategoryAssignmentConfirmedEmail(props));
+    const second = await render(CategoryAssignmentConfirmedEmail(props));
+
+    expect(second).toBe(first);
+  });
+
+  it('renders CategoryAssignmentUnconfirmedEmail identically for identical props', async () => {
+    const props = {
+      categoryName: 'Parks & Recreation',
+      processName: 'Participatory Budgeting 2026',
+      processUrl: 'https://common.oneproject.org/decisions/pb-2026',
+    };
+
+    const first = await render(CategoryAssignmentUnconfirmedEmail(props));
+    const second = await render(CategoryAssignmentUnconfirmedEmail(props));
+
+    expect(second).toBe(first);
+  });
+
+  it('renders the confirmed count of a CategoryAssignmentConfirmedEmail and its category name as escaped text', async () => {
+    const html = await render(
+      CategoryAssignmentConfirmedEmail({
+        categoryName: '<b>north SIDE</b>',
+        processName: 'Participatory Budgeting 2026',
+        confirmedCount: 1,
+        assignmentCount: 3,
+        processUrl: 'https://common.oneproject.org/decisions/pb-2026',
+      }),
+    );
+
+    expect(html).toContain('1 of 3 people have confirmed this category.');
+    expect(html).not.toContain('<b>north SIDE</b>');
+    expect(html).toContain('&lt;b&gt;north SIDE&lt;/b&gt;');
+    expect(html).toContain('<bdi>&lt;b&gt;north SIDE&lt;/b&gt;</bdi>');
+    expect(html).toContain('<bdi>Participatory Budgeting 2026</bdi>');
+  });
+
+  it('renders a CategoryAssignmentConfirmedEmail for a single assignment in the singular', async () => {
+    const html = await render(
+      CategoryAssignmentConfirmedEmail({
+        categoryName: 'Parks & Recreation',
+        processName: 'Participatory Budgeting 2026',
+        confirmedCount: 1,
+        assignmentCount: 1,
+        processUrl: 'https://common.oneproject.org/decisions/pb-2026',
+      }),
+    );
+
+    expect(html).toContain('1 of 1 person has confirmed this category.');
+  });
 
   it('renders markup in a ReviewReminderEmail message as escaped text', async () => {
     const html = await render(

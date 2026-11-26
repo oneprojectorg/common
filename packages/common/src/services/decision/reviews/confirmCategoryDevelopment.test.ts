@@ -13,7 +13,7 @@ import { confirmCategoryDevelopment } from './confirmCategoryDevelopment';
 
 // Each case reads the shared `event.send` spy, so the cases run in sequence.
 describe.sequential('confirmCategoryDevelopment', () => {
-  it('sends one event for the category of a reviewer who confirms it', async ({
+  it('sends one event for the assignment of a reviewer who confirms it', async ({
     task,
     onTestFinished,
   }) => {
@@ -41,12 +41,13 @@ describe.sequential('confirmCategoryDevelopment', () => {
           processInstanceId: instanceId,
           phaseId: 'final',
           taxonomyTermId: termA,
+          reviewerProfileId: reviewer.profileId,
         },
       },
     ]);
   });
 
-  it('sends one event, not one per row, when an admin confirms a whole category', async ({
+  it('sends one event per assignment when an admin confirms a whole category', async ({
     task,
     onTestFinished,
   }) => {
@@ -75,14 +76,12 @@ describe.sequential('confirmCategoryDevelopment', () => {
     });
 
     expect(result.reviewers).toHaveLength(2);
-    expect(sentCategoryEvents(instanceId)).toEqual([
-      expect.objectContaining({
-        data: expect.objectContaining({ taxonomyTermId: termA }),
-      }),
-    ]);
+    expect(sentAssignments(instanceId)).toEqual(
+      reviewers.map((reviewer) => `${termA}:${reviewer.profileId}`).sort(),
+    );
   });
 
-  it('sends one event per category when a reviewer confirms all own rows', async ({
+  it('sends one event per assignment when a reviewer confirms all own rows', async ({
     task,
     onTestFinished,
   }) => {
@@ -109,11 +108,11 @@ describe.sequential('confirmCategoryDevelopment', () => {
       user: reviewer.user,
     });
 
-    expect(
-      sentCategoryEvents(instanceId)
-        .map((payload) => payload.data.taxonomyTermId)
+    expect(sentAssignments(instanceId)).toEqual(
+      [termA, termB]
+        .map((taxonomyTermId) => `${taxonomyTermId}:${reviewer.profileId}`)
         .sort(),
-    ).toEqual([termA, termB].sort());
+    );
   });
 
   it('sends no event when no row is confirmed', async ({
@@ -150,4 +149,10 @@ function sentCategoryEvents(processInstanceId: string) {
         ? [payload]
         : [],
     );
+}
+
+function sentAssignments(processInstanceId: string) {
+  return sentCategoryEvents(processInstanceId)
+    .map(({ data }) => `${data.taxonomyTermId}:${data.reviewerProfileId}`)
+    .sort();
 }

@@ -23,7 +23,12 @@ const createEvent = ({
   taxonomyTermId: string;
 }) => ({
   name: Events.categoryDevelopmentConfirmed.name,
-  data: { processInstanceId, phaseId: 'final', taxonomyTermId },
+  data: {
+    processInstanceId,
+    phaseId: 'final',
+    taxonomyTermId,
+    reviewerProfileId: randomUUID(),
+  },
 });
 
 describe('sendCategoryDevelopmentConfirmedNotification', () => {
@@ -74,6 +79,25 @@ describe('sendCategoryDevelopmentConfirmedNotification', () => {
     expect(missingTerm?.result).toEqual({
       skipped: 'process instance or category not found',
     });
+  });
+
+  it('reads the recipients for an event sent without a reviewer', async () => {
+    const { result } = await new InngestTestEngine({
+      function: sendCategoryDevelopmentConfirmedNotification,
+    }).executeStep('get-recipients', {
+      events: [
+        {
+          name: Events.categoryDevelopmentConfirmed.name,
+          data: {
+            processInstanceId: randomUUID(),
+            phaseId: 'final',
+            taxonomyTermId: randomUUID(),
+          },
+        },
+      ],
+    });
+
+    expect(result).toEqual({ ok: false });
   });
 
   it('lists the decisions admins as recipients once every reviewer confirms', async ({
