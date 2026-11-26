@@ -118,7 +118,12 @@ const source = ({
 }: {
   id: string;
   name: string;
-  developedProposals: { id: string; profileId: string; status: string }[];
+  developedProposals: {
+    id: string;
+    profileId: string;
+    status: string;
+    isSubmittable: boolean;
+  }[];
 }) => ({
   id,
   profileId: `${id}-profile`,
@@ -132,7 +137,12 @@ const sources = [
     id: 'draft-source',
     name: 'Draft source',
     developedProposals: [
-      { id: 'draft-entry', profileId: 'draft-entry-profile', status: 'draft' },
+      {
+        id: 'draft-entry',
+        profileId: 'draft-entry-profile',
+        status: 'draft',
+        isSubmittable: true,
+      },
     ],
   }),
   source({
@@ -143,6 +153,7 @@ const sources = [
         id: 'submitted-entry',
         profileId: 'submitted-entry-profile',
         status: 'submitted',
+        isSubmittable: false,
       },
     ],
   }),
