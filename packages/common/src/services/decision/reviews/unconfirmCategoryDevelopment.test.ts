@@ -9,6 +9,7 @@ import { Events, event } from '@op/events';
 import { describe, expect, it, vi } from 'vitest';
 
 import { NotFoundError } from '../../../utils';
+import { confirmCategoryDevelopment } from './confirmCategoryDevelopment';
 import { unconfirmCategoryDevelopment } from './unconfirmCategoryDevelopment';
 
 // Each case reads the shared `event.send` spy, so the cases run in sequence.
@@ -26,6 +27,11 @@ describe.sequential('unconfirmCategoryDevelopment', () => {
       taxonomyTermId: termA,
       reviewerProfileId: reviewer.profileId,
       phaseId: 'final',
+    });
+    await confirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termA,
+      user: reviewer.user,
     });
 
     await unconfirmCategoryDevelopment({
@@ -68,6 +74,11 @@ describe.sequential('unconfirmCategoryDevelopment', () => {
         }),
       ),
     );
+    await confirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termA,
+      user: setup.user,
+    });
 
     await unconfirmCategoryDevelopment({
       processInstanceId: instanceId,
@@ -78,6 +89,50 @@ describe.sequential('unconfirmCategoryDevelopment', () => {
     expect(sentAssignments(instanceId)).toEqual(
       reviewers.map((reviewer) => `${termA}:${reviewer.profileId}`).sort(),
     );
+  });
+
+  it('sends events only for the assignments that were confirmed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId } = await createDevelopPhaseSetup({ testData });
+    const { id: termA } = await createTestTaxonomyTerm({ onTestFinished });
+    const [confirmedReviewer, pendingReviewer] = await Promise.all([
+      createDevelopProposalsMember({ testData, setup }),
+      createDevelopProposalsMember({ testData, setup }),
+    ]);
+    await Promise.all(
+      [confirmedReviewer, pendingReviewer].map((reviewer) =>
+        createCategoryReviewer({
+          processInstanceId: instanceId,
+          taxonomyTermId: termA,
+          reviewerProfileId: reviewer.profileId,
+          phaseId: 'final',
+        }),
+      ),
+    );
+    await confirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termA,
+      user: confirmedReviewer.user,
+    });
+
+    const result = await unconfirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      taxonomyTermId: termA,
+      user: setup.user,
+    });
+
+    expect(result.reviewers).toEqual([
+      {
+        reviewerProfileId: confirmedReviewer.profileId,
+        developConfirmedAt: null,
+      },
+    ]);
+    expect(sentAssignments(instanceId)).toEqual([
+      `${termA}:${confirmedReviewer.profileId}`,
+    ]);
   });
 
   it('sends one event per assignment when a reviewer unconfirms all own rows', async ({
@@ -101,6 +156,10 @@ describe.sequential('unconfirmCategoryDevelopment', () => {
         }),
       ),
     );
+    await confirmCategoryDevelopment({
+      processInstanceId: instanceId,
+      user: reviewer.user,
+    });
 
     await unconfirmCategoryDevelopment({
       processInstanceId: instanceId,

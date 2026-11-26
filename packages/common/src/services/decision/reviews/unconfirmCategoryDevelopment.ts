@@ -1,10 +1,11 @@
-import { db, sql } from '@op/db/client';
+import { and, db, sql } from '@op/db/client';
 import { categoryReviewers } from '@op/db/schema';
 import { Events } from '@op/events';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError } from '../../../utils';
+import { isCategoryReviewerDevelopConfirmed } from '../developLock';
 import { sendCategoryAssignmentEvents } from '../events/sendCategoryAssignmentEvents';
 import type { CategoryDevelopmentReviewerSchema } from '../schemas/reviews';
 import {
@@ -13,9 +14,8 @@ import {
 } from './assertCategoryDevelopAccess';
 
 /**
- * Removes `data.developConfirmedAt` from category reviewer rows for the
- * current develop phase, on the same rows that `confirmCategoryDevelopment`
- * stamps.
+ * Removes `data.developConfirmedAt` from the confirmed rows among those that
+ * `confirmCategoryDevelopment` stamps for the current develop phase.
  */
 export async function unconfirmCategoryDevelopment({
   processInstanceId,
@@ -38,7 +38,12 @@ export async function unconfirmCategoryDevelopment({
   const updated = await db
     .update(categoryReviewers)
     .set({ data: sql`${categoryReviewers.data} - 'developConfirmedAt'` })
-    .where(categoryDevelopRowsWhere({ processInstanceId, access }))
+    .where(
+      and(
+        categoryDevelopRowsWhere({ processInstanceId, access }),
+        isCategoryReviewerDevelopConfirmed(categoryReviewers),
+      ),
+    )
     .returning({
       reviewerProfileId: categoryReviewers.reviewerProfileId,
       taxonomyTermId: categoryReviewers.taxonomyTermId,
