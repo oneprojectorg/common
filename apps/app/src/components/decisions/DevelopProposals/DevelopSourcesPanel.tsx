@@ -265,28 +265,39 @@ function EditableSourcesTable(props: SourcesTableProps) {
         // one.
         const developedEntry = source.developedProposals[0];
 
-        return developedEntry ? (
-          <EntryActions>
-            <EditEntryLink
+        if (!developedEntry) {
+          return (
+            <PrepareEntryButton
               title={title}
-              href={decisionProposalDevelopHref({
-                decisionSlug,
-                profileId: developedEntry.profileId,
-              })}
+              disabled={isPreparing}
+              loading={preparingSourceId === source.id}
+              onPrepare={() => prepare(source)}
             />
+          );
+        }
+
+        const entryHref = decisionProposalDevelopHref({
+          decisionSlug,
+          profileId: developedEntry.profileId,
+        });
+
+        // Advanced from the editor, which names the empty fields.
+        if (
+          developedEntry.status === ProposalStatus.DRAFT &&
+          !developedEntry.isSubmittable
+        ) {
+          return <PrepareEntryLink title={title} href={entryHref} />;
+        }
+
+        return (
+          <EntryActions>
+            <EditEntryLink title={title} href={entryHref} />
             <AdvanceEntryButton
               entry={developedEntry}
               title={title}
               disabled={isPreparing}
             />
           </EntryActions>
-        ) : (
-          <PrepareEntryButton
-            title={title}
-            disabled={isPreparing}
-            loading={preparingSourceId === source.id}
-            onPrepare={() => prepare(source)}
-          />
         );
       }}
     />
@@ -486,6 +497,21 @@ function PrepareEntryButton({
       <LuPencil aria-hidden data-icon="inline-start" />
       {t('prepareEntryAction')}
     </Button>
+  );
+}
+
+function PrepareEntryLink({ title, href }: { title: string; href: string }) {
+  const t = useTranslations('decisions.develop');
+
+  return (
+    <ButtonLink
+      variant="outline"
+      href={href}
+      aria-label={t('prepareEntryLabel', { title })}
+    >
+      <LuPencil aria-hidden data-icon="inline-start" />
+      {t('prepareEntryAction')}
+    </ButtonLink>
   );
 }
 
