@@ -19,8 +19,6 @@ export type CategoryDevelopmentRecipients = {
   advancingCount: number;
   /** Every holder of decisions Admin on the instance profile. */
   adminEmails: string[];
-  /** The category reviewers of the category for the phase, minus `adminEmails`. */
-  reviewerEmails: string[];
 };
 
 /**
@@ -49,7 +47,7 @@ export async function getCategoryDevelopmentRecipients({
     // Rows with no phase are for review only and do not count.
     db.query.categoryReviewers.findMany({
       where: { processInstanceId, taxonomyTermId, phaseId },
-      columns: { reviewerProfileId: true },
+      columns: { id: true },
       extras: {
         isConfirmed: (table) => isCategoryReviewerDevelopConfirmed(table),
       },
@@ -69,21 +67,12 @@ export async function getCategoryDevelopmentRecipients({
     decisionProfileId: instance.profileId,
     permission: permission.ADMIN,
   });
-  const reviewerProfileIds = rows.map((row) => row.reviewerProfileId);
   const recipientsByProfileId =
-    await listIndividualProfileRecipientsByProfileId([
-      ...new Set([...adminProfileIds, ...reviewerProfileIds]),
-    ]);
-  const emailsOf = (profileIds: string[]) =>
-    selectEmailRecipients(
-      profileIds.flatMap(
-        (profileId) => recipientsByProfileId.get(profileId) ?? [],
-      ),
-    );
-
-  const adminEmails = emailsOf(adminProfileIds);
-  const adminEmailKeys = new Set(
-    adminEmails.map((email) => email.toLowerCase()),
+    await listIndividualProfileRecipientsByProfileId(adminProfileIds);
+  const adminEmails = selectEmailRecipients(
+    adminProfileIds.flatMap(
+      (profileId) => recipientsByProfileId.get(profileId) ?? [],
+    ),
   );
 
   return {
@@ -93,8 +82,5 @@ export async function getCategoryDevelopmentRecipients({
     decisionSlug: instance.profile.slug,
     advancingCount: advancingCounts.get(taxonomyTermId) ?? 0,
     adminEmails,
-    reviewerEmails: emailsOf(reviewerProfileIds).filter(
-      (email) => !adminEmailKeys.has(email.toLowerCase()),
-    ),
   };
 }

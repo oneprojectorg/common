@@ -86,9 +86,6 @@ describe.concurrent('getCategoryDevelopmentRecipients', () => {
     const partial = await readRecipients();
 
     expect(partial.isComplete).toBe(false);
-    expect([...partial.reviewerEmails].sort()).toEqual(
-      [firstReviewer.email, secondReviewer.email].sort(),
-    );
 
     await confirmCategoryDevelopment({
       processInstanceId: instanceId,
@@ -104,15 +101,10 @@ describe.concurrent('getCategoryDevelopmentRecipients', () => {
       decisionSlug: setup.instance.slug,
       advancingCount: 1,
       adminEmails: [setup.userEmail],
-      reviewerEmails: expect.arrayContaining([
-        firstReviewer.email,
-        secondReviewer.email,
-      ]),
     });
-    expect(complete.reviewerEmails).toHaveLength(2);
   });
 
-  it('lists an admin who is also a category reviewer only as an admin', async ({
+  it('lists every decisions admin, and reports a category without rows as not complete', async ({
     task,
     onTestFinished,
   }) => {
@@ -158,10 +150,6 @@ describe.concurrent('getCategoryDevelopmentRecipients', () => {
     expect([...(recipients?.adminEmails ?? [])].sort()).toEqual(
       [setup.userEmail, adminReviewer.email].sort(),
     );
-    expect(recipients?.reviewerEmails).toEqual([reviewer.email]);
-    expect(recipientsWithoutRows).toMatchObject({
-      isComplete: false,
-      reviewerEmails: [],
-    });
+    expect(recipientsWithoutRows).toMatchObject({ isComplete: false });
   });
 });
