@@ -1,5 +1,4 @@
 import { execSync } from 'child_process';
-import depcheck from 'depcheck';
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
 import * as path from 'path';
@@ -69,60 +68,6 @@ function findPackageDirs(dir: string): string[] {
   }
 
   return results;
-}
-
-// Runs depcheck on a single package directory and removes unused dependencies.
-async function runDepcheck(packageDir: string): Promise<void> {
-  const options = {
-    ignorePatterns: ['dist', 'build'], // Ignore build artifacts
-    ignoreMatches: [
-      // Ignore dependencies that might be used indirectly (e.g., via config files)
-      // or are known false positives for depcheck.
-      'postcss', // Used via postcss.config.js
-      '@storybook/*', // Used by storybook
-    ],
-  };
-
-  try {
-    const results = await depcheck(packageDir, options);
-    const packageJsonPath = path.join(packageDir, 'package.json');
-    const packageJson = JSON.parse(
-      fs.readFileSync(packageJsonPath, 'utf8'),
-    ) as {
-      dependencies: Record<string, string>;
-      devDependencies: Record<string, string>;
-    };
-
-    let hasChanges = false;
-
-    if (Object.keys(results.dependencies).length > 0) {
-      console.log(`\nRemoving unused dependencies in ${packageDir}:`);
-      results.dependencies.forEach((dep) => {
-        console.log(`  - ${dep}`);
-        delete packageJson.dependencies[dep];
-        hasChanges = true;
-      });
-    }
-
-    if (Object.keys(results.devDependencies).length > 0) {
-      console.log(`\nRemoving unused devDependencies in ${packageDir}:`);
-      results.devDependencies.forEach((dep) => {
-        console.log(`  - ${dep}`);
-        delete packageJson.devDependencies[dep];
-        hasChanges = true;
-      });
-    }
-
-    if (hasChanges) {
-      // Write the updated package.json back to the file
-      fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-      console.log(`Updated package.json in ${packageDir}`);
-    } else {
-      console.log(`No unused dependencies found in ${packageDir}`);
-    }
-  } catch (error) {
-    console.error(`Error checking dependencies for ${packageDir}:`, error);
-  }
 }
 
 // Scans all workspaces, identifies dependencies used in multiple packages,
@@ -280,63 +225,19 @@ function handleMultiuse() {
 
 // Main script execution logic
 async function main() {
-  // Perform a safety check to ensure no uncommitted/staged changes exist
-  checkGitStatus();
-
   const args = process.argv.slice(2);
 
-  // Handle --multiuse: Hoist shared dependencies to root
-  if (args.includes('--multiuse')) {
-    console.log(
-      'Running in --multiuse mode: Checking for shared dependencies...',
-    );
-    handleMultiuse();
-    console.log('Finished checking shared dependencies.');
-
-    return;
-  }
-
-  // Handle --clean: Remove unused dependencies from workspaces
-  if (!args.includes('--clean')) {
-    console.log('Please specify either --clean or --multiuse flag.');
+  if (!args.includes('--multiuse')) {
+    console.log('Please specify the --multiuse flag.');
     process.exit(1);
   }
 
-  console.log('Running in --clean mode: Checking for unused dependencies...');
+  // Perform a safety check to ensure no uncommitted/staged changes exist
+  checkGitStatus();
 
-  // Read pnpm-workspace.yaml
-  const workspaceConfig = yaml.load(
-    fs.readFileSync('pnpm-workspace.yaml', 'utf8'),
-  ) as { packages: string[] };
-
-  console.log(workspaceConfig);
-
-  // Get workspace roots
-  const workspaceRoots = workspaceConfig.packages.map((glob) =>
-    glob.replace('/*', ''),
-  );
-
-  console.log(workspaceRoots);
-
-  // Find package directories in each workspace root
-  const packageDirs: string[] = [];
-
-  for (const root of workspaceRoots) {
-    packageDirs.push(...findPackageDirs(root));
-  }
-
-  // Print the paths of package directories
-  console.log('Found package directories:');
-  packageDirs.forEach((dir) => console.log(dir));
-
-  // Run depcheck --clean operation on each package directory
-  console.log('\nRunning depcheck on each workspace...');
-
-  for (const packageDir of packageDirs) {
-    await runDepcheck(packageDir);
-  }
-
-  console.log('\nFinished checking unused dependencies.');
+  console.log('Running in --multiuse mode: Checking for shared dependencies...');
+  handleMultiuse();
+  console.log('Finished checking shared dependencies.');
 }
 
 main().catch((error) => {

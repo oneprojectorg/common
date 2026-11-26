@@ -244,8 +244,7 @@ Adding a new Tailwind-consuming package means adding an `@source` glob to `theme
 
 The root `package.json` includes several scripts prefixed with `deps:` to help manage dependencies across the monorepo:
 
-- **`pnpm deps:clean`**: Runs `depcheck` on all workspaces (`apps/*`, `packages/*`, `services/*`) and automatically removes any unused dependencies listed in their respective `package.json` files. It then formats all `package.json` files. **Important:** Ensure you have no uncommitted/staged changes before running, as it modifies `package.json` files directly.
-  - **Note**: This script incorrectly removes certain **Storybook** addons and plugins. Double check before committing.
+- **`pnpm deps:unused`**: Runs `fallow dead-code --unused-deps` and reports the dependencies that no workspace imports. It does not change any file. Fallow sees only imports, so it also reports packages that a config file or a CLI uses (for example Storybook addons). Check each package by hand before you remove it.
 - **`pnpm deps:override`**: Identifies external dependencies used in two or more workspaces. If such a dependency is not already present in the root `package.json`, this script adds it to the root `devDependencies` and creates a corresponding entry in `pnpm.overrides`. This enforces version consistency for shared dependencies across the monorepo. It then formats all `package.json` files. **Important:** Ensure you have no uncommitted/staged changes before running.
 - **`pnpm deps:viz`**: Generates an interactive D3.js visualization of the Turborepo task dependency graph (based on the `build` task) and opens it automatically in your default browser. Useful for understanding the relationships and build order between workspaces.
 

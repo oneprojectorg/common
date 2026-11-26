@@ -126,7 +126,7 @@ pnpm w:emails   # Work with services/emails
 ## Dependency Management
 
 - **Add dependencies**: `pnpm add <package> --filter <workspace-name>`
-- **Clean unused deps**: `pnpm deps:clean`
+- **Report unused deps**: `pnpm deps:unused` (report only; check config-used packages by hand before you remove one)
 - **Enforce version consistency**: `pnpm deps:override`
 
 ## Pull Request Process
