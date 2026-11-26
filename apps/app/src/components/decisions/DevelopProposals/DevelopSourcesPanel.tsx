@@ -473,7 +473,7 @@ function SourcesTable({
 }
 
 /** Creates an entry of this phase from a source that has none yet. */
-function PrepareEntryButton({
+export function PrepareEntryButton({
   title,
   disabled,
   loading,
@@ -516,7 +516,13 @@ function PrepareEntryLink({ title, href }: { title: string; href: string }) {
 }
 
 /** Opens the entry already developed from a source, draft or submitted. */
-function EditEntryLink({ title, href }: { title: string; href: string }) {
+export function EditEntryLink({
+  title,
+  href,
+}: {
+  title: string;
+  href: string;
+}) {
   const t = useTranslations('decisions.develop');
 
   return (
@@ -568,12 +574,12 @@ function SourceDecisionBadge({ advancing }: { advancing: boolean }) {
 }
 
 /** The actions or the decision of a source, side by side at the row's end. */
-function EntryActions({ children }: { children: ReactNode }) {
+export function EntryActions({ children }: { children: ReactNode }) {
   return <div className="flex items-center justify-end gap-2">{children}</div>;
 }
 
 /** Submits a source's draft entry, or un-advances it once submitted. */
-function AdvanceEntryButton({
+export function AdvanceEntryButton({
   entry,
   title,
   disabled,

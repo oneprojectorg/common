@@ -42,6 +42,9 @@ export function usePrepareDevelopEntry({
   });
 
   const isPreparing = createEntry.isPending || isNavigating;
+  const preparingSourceId = isPreparing
+    ? (createEntry.variables?.sourceProposalIds[0] ?? null)
+    : null;
 
   const prepare = (source: { id: string }) => {
     if (isPreparing) {
@@ -56,5 +59,5 @@ export function usePrepareDevelopEntry({
     });
   };
 
-  return { prepare };
+  return { prepare, isPreparing, preparingSourceId };
 }

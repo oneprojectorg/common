@@ -27,6 +27,7 @@ import { NoSourcesEmpty } from './DevelopSourcesPanel';
 import {
   DevelopSourceDecisionCell,
   DevelopSourceDecisionCellSkeleton,
+  DevelopSourceEntryActionsCell,
   DevelopSourceEntryTitle,
   DevelopSourceNameCell,
   DevelopSourceNameCellSkeleton,
@@ -44,8 +45,10 @@ const SOURCE_CATEGORY_PARAM = 'sourceCategory';
 
 /**
  * The admin's All proposals tab: every source of the previous phase, with its
- * category, its reviewers' overall recommendation and whether it is advancing.
- * A source's title opens its entry, or prepares one when it has none.
+ * category and its reviewers' overall recommendation. A source's title opens
+ * its entry, or prepares one when it has none. While the develop window is
+ * open, the last column offers the author's Edit and Advance, or Prepare;
+ * once it closes, it shows whether the source is advancing.
  */
 export function DevelopAdminSourcesPanel({
   processInstanceId,
@@ -131,7 +134,10 @@ export function DevelopAdminSourcesPanel({
                 <DevelopAdminSourcesTableSkeleton decisionSlug={decisionSlug} />
               }
             >
-              <DevelopAdminSourcesTableSuspense decisionSlug={decisionSlug} />
+              <DevelopAdminSourcesTableSuspense
+                processInstanceId={processInstanceId}
+                decisionSlug={decisionSlug}
+              />
             </Suspense>
           </APIErrorBoundary>
         </div>
@@ -229,12 +235,18 @@ function DevelopAdminSourceCategoryFilterSuspense({
 }
 
 function DevelopAdminSourcesTableSuspense({
+  processInstanceId,
   decisionSlug,
 }: {
+  processInstanceId: string;
   decisionSlug: string;
 }) {
   const t = useTranslations('decisions.develop');
   const { sources } = useDevelopSources();
+  // An admin has no confirm lock, so only the closed window locks them.
+  const [{ lock }] = trpc.decision.getDevelopConfirmState.useSuspenseQuery({
+    processInstanceId,
+  });
 
   if (sources.length === 0) {
     return (
@@ -260,7 +272,11 @@ function DevelopAdminSourcesTableSuspense({
               </DevelopSourceNameCell>
               <DevelopEntryCategoryCell entry={source} />
               <DevelopSourceRecommendationsCell source={source} />
-              <DevelopSourceDecisionCell source={source} />
+              {lock === null ? (
+                <DevelopSourceEntryActionsCell source={source} />
+              ) : (
+                <DevelopSourceDecisionCell source={source} />
+              )}
             </TableRow>
           ))}
         </TableBody>
@@ -298,7 +314,7 @@ function DevelopAdminSourcesTableHeader({
         <TableHead scope="col" className="w-72">
           {t('review.overallRecommendationLabel')}
         </TableHead>
-        <TableHead scope="col" className="w-48 text-end">
+        <TableHead scope="col" className="w-64 text-end">
           {t('develop.decisionColumn')}
         </TableHead>
       </TableRow>
@@ -314,7 +330,7 @@ function DevelopAdminSourceSkeletonRows({ count }: { count: number }) {
           <DevelopSourceNameCellSkeleton />
           <DevelopEntryTextCellSkeleton className="w-48" />
           <DevelopSourceRecommendationsCellSkeleton className="w-72" />
-          <DevelopSourceDecisionCellSkeleton className="w-48" />
+          <DevelopSourceDecisionCellSkeleton className="w-64" />
         </TableRow>
       ))}
     </>

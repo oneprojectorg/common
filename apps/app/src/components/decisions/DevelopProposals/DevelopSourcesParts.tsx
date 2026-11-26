@@ -33,7 +33,14 @@ import { Link, useTranslations } from '@/lib/i18n';
 
 import { decisionProposalDevelopHref } from '../proposalHrefs';
 import { useReportProposalsForReviewDecoration } from '../proposalReviewDecoration';
-import { NoSourcesEmpty, SourceRecommendations } from './DevelopSourcesPanel';
+import {
+  AdvanceEntryButton,
+  EditEntryLink,
+  EntryActions,
+  NoSourcesEmpty,
+  PrepareEntryButton,
+  SourceRecommendations,
+} from './DevelopSourcesPanel';
 import {
   type DevelopSourceScope,
   getDevelopSourcesInput,
@@ -48,6 +55,10 @@ interface DevelopSourcesQuery {
 }
 
 interface DevelopSourcesContextValue {
+  state: {
+    isPreparing: boolean;
+    preparingSourceId: string | null;
+  };
   actions: {
     prepare: (source: DevelopSource) => void;
   };
@@ -79,12 +90,13 @@ export function DevelopSourcesProvider({
 }) {
   // Deferred so the current rows stay on screen while the next ones load.
   const deferredCategoryId = useDeferredValue(categoryId);
-  const { prepare } = usePrepareDevelopEntry({
+  const { prepare, isPreparing, preparingSourceId } = usePrepareDevelopEntry({
     processInstanceId,
     decisionSlug,
   });
 
   const value: DevelopSourcesContextValue = {
+    state: { isPreparing, preparingSourceId },
     actions: { prepare },
     meta: {
       query: {
@@ -140,7 +152,7 @@ export function DevelopSourcesTable({ children }: { children: ReactNode }) {
   return (
     <Table
       aria-label={t('sourcesTableLabel')}
-      className="min-w-4xl table-fixed [&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0"
+      className="min-w-5xl table-fixed [&_tr>*:first-child]:ps-0 [&_tr>*:last-child]:pe-0"
     >
       {children}
     </Table>
@@ -181,7 +193,7 @@ export function DevelopSourceEntryTitle({ source }: { source: DevelopSource }) {
   const t = useTranslations('decisions');
   const { actions, meta } = useDevelopSourcesContext();
   const title = source.profile.name || t('proposals.untitledProposal');
-  const entry = getAdvancingEntry(source) ?? source.developedProposals[0];
+  const entry = getSourceEntry(source);
 
   if (entry) {
     return (
@@ -242,6 +254,50 @@ export function DevelopSourceDecisionCell({
           ? t('sourceAdvancingStatus')
           : t('sourceUnderConsiderationStatus')}
       </StatusBadge>
+    </TableCell>
+  );
+}
+
+/**
+ * Edit and Advance on the entry the title opens, or Prepare while the source
+ * has no entry the caller may read. The server decides whether the caller may
+ * change that entry.
+ */
+export function DevelopSourceEntryActionsCell({
+  source,
+}: {
+  source: DevelopSource;
+}) {
+  const t = useTranslations('decisions');
+  const { state, actions, meta } = useDevelopSourcesContext();
+  const title = source.profile.name || t('proposals.untitledProposal');
+  const entry = getSourceEntry(source);
+
+  return (
+    <TableCell className="py-4 text-end">
+      {entry ? (
+        <EntryActions>
+          <EditEntryLink
+            title={title}
+            href={decisionProposalDevelopHref({
+              decisionSlug: meta.decisionSlug,
+              profileId: entry.profileId,
+            })}
+          />
+          <AdvanceEntryButton
+            entry={entry}
+            title={title}
+            disabled={state.isPreparing}
+          />
+        </EntryActions>
+      ) : (
+        <PrepareEntryButton
+          title={title}
+          disabled={state.isPreparing}
+          loading={state.preparingSourceId === source.id}
+          onPrepare={() => actions.prepare(source)}
+        />
+      )}
     </TableCell>
   );
 }
@@ -334,6 +390,11 @@ function getAdvancingEntry(source: DevelopSource) {
   return source.developedProposals.find((entry) =>
     isVotingEligible(entry.status),
   );
+}
+
+// One entry per source for now; the advancing one wins over a draft.
+function getSourceEntry(source: DevelopSource) {
+  return getAdvancingEntry(source) ?? source.developedProposals[0];
 }
 
 function useDevelopSourcesContext() {
