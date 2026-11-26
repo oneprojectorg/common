@@ -2,10 +2,6 @@ import { Text } from 'react-email';
 
 import { CtaButton } from '../components/CtaButton';
 import EmailTemplate from '../components/EmailTemplate';
-import {
-  categoryDevelopmentConfirmedSubject,
-  formatAdvancingSentence,
-} from './categoryDevelopmentConfirmedCopy';
 
 export const CategoryDevelopmentConfirmedReviewerEmail = ({
   categoryName,
@@ -20,10 +16,7 @@ export const CategoryDevelopmentConfirmedReviewerEmail = ({
 }) => {
   return (
     <EmailTemplate
-      previewText={categoryDevelopmentConfirmedSubject(
-        categoryName,
-        processName,
-      )}
+      previewText={`${categoryName} is confirmed in ${processName}`}
     >
       <Text className="my-8 text-lg">
         The selections for <strong>{categoryName}</strong> in{' '}
@@ -37,8 +30,10 @@ export const CategoryDevelopmentConfirmedReviewerEmail = ({
   );
 };
 
-CategoryDevelopmentConfirmedReviewerEmail.subject =
-  categoryDevelopmentConfirmedSubject;
+CategoryDevelopmentConfirmedReviewerEmail.subject = (
+  categoryName: string,
+  processName: string,
+) => `${categoryName} is confirmed in ${processName}`;
 
 CategoryDevelopmentConfirmedReviewerEmail.PreviewProps = {
   categoryName: 'Parks and Recreation',
@@ -48,3 +43,9 @@ CategoryDevelopmentConfirmedReviewerEmail.PreviewProps = {
 } satisfies Parameters<typeof CategoryDevelopmentConfirmedReviewerEmail>[0];
 
 export default CategoryDevelopmentConfirmedReviewerEmail;
+
+function formatAdvancingSentence(advancingCount: number): string {
+  return advancingCount === 1
+    ? '1 proposal advances.'
+    : `${advancingCount} proposals advance.`;
+}
