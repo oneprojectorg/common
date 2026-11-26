@@ -1,13 +1,17 @@
+import { getPathMatch } from 'next/dist/shared/lib/router/utils/path-match';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   REPORTING_ENDPOINTS_HEADER,
+  STATIC_MEDIA_CONTENT_SECURITY_POLICY,
+  STATIC_MEDIA_SOURCES,
   VERCEL_TOOLBAR_ORIGIN,
   buildNonceContentSecurityPolicy,
   buildStaticContentSecurityPolicy,
   createCspHeaderApplier,
   createCspNonce,
   getStaticCspHeader,
+  getStaticMediaCspHeader,
   isStaticPolicyPath,
 } from './csp.mjs';
 
@@ -321,6 +325,60 @@ describe('getStaticCspHeader', () => {
     vi.stubEnv('CSP_MODE', 'report-only');
 
     expect(getStaticCspHeader().key).toBe(
+      'content-security-policy-report-only',
+    );
+  });
+});
+
+describe('static media policy', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('lets build media load and run nothing', () => {
+    const directives = parseDirectives(STATIC_MEDIA_CONTENT_SECURITY_POLICY);
+
+    expect(directives.get('default-src')).toEqual(["'none'"]);
+    expect(directives.has('script-src')).toBe(false);
+    expect(directives.has('sandbox')).toBe(true);
+  });
+
+  it('reports to the group named by the Reporting-Endpoints header', () => {
+    const directives = parseDirectives(STATIC_MEDIA_CONTENT_SECURITY_POLICY);
+
+    expect(directives.get('report-uri')).toEqual(['/api/csp-report']);
+    expect(directives.get('report-to')).toEqual(['csp-endpoint']);
+  });
+
+  // Matched the way Next matches `headers()` sources.
+  const matchers = STATIC_MEDIA_SOURCES.map((source) =>
+    getPathMatch(source, { strict: true, removeUnnamedParams: true }),
+  );
+  const isCovered = (pathname: string) =>
+    matchers.some((match) => match(pathname) !== false);
+
+  it.each([
+    '/_next/static/media/40575c2b721e3346-s.p.woff2',
+    '/_next/static/immutable/media/40575c2b721e3346-s.p.40n8y2mez4apg.woff2',
+    '/_next/static/media/logo.4f1a2b.svg',
+    '/_next/static/immutable/media/photo.abc.JPG',
+  ])('covers %s', (pathname) => {
+    expect(isCovered(pathname)).toBe(true);
+  });
+
+  it.each([
+    '/_next/static/media/maplibre-gl-worker.3a1f.mjs',
+    '/_next/static/immutable/media/worker.abc.js',
+    '/_next/static/chunks/main.js',
+    '/_next/static/media/nested/font.woff2',
+  ])('leaves %s alone', (pathname) => {
+    expect(isCovered(pathname)).toBe(false);
+  });
+
+  it('follows the CSP_MODE rollback lever', () => {
+    vi.stubEnv('CSP_MODE', 'report-only');
+
+    expect(getStaticMediaCspHeader().key).toBe(
       'content-security-policy-report-only',
     );
   });

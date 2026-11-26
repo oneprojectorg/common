@@ -7,8 +7,10 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 import {
   REPORTING_ENDPOINTS_HEADER,
+  STATIC_MEDIA_SOURCES,
   STATIC_POLICY_SOURCES,
   getStaticCspHeader,
+  getStaticMediaCspHeader,
 } from './src/lib/csp.mjs';
 
 const withNextIntl = createNextIntlPlugin('./src/lib/i18n/request.ts');
@@ -141,6 +143,10 @@ const config = {
       ...STATIC_POLICY_SOURCES.map((source) => ({
         source,
         headers: [staticCspHeader],
+      })),
+      ...STATIC_MEDIA_SOURCES.map((source) => ({
+        source,
+        headers: [getStaticMediaCspHeader()],
       })),
     ];
   },

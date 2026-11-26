@@ -177,6 +177,33 @@ export const getStaticCspHeader = () => ({
 });
 
 /**
+ * Fonts and images only: `media/` also holds Web Workers (maplibre's), which
+ * take their CSP from their own script response.
+ */
+const STATIC_MEDIA_FILE =
+  ':file([^/]+\\.(?:woff2?|ttf|otf|eot|png|jpe?g|gif|webp|avif|ico|bmp|svg))';
+
+export const STATIC_MEDIA_SOURCES = [
+  `/_next/static/media/${STATIC_MEDIA_FILE}`,
+  `/_next/static/immutable/media/${STATIC_MEDIA_FILE}`,
+];
+
+export const STATIC_MEDIA_CONTENT_SECURITY_POLICY = [
+  "default-src 'none'",
+  "style-src 'unsafe-inline'",
+  "frame-ancestors 'none'",
+  'sandbox',
+  `report-uri ${CSP_REPORT_PATH}`,
+  `report-to ${CSP_REPORT_GROUP}`,
+].join('; ');
+
+/** @returns {{ key: string, value: string }} */
+export const getStaticMediaCspHeader = () => ({
+  key: getCspHeaderName(),
+  value: STATIC_MEDIA_CONTENT_SECURITY_POLICY,
+});
+
+/**
  * The proxy stamps the same policy on the forwarded request headers and on the
  * response, so the nonce is minted once here and closed over.
  *
