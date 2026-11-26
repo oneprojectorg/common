@@ -117,5 +117,40 @@ describe('sendCategoryAssignmentConfirmedNotification', () => {
     expect(missing?.result).toEqual({
       skipped: 'process instance, category or assignment not found',
     });
+
+    // A retry replays the first read; the send step must read the state again.
+    const staleRead = await new InngestTestEngine({
+      function: sendCategoryAssignmentConfirmedNotification,
+      steps: [
+        {
+          id: 'get-receipt',
+          handler: () => ({
+            ok: true,
+            receipt: {
+              isConfirmed: true,
+              confirmedCount: 1,
+              assignmentCount: 1,
+              categoryName: term.label,
+              processName: setup.instance.instance.name,
+              decisionSlug: setup.instance.slug,
+              emails: [member.email],
+            },
+          }),
+        },
+      ],
+    }).execute({
+      events: [
+        createEvent({
+          processInstanceId: instanceId,
+          taxonomyTermId: term.id,
+          reviewerProfileId: member.profileId,
+        }),
+      ],
+    });
+
+    expect(staleRead.error).toBeUndefined();
+    expect(staleRead.result).toEqual({
+      skipped: 'assignment no longer confirmed',
+    });
   });
 });

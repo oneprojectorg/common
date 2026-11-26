@@ -14,19 +14,9 @@ export const sendCategoryAssignmentConfirmedNotification =
     async ({ event, step, runId }) => {
       const assignment = categoryDevelopmentConfirmed.schema.parse(event.data);
 
-      const receiptResult = await step.run('get-receipt', async () => {
-        try {
-          return {
-            ok: true as const,
-            receipt: await getCategoryAssignmentReceipt(assignment),
-          };
-        } catch (error) {
-          if (error instanceof NotFoundError) {
-            return { ok: false as const };
-          }
-          throw error;
-        }
-      });
+      const receiptResult = await step.run('get-receipt', () =>
+        getReceiptResult(assignment),
+      );
 
       if (!receiptResult.ok) {
         return {
@@ -35,7 +25,6 @@ export const sendCategoryAssignmentConfirmedNotification =
       }
 
       const {
-        isConfirmed,
         confirmedCount,
         assignmentCount,
         categoryName,
@@ -44,18 +33,21 @@ export const sendCategoryAssignmentConfirmedNotification =
         emails,
       } = receiptResult.receipt;
 
-      if (!isConfirmed) {
-        return { skipped: 'assignment no longer confirmed' };
-      }
-
       if (emails.length === 0) {
         return { skipped: 'no email address for the assigned person' };
       }
 
       const processUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${decisionSlug}`;
 
-      await step.run('send-receipt', async () =>
-        sendNotificationEmails({
+      return step.run('send-receipt', async () => {
+        // A retry of this step must not send a state the person changed after
+        // the first read, so the state is read again here.
+        const current = await getReceiptResult(assignment);
+        if (!current.ok || !current.receipt.isConfirmed) {
+          return { skipped: 'assignment no longer confirmed' };
+        }
+
+        await sendNotificationEmails({
           emails: emails.map((email) => ({
             to: email,
             subject: CategoryAssignmentConfirmedEmail.subject(categoryName),
@@ -75,9 +67,25 @@ export const sendCategoryAssignmentConfirmedNotification =
             reviewerProfileId: assignment.reviewerProfileId,
           },
           idempotencyKeyPrefix: `category-assignment-confirmed/${runId}`,
-        }),
-      );
+        });
 
-      return { sent: emails.length };
+        return { sent: emails.length };
+      });
     },
   );
+
+async function getReceiptResult(
+  assignment: Parameters<typeof getCategoryAssignmentReceipt>[0],
+) {
+  try {
+    return {
+      ok: true as const,
+      receipt: await getCategoryAssignmentReceipt(assignment),
+    };
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      return { ok: false as const };
+    }
+    throw error;
+  }
+}
