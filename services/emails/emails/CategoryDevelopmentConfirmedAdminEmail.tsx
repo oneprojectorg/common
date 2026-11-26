@@ -16,7 +16,10 @@ export const CategoryDevelopmentConfirmedAdminEmail = ({
 }) => {
   return (
     <EmailTemplate
-      previewText={`${categoryName} is confirmed in ${processName}`}
+      previewText={CategoryDevelopmentConfirmedAdminEmail.subject(
+        categoryName,
+        processName,
+      )}
     >
       <Text className="my-8 text-lg">
         The selections for{' '}

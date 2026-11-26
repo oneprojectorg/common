@@ -60,13 +60,6 @@ export const sendCategoryDevelopmentConfirmedNotification =
       }
 
       const processUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${decisionSlug}`;
-      const emailProps = {
-        categoryName,
-        processName,
-        advancingCount,
-        processUrl,
-      };
-      const context = { processInstanceId, taxonomyTermId };
 
       if (adminEmails.length > 0) {
         await step.run('send-admin-emails', async () =>
@@ -78,10 +71,15 @@ export const sendCategoryDevelopmentConfirmedNotification =
                 processName,
               ),
               component: () =>
-                CategoryDevelopmentConfirmedAdminEmail(emailProps),
+                CategoryDevelopmentConfirmedAdminEmail({
+                  categoryName,
+                  processName,
+                  advancingCount,
+                  processUrl,
+                }),
             })),
             failureMessage: 'category development confirmed admin emails',
-            context,
+            context: { processInstanceId, taxonomyTermId },
             idempotencyKeyPrefix: `category-development-confirmed/${runId}/admins`,
           }),
         );
