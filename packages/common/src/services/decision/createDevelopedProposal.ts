@@ -15,6 +15,7 @@ import {
 } from './developedEntryPrefill';
 import { insertProposalDraft } from './insertProposalDraft';
 import { getPhases } from './instancePhases';
+import { lockProcessInstanceOrThrow } from './lockProcessInstance';
 import {
   type ProposalDataInput,
   parseProposalData,
@@ -98,6 +99,10 @@ export const createDevelopedProposal = async ({
 
   const { createdProposal, coauthorAuthUserIds } = await db.transaction(
     async (tx) => {
+      // Serializes with `backfillDevelopedProposalCoauthors`, so an admin whose
+      // roles change while this entry is created is added to it exactly once.
+      await lockProcessInstanceOrThrow({ db: tx, instanceId: instance.id });
+
       const proposal = await insertProposalDraft({
         tx,
         user,

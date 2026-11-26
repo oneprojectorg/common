@@ -1,8 +1,7 @@
 import type { TransactionType } from '@op/db/client';
-import { profileUserToAccessRoles, profileUsers } from '@op/db/schema';
 
-import { CommonError } from '../../utils';
 import { getDecisionAdmins } from './getDecisionAdmins';
+import { insertProposalCoauthors } from './insertProposalCoauthors';
 
 /**
  * Makes every admin of the decision a co-author of the new developed
@@ -31,31 +30,15 @@ export async function addDevelopedProposalCoauthors({
     (admin) => admin.authUserId !== authorAuthUserId,
   );
 
-  if (coauthors.length === 0) {
-    return [];
-  }
-
-  const insertedCoauthors = await tx
-    .insert(profileUsers)
-    .values(
-      coauthors.map(({ authUserId, email }) => ({
-        profileId: proposalProfileId,
-        authUserId,
-        email,
-      })),
-    )
-    .returning({ id: profileUsers.id, authUserId: profileUsers.authUserId });
-
-  if (insertedCoauthors.length !== coauthors.length) {
-    throw new CommonError('Failed to add the co-authors of the proposal');
-  }
-
-  await tx.insert(profileUserToAccessRoles).values(
-    insertedCoauthors.map((coauthor) => ({
-      profileUserId: coauthor.id,
-      accessRoleId: authorRoleId,
+  await insertProposalCoauthors({
+    tx,
+    coauthors: coauthors.map(({ authUserId, email }) => ({
+      profileId: proposalProfileId,
+      authUserId,
+      email,
     })),
-  );
+    roleId: authorRoleId,
+  });
 
-  return insertedCoauthors.map((coauthor) => coauthor.authUserId);
+  return coauthors.map((coauthor) => coauthor.authUserId);
 }
