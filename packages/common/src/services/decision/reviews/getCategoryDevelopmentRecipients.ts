@@ -4,9 +4,11 @@ import { permission } from 'access-zones';
 import { NotFoundError } from '../../../utils';
 import { selectEmailRecipients } from '../../../utils/email';
 import { listIndividualProfileRecipientsByProfileId } from '../../email/recipients';
-import { isCategoryReviewerDevelopConfirmed } from '../developLock';
+import {
+  countAdvancingByCategory,
+  isCategoryReviewerDevelopConfirmed,
+} from '../developLock';
 import { getProfileIdsWithDecisionPermission } from '../getProfileIdsWithDecisionPermission';
-import { countAdvancingByCategory } from './countAdvancingByCategory';
 
 export type CategoryDevelopmentRecipients = {
   /** At least one category reviewer row for the phase, and every one confirmed. */

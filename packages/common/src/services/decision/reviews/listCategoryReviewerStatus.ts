@@ -6,6 +6,7 @@ import { permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../../utils';
 import { assertProfileAccess } from '../../assert';
+import { countAdvancingByCategory } from '../developLock';
 import { getProcessCategories } from '../getProcessCategories';
 import { getPhases } from '../instancePhases';
 import { decisionPermission } from '../permissions';
@@ -16,7 +17,6 @@ import type {
   CategoryWithReviewerStatusSchema,
 } from '../schemas/reviews';
 import { getPreviousPhases } from '../utils/phaseOrder';
-import { countAdvancingByCategory } from './countAdvancingByCategory';
 
 /**
  * Every category of the instance with its category reviewers for the current
