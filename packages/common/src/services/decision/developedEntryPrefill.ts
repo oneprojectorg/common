@@ -68,8 +68,9 @@ export async function getDevelopedEntryPrefill({
   };
 
   let data: Record<string, unknown>;
+  let reviewPhaseIds: string[] = [];
   try {
-    const reviewInputs = await getSubmittedReviewInputs({
+    const reviews = await getSubmittedReviewInputs({
       instanceId: instance.id,
       mappings,
       sourceProposalIds,
@@ -84,11 +85,12 @@ export async function getDevelopedEntryPrefill({
           phaseId: sourcePhaseId,
           id,
         })),
-        ...reviewInputs,
+        ...reviews.inputs,
       ],
       mappings,
       user,
     }));
+    reviewPhaseIds = reviews.phaseIds;
   } catch (error) {
     // A refused mapping or source is a config error that fails every create.
     if (error instanceof ValidationError || error instanceof NotFoundError) {
@@ -103,6 +105,22 @@ export async function getDevelopedEntryPrefill({
       });
     }
     return null;
+  }
+
+  const unfilledFields = getUnfilledFields({
+    mappings,
+    data,
+    sourcePhaseId,
+    developPhaseId: developPhase.phaseId,
+    sourceCount: sourceProposalIds.length,
+    reviewPhaseIds,
+  });
+  if (unfilledFields) {
+    logger.warn('Develop prefill left mapped fields empty', {
+      ...context,
+      unfilledFields,
+      sourceProposalIds: sourceProposalIds.join(','),
+    });
   }
 
   const proposalData = toSystemFields(data);
@@ -129,6 +147,67 @@ export async function getDevelopedEntryPrefill({
   return { proposalData, documentUpdate };
 }
 
+function getUnfilledFields({
+  mappings,
+  data,
+  sourcePhaseId,
+  developPhaseId,
+  sourceCount,
+  reviewPhaseIds,
+}: {
+  mappings: SchemaMapping[];
+  data: Record<string, unknown>;
+  sourcePhaseId: string;
+  developPhaseId: string;
+  sourceCount: number;
+  reviewPhaseIds: string[];
+}): string {
+  const targets = new Set(
+    mappings.flatMap((mapping) => mapping.fields.map(({ to }) => to)),
+  );
+  const applicableRules = mappings
+    .filter(
+      (mapping) =>
+        mapping.to.type === 'proposal' &&
+        mapping.to.phaseId === developPhaseId &&
+        (mapping.from.type !== 'proposal' ||
+          mapping.from.phaseId === sourcePhaseId),
+    )
+    .flatMap((mapping) => {
+      // As in `buildDevelopPrefill`: several inputs drop the expression rules.
+      const isDropped =
+        sourceCount > 1 ||
+        (mapping.from.type === 'review' &&
+          reviewPhaseIds.filter((id) => id === mapping.from.phaseId).length >
+            1);
+      return mapping.fields.map((field) => ({
+        to: field.to,
+        isDropped: isDropped && typeof field.from !== 'string',
+      }));
+    });
+
+  return [...targets]
+    .filter((field) => {
+      const value = data[field];
+      return (
+        !Object.hasOwn(data, field) ||
+        (Array.isArray(value) && value.length === 0)
+      );
+    })
+    .map((field) => {
+      const rules = applicableRules.filter(({ to }) => to === field);
+      if (rules.length === 0) {
+        return `${field}:wrong_phase`;
+      }
+      if (rules.every(({ isDropped }) => isDropped)) {
+        return `${field}:rule_dropped`;
+      }
+      return `${field}:no_value`;
+    })
+    .sort()
+    .join(',');
+}
+
 async function getSubmittedReviewInputs({
   instanceId,
   mappings,
@@ -137,9 +216,9 @@ async function getSubmittedReviewInputs({
   instanceId: string;
   mappings: SchemaMapping[];
   sourceProposalIds: string[];
-}): Promise<DevelopPrefillInput[]> {
+}): Promise<{ inputs: DevelopPrefillInput[]; phaseIds: string[] }> {
   if (!mappings.some((mapping) => mapping.from.type === 'review')) {
-    return [];
+    return { inputs: [], phaseIds: [] };
   }
 
   const reviews = await db.query.proposalReviews.findMany({
@@ -151,9 +230,13 @@ async function getSubmittedReviewInputs({
       },
     },
     columns: { id: true },
+    with: { assignment: { columns: { phaseId: true } } },
   });
 
-  return reviews.map((review) => ({ type: 'review', id: review.id }));
+  return {
+    inputs: reviews.map((review) => ({ type: 'review', id: review.id })),
+    phaseIds: reviews.map((review) => review.assignment.phaseId),
+  };
 }
 
 /**
