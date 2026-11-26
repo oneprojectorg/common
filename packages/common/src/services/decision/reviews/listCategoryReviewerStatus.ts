@@ -1,11 +1,5 @@
-import { and, count, db, eq, exists, isNull, ne } from '@op/db/client';
-import {
-  ProposalRelationshipType,
-  ProposalStatus,
-  proposalCategories,
-  proposalRelationships,
-  proposals,
-} from '@op/db/schema';
+import { and, count, db, eq, ne } from '@op/db/client';
+import { ProposalStatus, proposalCategories, proposals } from '@op/db/schema';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
@@ -15,7 +9,6 @@ import { assertProfileAccess } from '../../assert';
 import { getProcessCategories } from '../getProcessCategories';
 import { getPhases } from '../instancePhases';
 import { decisionPermission } from '../permissions';
-import { activeProposalPredicate } from '../phaseEligibility';
 import { resolveProposalListScope } from '../resolveProposalListScope';
 import { categoryReviewerDataSchema } from '../schemas/categoryReviewerData';
 import type {
@@ -23,6 +16,7 @@ import type {
   CategoryWithReviewerStatusSchema,
 } from '../schemas/reviews';
 import { getPreviousPhases } from '../utils/phaseOrder';
+import { countAdvancingByCategory } from './countAdvancingByCategory';
 
 /**
  * Every category of the instance with its category reviewers for the current
@@ -168,50 +162,6 @@ async function countSourcesByCategory({
       and(
         listScope.buildWhereClause(proposals),
         ne(proposals.status, ProposalStatus.DRAFT),
-      ),
-    )
-    .groupBy(proposalCategories.taxonomyTermId);
-
-  return new Map(rows.map((row) => [row.taxonomyTermId, row.total]));
-}
-
-/** The entries `publishDevelopedProposals` publishes, grouped by category. */
-async function countAdvancingByCategory({
-  processInstanceId,
-}: {
-  processInstanceId: string;
-}): Promise<Map<string, number>> {
-  const rows = await db
-    .select({
-      taxonomyTermId: proposalCategories.taxonomyTermId,
-      total: count(),
-    })
-    .from(proposals)
-    .innerJoin(
-      proposalCategories,
-      eq(proposalCategories.proposalId, proposals.id),
-    )
-    .where(
-      and(
-        eq(proposals.processInstanceId, processInstanceId),
-        eq(proposals.status, ProposalStatus.SUBMITTED),
-        activeProposalPredicate(proposals),
-        exists(
-          db
-            .select({ id: proposalRelationships.id })
-            .from(proposalRelationships)
-            .where(
-              and(
-                eq(proposalRelationships.processInstanceId, processInstanceId),
-                eq(proposalRelationships.targetProposalId, proposals.id),
-                eq(
-                  proposalRelationships.relationshipType,
-                  ProposalRelationshipType.DEVELOPED,
-                ),
-                isNull(proposalRelationships.deletedAt),
-              ),
-            ),
-        ),
       ),
     )
     .groupBy(proposalCategories.taxonomyTermId);

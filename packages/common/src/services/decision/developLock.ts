@@ -1,4 +1,4 @@
-import { type DbClient, and, db, eq, sql } from '@op/db/client';
+import { type DbClient, type SQL, and, db, eq, sql } from '@op/db/client';
 import { categoryReviewers, users } from '@op/db/schema';
 import { checkPermission, permission } from 'access-zones';
 
@@ -129,7 +129,7 @@ async function hasConfirmedEveryOwnCategory({
     .select({
       allConfirmed: sql<
         boolean | null
-      >`bool_and(${categoryReviewers.data} ->> 'developConfirmedAt' IS NOT NULL)`,
+      >`bool_and(${isCategoryReviewerDevelopConfirmed()})`,
     })
     .from(categoryReviewers)
     .innerJoin(users, eq(users.profileId, categoryReviewers.reviewerProfileId))
@@ -160,7 +160,7 @@ export async function isEveryCategoryDevelopConfirmed({
     .select({
       allConfirmed: sql<
         boolean | null
-      >`bool_and(${categoryReviewers.data} ->> 'developConfirmedAt' IS NOT NULL)`,
+      >`bool_and(${isCategoryReviewerDevelopConfirmed()})`,
     })
     .from(categoryReviewers)
     .where(
@@ -171,4 +171,9 @@ export async function isEveryCategoryDevelopConfirmed({
     );
 
   return result?.allConfirmed === true;
+}
+
+/** True for a category reviewer row whose develop work is confirmed. */
+export function isCategoryReviewerDevelopConfirmed(): SQL<boolean> {
+  return sql<boolean>`${categoryReviewers.data} ->> 'developConfirmedAt' IS NOT NULL`;
 }

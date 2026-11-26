@@ -111,6 +111,16 @@ export const Events = {
       toPhaseId: z.string().min(1),
     }),
   },
+  // Sent on every confirm, also when other rows of the category are not
+  // confirmed yet. The consumer reads the rows to know if it is complete.
+  categoryDevelopmentConfirmed: {
+    name: 'decision/category-development-confirmed' as const,
+    schema: z.object({
+      processInstanceId: z.string().uuid(),
+      phaseId: z.string().min(1),
+      taxonomyTermId: z.string().uuid(),
+    }),
+  },
   // Refs only, both addressed by id: a revert retires the result row, and any
   // later transition would hide the copy. The message bodies live on the
   // transition row.

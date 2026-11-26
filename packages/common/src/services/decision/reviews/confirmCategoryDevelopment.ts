@@ -9,6 +9,7 @@ import {
   assertCategoryDevelopAccess,
   categoryDevelopRowsWhere,
 } from './assertCategoryDevelopAccess';
+import { sendCategoryDevelopmentConfirmed } from './sendCategoryDevelopmentConfirmed';
 
 /**
  * Stamps `data.developConfirmedAt` on category reviewer rows for the current
@@ -44,7 +45,10 @@ export async function confirmCategoryDevelopment({
       data: sql`${categoryReviewers.data} || ${JSON.stringify({ developConfirmedAt: now })}::jsonb`,
     })
     .where(categoryDevelopRowsWhere({ processInstanceId, access }))
-    .returning({ reviewerProfileId: categoryReviewers.reviewerProfileId });
+    .returning({
+      reviewerProfileId: categoryReviewers.reviewerProfileId,
+      taxonomyTermId: categoryReviewers.taxonomyTermId,
+    });
 
   if (updated.length === 0) {
     throw new NotFoundError(
@@ -53,6 +57,12 @@ export async function confirmCategoryDevelopment({
       'No category reviewer to confirm for the current phase',
     );
   }
+
+  sendCategoryDevelopmentConfirmed({
+    processInstanceId,
+    phaseId: access.phaseId,
+    taxonomyTermIds: [...new Set(updated.map((row) => row.taxonomyTermId))],
+  });
 
   if (access.isAdmin) {
     logger.info('Admin confirmed category development', {

@@ -101,6 +101,7 @@ export {
   createReviewAssignment,
   createReviewScenario,
   createRevisionRequest,
+  createTestTaxonomyTerm,
   defaultReviewSettings,
   ensureProposalCategoryTerms,
   getCurrentProposalHistoryId,
