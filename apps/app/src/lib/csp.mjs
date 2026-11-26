@@ -176,10 +176,16 @@ export const getStaticCspHeader = () => ({
   }),
 });
 
-/** Media only: a Web Worker takes its CSP from its own script response. */
+/**
+ * Fonts and images only: `media/` also holds Web Workers (maplibre's), which
+ * take their CSP from their own script response.
+ */
+const STATIC_MEDIA_FILE =
+  ':file([^/]+\\.(?:woff2?|ttf|otf|eot|png|jpe?g|gif|webp|avif|ico|bmp|svg))';
+
 export const STATIC_MEDIA_SOURCES = [
-  '/_next/static/media/:path*',
-  '/_next/static/immutable/media/:path*',
+  `/_next/static/media/${STATIC_MEDIA_FILE}`,
+  `/_next/static/immutable/media/${STATIC_MEDIA_FILE}`,
 ];
 
 export const STATIC_MEDIA_CONTENT_SECURITY_POLICY = [
@@ -187,6 +193,8 @@ export const STATIC_MEDIA_CONTENT_SECURITY_POLICY = [
   "style-src 'unsafe-inline'",
   "frame-ancestors 'none'",
   'sandbox',
+  `report-uri ${CSP_REPORT_PATH}`,
+  `report-to ${CSP_REPORT_GROUP}`,
 ].join('; ');
 
 /** @returns {{ key: string, value: string }} */
