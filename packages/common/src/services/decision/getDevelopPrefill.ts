@@ -33,6 +33,7 @@ import {
 } from './resolveProposalTemplate';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
+import { getDevelopPrefillLogAttributes } from './utils/developPrefillLog';
 import { assertInstancePhase } from './utils/instance';
 
 /**
@@ -458,6 +459,7 @@ const getAssembledProposalData = async ({
         logger.warn(
           'Develop prefill skipped an unavailable proposal document',
           {
+            ...getDevelopPrefillLogAttributes('source_unavailable'),
             proposalId: proposal.id,
           },
         );

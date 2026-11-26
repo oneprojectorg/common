@@ -26,6 +26,10 @@ import {
   parseProposalData,
 } from './proposalDataSchema';
 import type { PhaseInstanceData } from './schemas/instanceData';
+import {
+  getDevelopPrefillLogAttributes,
+  getDevelopPrefillSummary,
+} from './utils/developPrefillLog';
 import { getPreviousPhases } from './utils/phaseOrder';
 
 /** What a new developed proposal starts with, from its sources. */
@@ -58,14 +62,20 @@ export async function getDevelopedEntryPrefill({
   const sourcePhaseId = getPreviousPhases({ phases }, developPhase.phaseId).at(
     -1,
   )?.phaseId;
-  if (mappings.length === 0 || !sourcePhaseId) {
-    return null;
-  }
-
   const context = {
     processInstanceId: instance.id,
     phaseId: developPhase.phaseId,
   };
+  if (mappings.length === 0) {
+    return null;
+  }
+  if (!sourcePhaseId) {
+    logger.warn('Develop prefill has no source phase; skipping it', {
+      ...getDevelopPrefillLogAttributes('no_source_phase'),
+      ...context,
+    });
+    return null;
+  }
 
   let data: Record<string, unknown>;
   try {
@@ -93,11 +103,17 @@ export async function getDevelopedEntryPrefill({
     // A refused mapping or source is a config error that fails every create.
     if (error instanceof ValidationError || error instanceof NotFoundError) {
       logger.error('Develop prefill refused; creating the entry without it', {
+        ...getDevelopPrefillLogAttributes('refused'),
+        reason:
+          error instanceof ValidationError
+            ? 'ValidationError'
+            : 'NotFoundError',
         ...context,
         error,
       });
     } else {
       logger.warn('Develop prefill failed; creating the entry without it', {
+        ...getDevelopPrefillLogAttributes('failed'),
         ...context,
         error,
       });
@@ -106,6 +122,25 @@ export async function getDevelopedEntryPrefill({
   }
 
   const proposalData = toSystemFields(data);
+
+  const summary = getDevelopPrefillSummary({
+    mappings,
+    sourcePhaseId,
+    developPhaseId: developPhase.phaseId,
+    data,
+    proposalData,
+  });
+  const summaryRecord = {
+    ...getDevelopPrefillLogAttributes(summary.outcome),
+    ...summary,
+    ...context,
+    sourceCount: sourceProposalIds.length,
+  };
+  if (summary.outcome === 'filled') {
+    logger.info('Develop prefill filled the entry', summaryRecord);
+  } else {
+    logger.warn('Develop prefill partly filled the entry', summaryRecord);
+  }
 
   let documentUpdate: Uint8Array<ArrayBuffer> | null = null;
   try {
@@ -121,6 +156,7 @@ export async function getDevelopedEntryPrefill({
     });
   } catch (error) {
     logger.warn('Could not build the entry document from the develop sources', {
+      ...getDevelopPrefillLogAttributes('document_failed'),
       ...context,
       error,
     });
@@ -197,6 +233,7 @@ export async function seedDevelopedEntryDocument({
     await getTipTapClient().createDocument(collaborationDocId, documentUpdate);
   } catch (error) {
     logger.warn('Could not seed the developed entry document', {
+      ...getDevelopPrefillLogAttributes('document_failed'),
       error,
       collaborationDocId,
     });
@@ -296,6 +333,7 @@ async function getFragmentCopies({
         });
       } catch (error) {
         logger.warn('Develop prefill skipped an unreadable source document', {
+          ...getDevelopPrefillLogAttributes('source_unavailable'),
           proposalId: id,
           error,
         });

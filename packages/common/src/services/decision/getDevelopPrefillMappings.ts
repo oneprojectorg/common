@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { type SchemaMapping, schemaMappingSchema } from '../../schemaMapping';
 import type { PhaseInstanceData } from './schemas/instanceData';
+import { getDevelopPrefillLogAttributes } from './utils/developPrefillLog';
 
 const developPrefillMappingsSchema = z.array(schemaMappingSchema);
 
@@ -20,6 +21,7 @@ export function getDevelopPrefillMappings(
 
   if (!developPrefillMappingsSchema.validate(mappings)) {
     logger.error('Ignoring invalid develop prefill mappings', {
+      ...getDevelopPrefillLogAttributes('invalid_mappings'),
       phaseId: phase.phaseId,
     });
     return [];
