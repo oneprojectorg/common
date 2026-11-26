@@ -2,12 +2,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   REPORTING_ENDPOINTS_HEADER,
+  STATIC_MEDIA_CONTENT_SECURITY_POLICY,
+  STATIC_MEDIA_SOURCES,
   VERCEL_TOOLBAR_ORIGIN,
   buildNonceContentSecurityPolicy,
   buildStaticContentSecurityPolicy,
   createCspHeaderApplier,
   createCspNonce,
   getStaticCspHeader,
+  getStaticMediaCspHeader,
   isStaticPolicyPath,
 } from './csp.mjs';
 
@@ -321,6 +324,34 @@ describe('getStaticCspHeader', () => {
     vi.stubEnv('CSP_MODE', 'report-only');
 
     expect(getStaticCspHeader().key).toBe(
+      'content-security-policy-report-only',
+    );
+  });
+});
+
+describe('static media policy', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('lets build media load and run nothing', () => {
+    const directives = parseDirectives(STATIC_MEDIA_CONTENT_SECURITY_POLICY);
+
+    expect(directives.get('default-src')).toEqual(["'none'"]);
+    expect(directives.has('script-src')).toBe(false);
+    expect(directives.has('sandbox')).toBe(true);
+  });
+
+  it('covers only media, never the chunks a Web Worker loads from', () => {
+    for (const source of STATIC_MEDIA_SOURCES) {
+      expect(source).toMatch(/^\/_next\/static\/(?:immutable\/)?media\//);
+    }
+  });
+
+  it('follows the CSP_MODE rollback lever', () => {
+    vi.stubEnv('CSP_MODE', 'report-only');
+
+    expect(getStaticMediaCspHeader().key).toBe(
       'content-security-policy-report-only',
     );
   });

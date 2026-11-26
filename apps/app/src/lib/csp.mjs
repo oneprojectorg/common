@@ -177,6 +177,33 @@ export const getStaticCspHeader = () => ({
 });
 
 /**
+ * Build media — fonts and images under `/_next/static/.../media/` — never
+ * renders as a page, but an SVG opened directly is a document that could run
+ * script, and scanners flag any response without a policy. Nothing here may
+ * load or run anything. Scoped to media rather than all of `/_next/static`
+ * because a bundled Web Worker takes its policy from its own response, and
+ * `default-src 'none'` would cut it off.
+ */
+export const STATIC_MEDIA_SOURCES = [
+  '/_next/static/media/:path*',
+  '/_next/static/immutable/media/:path*',
+];
+
+export const STATIC_MEDIA_CONTENT_SECURITY_POLICY = [
+  "default-src 'none'",
+  // Lets a directly opened SVG keep its inline styles; nothing else loads.
+  "style-src 'unsafe-inline'",
+  "frame-ancestors 'none'",
+  'sandbox',
+].join('; ');
+
+/** @returns {{ key: string, value: string }} */
+export const getStaticMediaCspHeader = () => ({
+  key: getCspHeaderName(),
+  value: STATIC_MEDIA_CONTENT_SECURITY_POLICY,
+});
+
+/**
  * The proxy stamps the same policy on the forwarded request headers and on the
  * response, so the nonce is minted once here and closed over.
  *

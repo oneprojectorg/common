@@ -7,8 +7,10 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 import {
   REPORTING_ENDPOINTS_HEADER,
+  STATIC_MEDIA_SOURCES,
   STATIC_POLICY_SOURCES,
   getStaticCspHeader,
+  getStaticMediaCspHeader,
 } from './src/lib/csp.mjs';
 
 const withNextIntl = createNextIntlPlugin('./src/lib/i18n/request.ts');
@@ -141,6 +143,12 @@ const config = {
       ...STATIC_POLICY_SOURCES.map((source) => ({
         source,
         headers: [staticCspHeader],
+      })),
+      // Build fonts and images: the proxy matcher skips `_next/static`, so
+      // this is their only policy.
+      ...STATIC_MEDIA_SOURCES.map((source) => ({
+        source,
+        headers: [getStaticMediaCspHeader()],
       })),
     ];
   },
