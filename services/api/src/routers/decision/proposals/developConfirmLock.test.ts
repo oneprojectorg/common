@@ -1,12 +1,10 @@
-import { getInstancePhases } from '@op/common';
 import {
   TEST_PERMISSION_BITS,
   TestDecisionsDataManager,
+  addResultsPhase,
   createDevelopPhaseSetup,
-  syncPhaseRows,
 } from '@op/common/testing';
-import { db, eq } from '@op/db/client';
-import { ProposalStatus, processInstances } from '@op/db/schema';
+import { ProposalStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { createCategoryDevelopReviewer } from '../../../test/helpers/categoryDevelopTestUtils';
@@ -231,7 +229,7 @@ async function createLockSetup({
   if (!termA || !termB) {
     throw new Error('Expected two category terms');
   }
-  await addResultsPhase(instanceId);
+  await addResultsPhase({ instanceId });
 
   return { setup, instanceId, source, termA, termB };
 }
@@ -265,29 +263,4 @@ async function createEntry({
   testData.trackProfileForCleanup(entry.profileId);
 
   return entry;
-}
-
-async function addResultsPhase(processInstanceId: string): Promise<void> {
-  const instance = await db.query.processInstances.findFirst({
-    where: { id: processInstanceId },
-    columns: { instanceData: true },
-  });
-  const instanceData = instance?.instanceData;
-  if (instanceData === null || typeof instanceData !== 'object') {
-    throw new Error(`Instance ${processInstanceId} has no instanceData`);
-  }
-
-  await db
-    .update(processInstances)
-    .set({
-      instanceData: {
-        ...instanceData,
-        phases: [
-          ...getInstancePhases(instanceData),
-          { phaseId: 'results', name: 'Results', rules: {} },
-        ],
-      },
-    })
-    .where(eq(processInstances.id, processInstanceId));
-  await syncPhaseRows(processInstanceId);
 }

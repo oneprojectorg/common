@@ -11,6 +11,17 @@ import { isDevelopWindowOpen } from './isDevelopWindowOpen';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 
+export type ProposalContentEditAccess = 'allowed' | 'forbidden' | 'closed';
+
+type ContentEditProposal = { id: string; status: string | null };
+
+type ContentEditInstance = {
+  id: string;
+  instanceData: unknown;
+  currentStateId: string | null;
+  phases: readonly PhaseInstanceData[];
+};
+
 /** `profile: UPDATE` on the proposal, or `decisions: UPDATE` on the decision. */
 export function hasProposalContentEditPermission({
   proposalRoles,
@@ -25,23 +36,52 @@ export function hasProposalContentEditPermission({
   );
 }
 
-/**
- * Whether the content of this proposal is open to edits for a caller who
- * already holds `hasProposalContentEditPermission`.
- */
-export async function isProposalContentEditOpen({
-  proposal,
-  instance,
+/** `profile: ADMIN` or `decisions: ADMIN` on the decision profile. */
+export function hasDecisionAdminPermission({
   instanceRoles,
 }: {
-  proposal: { id: string; status: string | null };
-  instance: {
-    id: string;
-    instanceData: unknown;
-    currentStateId: string | null;
-    phases: readonly PhaseInstanceData[];
-  };
   instanceRoles: NormalizedRole[];
+}): boolean {
+  return checkPermission(
+    [{ profile: permission.ADMIN }, { decisions: permission.ADMIN }],
+    instanceRoles,
+  );
+}
+
+/**
+ * Combines the caller's role facts with the edit window of the proposal. A
+ * decision admin edits outside the window.
+ */
+export async function resolveProposalContentEditAccess({
+  canEditContent,
+  isDecisionAdmin,
+  proposal,
+  instance,
+}: {
+  canEditContent: boolean;
+  isDecisionAdmin: boolean;
+  proposal: ContentEditProposal;
+  instance: ContentEditInstance;
+}): Promise<ProposalContentEditAccess> {
+  if (!canEditContent) {
+    return 'forbidden';
+  }
+
+  if (isDecisionAdmin) {
+    return 'allowed';
+  }
+
+  return (await isProposalContentEditWindowOpen({ proposal, instance }))
+    ? 'allowed'
+    : 'closed';
+}
+
+async function isProposalContentEditWindowOpen({
+  proposal,
+  instance,
+}: {
+  proposal: ContentEditProposal;
+  instance: ContentEditInstance;
 }): Promise<boolean> {
   if (
     proposal.status === ProposalStatus.DRAFT ||
@@ -50,15 +90,6 @@ export async function isProposalContentEditOpen({
       currentPhaseId: instance.currentStateId,
     })
   ) {
-    return true;
-  }
-
-  const isInstanceAdmin = checkPermission(
-    [{ profile: permission.ADMIN }, { decisions: permission.ADMIN }],
-    instanceRoles,
-  );
-
-  if (isInstanceAdmin) {
     return true;
   }
 

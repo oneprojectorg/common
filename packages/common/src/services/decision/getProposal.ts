@@ -27,12 +27,24 @@ import {
 } from './permissions';
 import { isAnonymousAuthor } from './proposalAuthor';
 import {
+  hasDecisionAdminPermission,
   hasProposalContentEditPermission,
-  isProposalContentEditOpen,
+  resolveProposalContentEditAccess,
 } from './proposalContentEditAccess';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import { isLastPhase } from './schemas/instanceData';
 import { ProposalTemplateSchema } from './types';
+
+type ProposalWithInstance = Proposal & { processInstance: ProcessInstance };
+
+type ProposalAccess = { access: DecisionRolePermissions; isEditable: boolean };
+
+type ProposalRolePermissions = {
+  access: DecisionRolePermissions;
+  canEditContent: boolean;
+  isDecisionAdmin: boolean;
+};
 
 /** Attachment with signed URL for accessing the file */
 type AttachmentWithUrl = {
@@ -274,13 +286,47 @@ async function getProposalEngagementCounts(profileId: string | null) {
   };
 }
 
-export const getPermissionsOnProposal = async ({
+/** The caller's permissions on a proposal, and whether they may edit its content now. */
+export const getProposalAccess = async ({
   user,
   proposal,
 }: {
   user: User | undefined;
-  proposal: Proposal & { processInstance: ProcessInstance };
-}): Promise<{ access: DecisionRolePermissions; isEditable: boolean }> => {
+  proposal: ProposalWithInstance;
+}): Promise<ProposalAccess> => {
+  const { access, canEditContent, isDecisionAdmin } =
+    await getPermissionsOnProposal({ user, proposal });
+
+  // Skips the phase load for a caller who may never edit.
+  if (!canEditContent) {
+    return { access, isEditable: false };
+  }
+
+  const instance = await resolvePhases({ instance: proposal.processInstance });
+
+  // `updateProposal` refuses every edit in the results phase before its gate.
+  if (isLastPhase(instance.currentStateId, instance.phases)) {
+    return { access, isEditable: false };
+  }
+
+  const contentEditAccess = await resolveProposalContentEditAccess({
+    canEditContent,
+    isDecisionAdmin,
+    proposal,
+    instance,
+  });
+
+  return { access, isEditable: contentEditAccess === 'allowed' };
+};
+
+/** What the caller may do on a proposal by role alone. */
+const getPermissionsOnProposal = async ({
+  user,
+  proposal,
+}: {
+  user: User | undefined;
+  proposal: ProposalWithInstance;
+}): Promise<ProposalRolePermissions> => {
   const roles = await getProfileAccessRoles({
     user,
     profileId: proposal.profileId,
@@ -300,7 +346,7 @@ export const getPermissionsOnProposal = async ({
   }
 
   if (!proposal.processInstance.profileId) {
-    return { access, isEditable: false };
+    return { access, canEditContent: false, isDecisionAdmin: false };
   }
 
   // The comment / post-write gate in `assertPostWriteAccess` walks proposal
@@ -327,17 +373,14 @@ export const getPermissionsOnProposal = async ({
     access.submitProposals = true;
   }
 
-  // Mirrors the content-edit gate in `assertProposalUpdateAccess`.
-  const isEditable =
-    hasProposalContentEditPermission({
+  return {
+    access,
+    canEditContent: hasProposalContentEditPermission({
       proposalRoles: roles,
       instanceRoles: decisionRoles,
-    }) &&
-    (await isProposalContentEditOpen({
-      proposal,
-      instance: await resolvePhases({ instance: proposal.processInstance }),
+    }),
+    isDecisionAdmin: hasDecisionAdminPermission({
       instanceRoles: decisionRoles,
-    }));
-
-  return { access, isEditable };
+    }),
+  };
 };

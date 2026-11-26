@@ -1,6 +1,7 @@
 import { mockCollab, textFragment } from '@op/collab/testing';
 import {
   TestDecisionsDataManager,
+  addResultsPhase,
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
 } from '@op/common/testing';
@@ -246,6 +247,7 @@ describe.concurrent('getProposal', () => {
     const { setup, instanceId, source } = await createDevelopPhaseSetup({
       testData,
     });
+    await addResultsPhase({ instanceId });
     const [author, otherDeveloper] = await Promise.all([
       createDevelopProposalsMember({ testData, setup }),
       createDevelopProposalsMember({ testData, setup }),
@@ -327,6 +329,48 @@ describe.concurrent('getProposal', () => {
         data: { title: 'Edited by a member' },
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('marks no proposal editable in the results phase, not even for a decision admin, as the update refuses it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+    const author = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const proposal = await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Submitted' },
+    });
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
+    await db
+      .update(processInstances)
+      .set({ currentStateId: 'final' })
+      .where(eq(processInstances.id, instance.instance.id));
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    const adminView = await adminCaller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(adminView.isEditable).toBe(false);
+    await expect(
+      adminCaller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: { title: 'Edited in the results phase' },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 
   // Mirrors the server `assertPostWriteAccess` comment gate — a decision

@@ -3,14 +3,17 @@ import {
   ProcessStatus,
   ProposalStatus,
   decisionTransitionProposals,
+  processInstances,
 } from '@op/db/schema';
 
+import { getInstancePhases } from '../../src';
 import {
   TEST_PERMISSION_BITS,
   grantInstanceRole,
   testDevelopSchema,
 } from '../data/decision-data';
 import type { TestDecisionsDataManager } from './TestDecisionsDataManager';
+import { syncPhaseRows } from './phaseRowFixtures';
 
 /**
  * A published instance in its develop phase ("final") with `sourceCount`
@@ -98,4 +101,34 @@ export async function createDevelopProposalsMember({
       TEST_PERMISSION_BITS.READ | TEST_PERMISSION_BITS.DEVELOP_PROPOSALS,
   });
   return member;
+}
+
+/** Appends a results phase, so the develop phase is no longer the last. */
+export async function addResultsPhase({
+  instanceId,
+}: {
+  instanceId: string;
+}): Promise<void> {
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
+    columns: { instanceData: true },
+  });
+  const instanceData = instance?.instanceData;
+  if (instanceData === null || typeof instanceData !== 'object') {
+    throw new Error(`Instance ${instanceId} has no instanceData`);
+  }
+
+  await db
+    .update(processInstances)
+    .set({
+      instanceData: {
+        ...instanceData,
+        phases: [
+          ...getInstancePhases(instanceData),
+          { phaseId: 'results', name: 'Results', rules: {} },
+        ],
+      },
+    })
+    .where(eq(processInstances.id, instanceId));
+  await syncPhaseRows(instanceId);
 }

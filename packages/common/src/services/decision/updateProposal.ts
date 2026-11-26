@@ -23,8 +23,9 @@ import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
 import { getPhases } from './instancePhases';
 import {
+  hasDecisionAdminPermission,
   hasProposalContentEditPermission,
-  isProposalContentEditOpen,
+  resolveProposalContentEditAccess,
 } from './proposalContentEditAccess';
 import type {
   CheckpointVersion,
@@ -308,17 +309,21 @@ export async function assertProposalUpdateAccess({
     profileId: proposal.profileId,
   });
 
-  if (!hasProposalContentEditPermission({ proposalRoles, instanceRoles })) {
+  const contentEditAccess = await resolveProposalContentEditAccess({
+    canEditContent: hasProposalContentEditPermission({
+      proposalRoles,
+      instanceRoles,
+    }),
+    isDecisionAdmin: hasDecisionAdminPermission({ instanceRoles }),
+    proposal,
+    instance: { ...processInstance, phases: instancePhases },
+  });
+
+  if (contentEditAccess === 'forbidden') {
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  const isEditOpen = await isProposalContentEditOpen({
-    proposal,
-    instance: { ...processInstance, phases: instancePhases },
-    instanceRoles,
-  });
-
-  if (!isEditOpen) {
+  if (contentEditAccess === 'closed') {
     throw new UnauthorizedError('Editing proposals is closed for this phase');
   }
 }
