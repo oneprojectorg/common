@@ -1791,6 +1791,7 @@
       "publishNotConfirmedError": "Qayb kasta waa in la xaqiijiyaa ka hor intaadan daabicin.",
       "alreadyPublishedError": "Wejigan horay ayaa loo daabacay ama wuu isbeddelay. Cusboonaysii bogga.",
       "categoriesLoadError": "Lama soo rari karin qaybaha",
+      "categoryNotFoundTitle": "Qaybta lama helin",
       "sourcesAcrossCategoriesCount": "{count, plural, one {# soo jeedin} other {# soo jeedinno}} oo ku kala baahsan {categories, plural, one {# qayb} other {# qaybood}}",
       "sourcesAcrossDistrictsCount": "{count, plural, one {# soo jeedin} other {# soo jeedinno}} oo ku kala baahsan {categories, plural, one {# degmo} other {# degmooyin}}",
       "sourcesInCategoryCount": "{count, plural, one {# soo jeedin} other {# soo jeedinno}} ee <bdi>{category}</bdi>",

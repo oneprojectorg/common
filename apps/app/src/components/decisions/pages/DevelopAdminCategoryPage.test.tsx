@@ -160,15 +160,15 @@ const sources = [
   source({ id: 'empty-source', name: 'Empty source', developedProposals: [] }),
 ];
 
-function renderPage() {
+function renderPage({ categoryId = 'parks' }: { categoryId?: string } = {}) {
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
       <DevelopAdminCategoryPage
         instance={instance}
         sourcePhase={{ phaseId: 'review', rules: {} }}
         decisionSlug="decision"
-        categoryId="parks"
-        onBack={vi.fn()}
+        categoryId={categoryId}
+        backHref="/decisions/decision"
       />
     </NextIntlClientProvider>,
   );
@@ -291,6 +291,19 @@ describe('DevelopAdminCategoryPage', () => {
       processInstanceId: instance.id,
       taxonomyTermId: 'parks',
     });
+  });
+
+  it('shows that the category is not found when no category matches the id, with the Back link', () => {
+    renderPage({ categoryId: 'unknown' });
+
+    expect(screen.getByText('Category not found')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Back' })).toHaveProperty(
+      'href',
+      expect.stringContaining('/decisions/decision'),
+    );
+    expect(listDevelopSources).not.toHaveBeenCalled();
+    expect(screen.queryByRole('table')).toBeNull();
+    expect(screen.queryByRole('contentinfo')).toBeNull();
   });
 
   it('offers no confirm for a category without reviewers', () => {

@@ -169,16 +169,13 @@ function SourcesPanelShell({
 }: DevelopSourcesPanelProps & {
   renderTable: (props: SourcesTableProps) => ReactNode;
 }) {
-  const t = useTranslations('decisions.develop');
   const scope = getDevelopSourceScope(instance);
 
   if (!sourcePhase) {
     return (
       <div className="flex flex-col gap-10">
         <div className="flex min-h-11 items-center">
-          <Header2 className="text-title font-normal">
-            {t('sourcesCount', { count: 0 })}
-          </Header2>
+          <SourcesCountHeading count={0} category={category} />
         </div>
         <NoSourcesEmpty scope={scope} />
       </div>
@@ -404,15 +401,7 @@ function SourcesTable({
       {/* The Entries tab's search row's height, so the count holds still
           across tabs. */}
       <div aria-live="polite" className="flex min-h-11 items-center">
-        <Header2 className="text-title font-normal">
-          {category
-            ? t.rich('develop.sourcesInCategoryCount', {
-                count: total,
-                category: category.name,
-                bdi: (chunks) => <bdi>{chunks}</bdi>,
-              })
-            : t('develop.sourcesCount', { count: total })}
-        </Header2>
+        <SourcesCountHeading count={total} category={category} />
       </div>
 
       {sources.length === 0 ? (
@@ -492,6 +481,28 @@ function SourcesTable({
         </div>
       )}
     </div>
+  );
+}
+
+function SourcesCountHeading({
+  count,
+  category,
+}: {
+  count: number;
+  category?: DevelopSourcesCategory;
+}) {
+  const t = useTranslations('decisions.develop');
+
+  return (
+    <Header2 className="text-title font-normal">
+      {category
+        ? t.rich('sourcesInCategoryCount', {
+            count,
+            category: category.name,
+            bdi: (chunks) => <bdi>{chunks}</bdi>,
+          })
+        : t('sourcesCount', { count })}
+    </Header2>
   );
 }
 

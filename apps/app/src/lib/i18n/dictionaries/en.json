@@ -1791,6 +1791,7 @@
       "publishNotConfirmedError": "Every category must be confirmed before you publish.",
       "alreadyPublishedError": "This phase is already published or has changed. Refresh the page.",
       "categoriesLoadError": "Could not load the categories",
+      "categoryNotFoundTitle": "Category not found",
       "sourcesAcrossCategoriesCount": "{count, plural, one {# proposal} other {# proposals}} across {categories, plural, one {# category} other {# categories}}",
       "sourcesAcrossDistrictsCount": "{count, plural, one {# proposal} other {# proposals}} across {categories, plural, one {# district} other {# districts}}",
       "sourcesInCategoryCount": "{count, plural, one {# proposal} other {# proposals}} in <bdi>{category}</bdi>",

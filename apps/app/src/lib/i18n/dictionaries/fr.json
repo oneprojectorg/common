@@ -1791,6 +1791,7 @@
       "publishNotConfirmedError": "Toutes les catégories doivent être confirmées avant la publication.",
       "alreadyPublishedError": "Cette phase est déjà publiée ou a changé. Actualisez la page.",
       "categoriesLoadError": "Impossible de charger les catégories",
+      "categoryNotFoundTitle": "Catégorie introuvable",
       "sourcesAcrossCategoriesCount": "{count, plural, one {# proposition} other {# propositions}} dans {categories, plural, one {# catégorie} other {# catégories}}",
       "sourcesAcrossDistrictsCount": "{count, plural, one {# proposition} other {# propositions}} dans {categories, plural, one {# district} other {# districts}}",
       "sourcesInCategoryCount": "{count, plural, one {# proposition} other {# propositions}} dans <bdi>{category}</bdi>",

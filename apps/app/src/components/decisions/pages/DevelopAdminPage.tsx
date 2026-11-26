@@ -6,10 +6,16 @@ import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
 import { isVotingPhase } from '@op/common/client';
 import { BadgeNumber } from '@op/sense/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@op/sense/Tabs';
-import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
-import { Suspense, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
+import {
+  createSerializer,
+  parseAsString,
+  parseAsStringLiteral,
+  useQueryState,
+} from 'nuqs';
+import { Suspense } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
+import { usePathname, useTranslations } from '@/lib/i18n';
 
 import { DevelopAdminCategoriesPanel } from '../DevelopProposals/DevelopAdminCategoriesPanel';
 import { DevelopAdminEntriesPanel } from '../DevelopProposals/DevelopAdminEntriesPanel';
@@ -29,6 +35,9 @@ const DEVELOP_CATEGORY_PARAM = 'developCategory';
 
 const developTabParser = parseAsStringLiteral(DEVELOP_TABS);
 
+const developCategoryParsers = { [DEVELOP_CATEGORY_PARAM]: parseAsString };
+const serializeDevelopCategory = createSerializer(developCategoryParsers);
+
 export function DevelopAdminPage({
   instance,
   decisionSlug,
@@ -41,10 +50,16 @@ export function DevelopAdminPage({
     DEVELOP_TAB_PARAM,
     developTabParser.withDefault(DEFAULT_DEVELOP_TAB),
   );
-  const [categoryId, setCategoryId] = useQueryState(
+  const [categoryId] = useQueryState(
     DEVELOP_CATEGORY_PARAM,
-    parseAsString,
+    developCategoryParsers[DEVELOP_CATEGORY_PARAM],
   );
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const getCategoryHref = (id: string | null) =>
+    serializeDevelopCategory(`${pathname}?${searchParams.toString()}`, {
+      [DEVELOP_CATEGORY_PARAM]: id,
+    });
   const phases = instance.instanceData.phases ?? [];
   const currentIndex = phases.findIndex(
     (phase) => phase.phaseId === instance.currentStateId,
@@ -57,14 +72,6 @@ export function DevelopAdminPage({
   const phaseId = instance.currentStateId ?? undefined;
   const entryName = t('develop.defaultEntryName');
 
-  // Pushed, so the browser's Back also returns to the categories.
-  const openCategory = (id: string) => {
-    void setCategoryId(id, { history: 'push', scroll: true });
-  };
-  const closeCategory = useCallback(() => {
-    void setCategoryId(null);
-  }, [setCategoryId]);
-
   if (categoryId) {
     return (
       <DevelopAdminCategoryPage
@@ -72,7 +79,7 @@ export function DevelopAdminPage({
         sourcePhase={sourcePhase}
         decisionSlug={decisionSlug}
         categoryId={categoryId}
-        onBack={closeCategory}
+        backHref={getCategoryHref(null)}
       />
     );
   }
@@ -113,7 +120,7 @@ export function DevelopAdminPage({
         <TabsContent value="categories">
           <DevelopAdminCategoriesPanel
             processInstanceId={instance.id}
-            onOpenCategory={openCategory}
+            getCategoryHref={getCategoryHref}
           />
         </TabsContent>
 

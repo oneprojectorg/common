@@ -3,7 +3,6 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type { CategoryWithReviewerStatusSchema } from '@op/common/client';
-import { Button } from '@op/sense/Button';
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@op/sense/Empty';
 import { Header2 } from '@op/sense/Header';
 import { Skeleton } from '@op/sense/Skeleton';
@@ -23,15 +22,17 @@ import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ButtonLink } from '@/components/ButtonLink';
+
 import { getCategoryConfirmedAt } from './developCategoryStatus';
 
-/** Each category's row opens that category's page through `onOpenCategory`. */
+/** Each category's name links to that category's page at `getCategoryHref`. */
 export function DevelopAdminCategoriesPanel({
   processInstanceId,
-  onOpenCategory,
+  getCategoryHref,
 }: {
   processInstanceId: string;
-  onOpenCategory: (categoryId: string) => void;
+  getCategoryHref: (categoryId: string) => string;
 }) {
   return (
     <div className="flex flex-col gap-10">
@@ -50,7 +51,7 @@ export function DevelopAdminCategoriesPanel({
         <Suspense fallback={<CategoriesTableSkeleton />}>
           <CategoriesTableSuspense
             processInstanceId={processInstanceId}
-            onOpenCategory={onOpenCategory}
+            getCategoryHref={getCategoryHref}
           />
         </Suspense>
       </APIErrorBoundary>
@@ -79,10 +80,10 @@ function CategoriesCountSuspense({
 
 function CategoriesTableSuspense({
   processInstanceId,
-  onOpenCategory,
+  getCategoryHref,
 }: {
   processInstanceId: string;
-  onOpenCategory: (categoryId: string) => void;
+  getCategoryHref: (categoryId: string) => string;
 }) {
   const [{ items }] = trpc.decision.listCategoryReviewerStatus.useSuspenseQuery(
     {
@@ -101,7 +102,7 @@ function CategoriesTableSuspense({
           <CategoryRow
             key={status.category.id}
             status={status}
-            onOpen={() => onOpenCategory(status.category.id)}
+            href={getCategoryHref(status.category.id)}
           />
         ))}
       </TableBody>
@@ -138,10 +139,10 @@ function CategoriesTable({ children }: { children: ReactNode }) {
 
 function CategoryRow({
   status,
-  onOpen,
+  href,
 }: {
   status: CategoryWithReviewerStatusSchema;
-  onOpen: () => void;
+  href: string;
 }) {
   const t = useTranslations('decisions.develop');
   const { category, sourceCount, advancingCount } = status;
@@ -150,14 +151,14 @@ function CategoryRow({
   return (
     <TableRow>
       <TableRowHeader className="py-4 whitespace-normal">
-        <Button
+        <ButtonLink
           variant="link"
           size="inline"
-          onClick={onOpen}
+          href={href}
           className="justify-start text-start whitespace-normal text-foreground"
         >
           <bdi>{category.name}</bdi>
-        </Button>
+        </ButtonLink>
       </TableRowHeader>
       <TableCell className="py-4 tabular-nums">{sourceCount}</TableCell>
       <TableCell className="py-4 tabular-nums">

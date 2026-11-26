@@ -1791,6 +1791,7 @@
       "publishNotConfirmedError": "يجب تأكيد كل الفئات قبل النشر.",
       "alreadyPublishedError": "هذه المرحلة منشورة بالفعل أو تغيّرت. حدّث الصفحة.",
       "categoriesLoadError": "تعذّر تحميل الفئات",
+      "categoryNotFoundTitle": "لم يتم العثور على الفئة",
       "sourcesAcrossCategoriesCount": "{count, plural, zero {لا مقترحات} one {مقترح واحد} two {مقترحان} few {# مقترحات} many {# مقترحًا} other {# مقترح}} في {categories, plural, zero {أي فئة} one {فئة واحدة} two {فئتين} few {# فئات} many {# فئة} other {# فئة}}",
       "sourcesAcrossDistrictsCount": "{count, plural, zero {لا مقترحات} one {مقترح واحد} two {مقترحان} few {# مقترحات} many {# مقترحًا} other {# مقترح}} في {categories, plural, zero {أي منطقة} one {منطقة واحدة} two {منطقتين} few {# مناطق} many {# منطقة} other {# منطقة}}",
       "sourcesInCategoryCount": "{count, plural, zero {لا مقترحات} one {مقترح واحد} two {مقترحان} few {# مقترحات} many {# مقترحًا} other {# مقترح}} في <bdi>{category}</bdi>",

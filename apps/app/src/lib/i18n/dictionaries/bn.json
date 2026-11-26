@@ -1791,6 +1791,7 @@
       "publishNotConfirmedError": "প্রকাশ করার আগে প্রতিটি বিভাগ নিশ্চিত হতে হবে।",
       "alreadyPublishedError": "এই ধাপটি ইতিমধ্যে প্রকাশিত হয়েছে বা পরিবর্তিত হয়েছে। পৃষ্ঠাটি রিফ্রেশ করুন।",
       "categoriesLoadError": "বিভাগগুলি লোড করা যায়নি",
+      "categoryNotFoundTitle": "বিভাগটি পাওয়া যায়নি",
       "sourcesAcrossCategoriesCount": "{categories, plural, one {#টি বিভাগে} other {#টি বিভাগে}} {count, plural, one {#টি প্রস্তাব} other {#টি প্রস্তাব}}",
       "sourcesAcrossDistrictsCount": "{categories, plural, one {#টি জেলায়} other {#টি জেলায়}} {count, plural, one {#টি প্রস্তাব} other {#টি প্রস্তাব}}",
       "sourcesInCategoryCount": "<bdi>{category}</bdi>-এ {count, plural, one {#টি প্রস্তাব} other {#টি প্রস্তাব}}",

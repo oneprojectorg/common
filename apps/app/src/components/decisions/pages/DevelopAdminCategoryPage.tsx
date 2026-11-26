@@ -3,11 +3,13 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import type { InstancePhaseData, ProcessInstance } from '@op/api/encoders';
-import { Button } from '@op/sense/Button';
-import { Suspense, useEffect } from 'react';
-import { LuArrowLeft } from 'react-icons/lu';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@op/sense/Empty';
+import { Suspense } from 'react';
+import { LuArrowLeft, LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { ButtonLink } from '@/components/ButtonLink';
 
 import { DevelopAdminCategoryFooter } from '../DevelopProposals/DevelopAdminCategoryFooter';
 import {
@@ -27,8 +29,8 @@ interface DevelopAdminCategoryPageProps {
   sourcePhase: InstancePhaseData | null;
   decisionSlug: string;
   categoryId: string;
-  /** Returns to the categories list. */
-  onBack: () => void;
+  /** The categories list, where Back leads. */
+  backHref: string;
 }
 
 /**
@@ -44,14 +46,14 @@ export function DevelopAdminCategoryPage(props: DevelopAdminCategoryPageProps) {
     <DevelopPageContent>
       <div className="flex flex-col gap-6">
         <div>
-          <Button variant="link" size="inline" onClick={props.onBack}>
+          <ButtonLink variant="link" size="inline" href={props.backHref}>
             <LuArrowLeft
               aria-hidden
               data-icon="inline-start"
               className="rtl:-scale-x-100"
             />
             {t('Back')}
-          </Button>
+          </ButtonLink>
         </div>
 
         <APIErrorBoundary fallbacks={{ default: () => <ProposalsLoadError /> }}>
@@ -69,24 +71,15 @@ function DevelopAdminCategorySourcesSuspense({
   sourcePhase,
   decisionSlug,
   categoryId,
-  onBack,
 }: DevelopAdminCategoryPageProps) {
   const [[{ items }, { lock }]] = trpc.useSuspenseQueries((q) => [
     q.decision.listCategoryReviewerStatus({ processInstanceId: instance.id }),
     q.decision.getDevelopConfirmState({ processInstanceId: instance.id }),
   ]);
   const status = items.find((item) => item.category.id === categoryId);
-  const isKnownCategory = Boolean(status);
-
-  // The id comes from the URL: go back when it names no category.
-  useEffect(() => {
-    if (!isKnownCategory) {
-      onBack();
-    }
-  }, [isKnownCategory, onBack]);
 
   if (!status) {
-    return null;
+    return <CategoryNotFound />;
   }
 
   const panelProps = {
@@ -119,5 +112,20 @@ function DevelopAdminCategorySourcesSuspense({
         }
       />
     </>
+  );
+}
+
+function CategoryNotFound() {
+  const t = useTranslations('decisions.develop');
+
+  return (
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LuLeaf aria-hidden className="size-5" />
+        </EmptyMedia>
+        <EmptyTitle render={<h2 />}>{t('categoryNotFoundTitle')}</EmptyTitle>
+      </EmptyHeader>
+    </Empty>
   );
 }

@@ -1791,6 +1791,7 @@
       "publishNotConfirmedError": "Közzététel előtt minden kategóriát meg kell erősíteni.",
       "alreadyPublishedError": "Ez a fázis már közzé van téve, vagy megváltozott. Frissítse az oldalt.",
       "categoriesLoadError": "Nem sikerült betölteni a kategóriákat",
+      "categoryNotFoundTitle": "A kategória nem található",
       "sourcesAcrossCategoriesCount": "{count, plural, one {# javaslat} other {# javaslat}} {categories, plural, one {# kategóriában} other {# kategóriában}}",
       "sourcesAcrossDistrictsCount": "{count, plural, one {# javaslat} other {# javaslat}} {categories, plural, one {# körzetben} other {# körzetben}}",
       "sourcesInCategoryCount": "{count, plural, one {# javaslat} other {# javaslat}} itt: <bdi>{category}</bdi>",
