@@ -144,8 +144,6 @@ const config = {
         source,
         headers: [staticCspHeader],
       })),
-      // Build fonts and images: the proxy matcher skips `_next/static`, so
-      // this is their only policy.
       ...STATIC_MEDIA_SOURCES.map((source) => ({
         source,
         headers: [getStaticMediaCspHeader()],
