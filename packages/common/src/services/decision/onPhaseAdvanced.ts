@@ -40,6 +40,12 @@ export async function onPhaseAdvanced(
       });
     });
 
+  // Held: the attachments are not in the phase until an admin confirms them,
+  // and submitManualSelection generates assignments and results then.
+  if (input.advanceResult.selectionAwaitingApproval) {
+    return;
+  }
+
   if (targetPhase && isReviewPhase(targetPhase)) {
     await runGenerateReviewAssignments(input);
   }

@@ -1,5 +1,8 @@
-import { and, db, eq, isNull } from '@op/db/client';
-import { stateTransitionHistory } from '@op/db/schema';
+import { and, db, eq, isNull, ne, notExists } from '@op/db/client';
+import {
+  decisionTransitionProposals,
+  stateTransitionHistory,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { ConflictError, ValidationError } from '../../utils';
@@ -62,7 +65,8 @@ export async function advanceProposal({
     });
 
     // The first proposal added to a phase waiting for a manual selection
-    // settles that selection, as an attachment always has.
+    // settles that selection, as an attachment always has; a held pipeline
+    // selection stays held until an admin confirms it.
     await tx
       .update(stateTransitionHistory)
       .set({ selectionConfirmedAt: new Date() })
@@ -70,6 +74,20 @@ export async function advanceProposal({
         and(
           eq(stateTransitionHistory.id, advancement.transitionHistoryId),
           isNull(stateTransitionHistory.selectionConfirmedAt),
+          notExists(
+            tx
+              .select({ id: decisionTransitionProposals.proposalId })
+              .from(decisionTransitionProposals)
+              .where(
+                and(
+                  eq(
+                    decisionTransitionProposals.transitionHistoryId,
+                    advancement.transitionHistoryId,
+                  ),
+                  ne(decisionTransitionProposals.proposalId, proposalId),
+                ),
+              ),
+          ),
         ),
       );
 
@@ -83,6 +101,7 @@ export async function advanceProposal({
             conflict: false as const,
             transitionHistoryId: advancement.transitionHistoryId,
             selectedProposalIds: [proposalId],
+            selectionAwaitingApproval: false,
           },
         }
       : null;

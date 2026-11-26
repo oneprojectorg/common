@@ -164,7 +164,7 @@ function happyPathResults() {
         selectionConfirmedAt: null,
       },
     ],
-    // attachedRow (no proposals attached yet)
+    // attachedRows (no proposals attached yet)
     [],
     // UPDATE stateTransitionHistory
     undefined,
@@ -223,6 +223,7 @@ describe('submitManualSelection', () => {
         conflict: false,
         transitionHistoryId: TRANSITION_HISTORY_ID,
         selectedProposalIds: ['prop-1', 'prop-2'],
+        selectionAwaitingApproval: false,
       },
     });
     // The regression guard: generation runs strictly after the tx commits.
