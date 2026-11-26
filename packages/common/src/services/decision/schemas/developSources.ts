@@ -31,6 +31,8 @@ export const developedProposalSchema = z.object({
   id: z.uuid(),
   profileId: z.uuid(),
   status: z.enum(ProposalStatus).nullable(),
+  /** A draft that passes the submit checks. */
+  isSubmittable: z.boolean(),
 });
 
 export type DevelopedProposal = z.infer<typeof developedProposalSchema>;

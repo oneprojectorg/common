@@ -9,6 +9,11 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import {
+  attachFormSchema,
+  insertFormSchema,
+  seedCollabFragments,
+} from '../../../test/helpers/formSchemaTestUtils';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
@@ -49,6 +54,55 @@ describe.concurrent('submitDevelopedProposal', () => {
     expect(submitted.id).toBe(draft.id);
     expect(submitted.status).toBe(ProposalStatus.SUBMITTED);
     expect(submitted.shortCode).not.toBeNull();
+  });
+
+  it('refuses a draft whose required field is empty in the document', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const draft = await caller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: { title: 'No budget' },
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+    const budgetRequired = await insertFormSchema({
+      processInstanceId: instanceId,
+      name: 'Entry',
+      schema: {
+        type: 'object',
+        required: ['title', 'budget'],
+        'x-field-order': ['title', 'budget'],
+        properties: {
+          title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+          budget: {
+            type: 'object',
+            title: 'Budget',
+            'x-format': 'money',
+            properties: {
+              amount: { type: 'number' },
+              currency: { type: 'string', default: 'USD' },
+            },
+          },
+        },
+      },
+    });
+    await attachFormSchema(draft.id, budgetRequired.id);
+    await seedCollabFragments(draft.id, { title: 'No budget' });
+
+    await expect(
+      caller.decision.submitDevelopedProposal({ proposalId: draft.id }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    const stored = await db.query.proposals.findFirst({
+      where: { id: draft.id },
+      columns: { status: true },
+    });
+    expect(stored?.status).toBe(ProposalStatus.DRAFT);
   });
 
   it('refuses a caller with Develop Proposals who is not an author', async ({
