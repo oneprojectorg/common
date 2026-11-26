@@ -105,7 +105,13 @@ export async function getDevelopedEntryPrefill({
     return null;
   }
 
-  const unfilledFields = getUnfilledFields({ mappings, data });
+  const unfilledFields = getUnfilledFields({
+    mappings,
+    data,
+    sourcePhaseId,
+    developPhaseId: developPhase.phaseId,
+    sourceCount: sourceProposalIds.length,
+  });
   if (unfilledFields) {
     logger.warn('Develop prefill left mapped fields empty', {
       ...context,
@@ -141,15 +147,45 @@ export async function getDevelopedEntryPrefill({
 function getUnfilledFields({
   mappings,
   data,
+  sourcePhaseId,
+  developPhaseId,
+  sourceCount,
 }: {
   mappings: SchemaMapping[];
   data: Record<string, unknown>;
+  sourcePhaseId: string;
+  developPhaseId: string;
+  sourceCount: number;
 }): string {
   const targets = new Set(
     mappings.flatMap((mapping) => mapping.fields.map(({ to }) => to)),
   );
+  const applicableRules = mappings
+    .filter(
+      (mapping) =>
+        mapping.to.type === 'proposal' &&
+        mapping.to.phaseId === developPhaseId &&
+        (mapping.from.type !== 'proposal' ||
+          mapping.from.phaseId === sourcePhaseId),
+    )
+    .flatMap((mapping) => mapping.fields);
+
   return [...targets]
     .filter((field) => !Object.hasOwn(data, field))
+    .map((field) => {
+      const rules = applicableRules.filter(({ to }) => to === field);
+      if (rules.length === 0) {
+        return `${field}:wrong_phase`;
+      }
+      // `buildDevelopPrefill` drops expression rules when there are several sources.
+      if (
+        sourceCount > 1 &&
+        rules.every(({ from }) => typeof from !== 'string')
+      ) {
+        return `${field}:rule_dropped`;
+      }
+      return `${field}:no_value`;
+    })
     .sort()
     .join(',');
 }
