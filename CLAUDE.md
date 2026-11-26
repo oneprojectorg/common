@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) and other AI agents 
 - **Test naming**: `<name>.unit.test.ts` is a unit test; `<name>.test.ts` is an integration test against the test Supabase on 55321/55322. Applies to `packages/common`; every `services/api` test is an integration test
 - **Tests**: `pnpm test` runs every package through turbo; the packages that use the test database run one after another. `pnpm w:common test:unit` / `pnpm w:common test:integration` run one project. Run `pnpm test:supabase:start` first
 - **Workspaces**: use the `pnpm w:<name>` shortcuts defined in the root `package.json` scripts (e.g. `pnpm w:app`, `pnpm w:db`)
-- **Dependencies**: add with `pnpm add <package> --filter <workspace-name>`; `pnpm deps:clean` / `pnpm deps:override` keep versions consistent
+- **Dependencies**: add with `pnpm add <package> --filter <workspace-name>`; `pnpm deps:override` keeps versions consistent; `pnpm deps:unused` reports unused dependencies and deletes nothing
 
 ## Architecture Overview
 
