@@ -102,9 +102,13 @@ async function getSubmittableDraftIds({
     profile: { name: string };
   }>;
 }): Promise<Set<string>> {
-  const drafts = proposals.filter(
-    (proposal) => proposal.status === ProposalStatus.DRAFT,
-  );
+  const drafts = [
+    ...new Map(
+      proposals
+        .filter((proposal) => proposal.status === ProposalStatus.DRAFT)
+        .map((proposal) => [proposal.id, proposal]),
+    ).values(),
+  ];
   if (drafts.length === 0) {
     return new Set();
   }

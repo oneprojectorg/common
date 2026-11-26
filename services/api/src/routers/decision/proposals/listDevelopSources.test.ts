@@ -742,4 +742,37 @@ describe.concurrent('decision.listDevelopSources developedProposals', () => {
       }),
     ]);
   });
+
+  it('reports the same isSubmittable on every source of one draft entry', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source, otherSources } =
+      await createDevelopPhaseSetup({ testData, sourceCount: 2 });
+    const [otherSource] = otherSources;
+    if (!otherSource) {
+      throw new Error('expected two sources');
+    }
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const entry = await caller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id, otherSource.id],
+      proposalData: { title: 'Merged' },
+    });
+    testData.trackProfileForCleanup(entry.profileId);
+
+    const bySource = developedBySource(
+      await caller.decision.listDevelopSources({
+        processInstanceId: instanceId,
+        phaseIds: ['initial'],
+      }),
+    );
+
+    const expected = [
+      expect.objectContaining({ id: entry.id, isSubmittable: true }),
+    ];
+    expect(bySource.get(source.id)).toEqual(expected);
+    expect(bySource.get(otherSource.id)).toEqual(expected);
+  });
 });
