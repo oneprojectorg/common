@@ -19,11 +19,17 @@ export const CategoryDevelopmentConfirmedAdminEmail = ({
       previewText={`${categoryName} is confirmed in ${processName}`}
     >
       <Text className="my-8 text-lg">
-        The selections for <strong>{categoryName}</strong> are confirmed.{' '}
-        {formatAdvancingSentence(advancingCount)} You can open the category now.
+        The selections for{' '}
+        <strong>
+          <bdi>{categoryName}</bdi>
+        </strong>{' '}
+        are confirmed. {formatAdvancingSentence(advancingCount)} You can open
+        the category now.
       </Text>
 
-      <CtaButton href={processUrl}>Open {processName}</CtaButton>
+      <CtaButton href={processUrl}>
+        Open <bdi>{processName}</bdi>
+      </CtaButton>
     </EmailTemplate>
   );
 };
