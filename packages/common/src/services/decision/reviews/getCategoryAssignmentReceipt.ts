@@ -6,23 +6,16 @@ import { listIndividualProfileRecipientsByProfileId } from '../../email/recipien
 import { isCategoryReviewerDevelopConfirmed } from '../developLock';
 
 export type CategoryAssignmentReceipt = {
-  /** The develop work of this assignment is confirmed now. */
   isConfirmed: boolean;
-  /** Confirmed assignments of the category for the phase. */
   confirmedCount: number;
-  /** All assignments of the category for the phase. */
   assignmentCount: number;
   categoryName: string;
   processName: string;
   decisionSlug: string;
-  /** The addresses of the assigned person. */
   emails: string[];
 };
 
-/**
- * What the receipt for one category assignment names, and where it goes.
- * No access check: the caller is a background function.
- */
+/** No access check: the caller is a background function. */
 export async function getCategoryAssignmentReceipt({
   processInstanceId,
   phaseId,
