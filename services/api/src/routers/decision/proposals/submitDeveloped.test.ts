@@ -138,6 +138,33 @@ describe.concurrent('submitDevelopedProposal', () => {
     });
   });
 
+  it('lets a decision admin who is not an author advance another person’s draft', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const author = await createDevelopProposalsMember({ testData, setup });
+    const [authorCaller, adminCaller] = await Promise.all([
+      createAuthenticatedCaller(author.email),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+    const draft = await authorCaller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: { title: 'Developed' },
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    const submitted = await adminCaller.decision.submitDevelopedProposal({
+      proposalId: draft.id,
+    });
+
+    expect(submitted.status).toBe(ProposalStatus.SUBMITTED);
+  });
+
   it('refuses a draft with no developed edge', async ({
     task,
     onTestFinished,

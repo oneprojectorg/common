@@ -3,7 +3,7 @@ import { ProposalStatus, proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { CommonError, ConflictError, NotFoundError } from '../../utils';
-import { assertDevelopedProposalAuthor } from './assertDevelopedProposalAuthor';
+import { assertDevelopedProposalStatusAccess } from './assertDevelopedProposalStatusAccess';
 import { activeProposalPredicate } from './phaseEligibility';
 
 export interface UnsubmitDevelopedProposalInput {
@@ -36,7 +36,7 @@ export const unsubmitDevelopedProposal = async ({
     throw new ConflictError('Only a submitted proposal can be un-advanced');
   }
 
-  await assertDevelopedProposalAuthor({
+  await assertDevelopedProposalStatusAccess({
     proposal,
     instance: proposal.processInstance,
     user,

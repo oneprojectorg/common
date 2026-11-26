@@ -20,17 +20,19 @@ import {
 } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { resolvePhases } from './instancePhases';
-import { isDevelopWindowOpen } from './isDevelopWindowOpen';
 import {
   type DecisionRolePermissions,
   decisionPermission,
   fromDecisionBitField,
 } from './permissions';
 import { isAnonymousAuthor } from './proposalAuthor';
+import {
+  hasProposalContentEditPermission,
+  isProposalContentEditOpen,
+} from './proposalContentEditAccess';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { ProposalTemplateSchema } from './types';
-import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 
 /** Attachment with signed URL for accessing the file */
 type AttachmentWithUrl = {
@@ -297,58 +299,45 @@ export const getPermissionsOnProposal = async ({
     access.admin = true;
   }
 
+  if (!proposal.processInstance.profileId) {
+    return { access, isEditable: false };
+  }
+
   // The comment / post-write gate in `assertPostWriteAccess` walks proposal
   // targets up to the parent decision via `resolvePostRoots` and admits
   // `{ profile: ADMIN }` OR `{ decisions: SUBMIT_PROPOSALS }` on the decision
   // profile — bits that live on `profileUsers` for the *decision* profile,
   // not the proposal profile. Mirror that OR on `access.submitProposals` so
   // the frontend can mirror the server gate and hide the comment box only
-  // for callers who'd be rejected on submit. Leave the other bits
-  // (update / admin) on proposal-profile roles — editability and admin
-  // signal are separate concerns from comment access.
-  if (proposal.processInstance.profileId) {
-    const decisionRoles = await getProfileAccessRoles({
-      user,
-      profileId: proposal.processInstance.profileId,
-    });
-    if (
-      checkPermission(
-        [
-          { profile: permission.ADMIN },
-          { decisions: decisionPermission.SUBMIT_PROPOSALS },
-        ],
-        decisionRoles,
-      )
-    ) {
-      access.submitProposals = true;
-    }
+  // for callers who'd be rejected on submit. Leave the other `access` bits
+  // on proposal-profile roles.
+  const decisionRoles = await getProfileAccessRoles({
+    user,
+    profileId: proposal.processInstance.profileId,
+  });
+  if (
+    checkPermission(
+      [
+        { profile: permission.ADMIN },
+        { decisions: decisionPermission.SUBMIT_PROPOSALS },
+      ],
+      decisionRoles,
+    )
+  ) {
+    access.submitProposals = true;
   }
 
-  return {
-    access,
-    isEditable: access.update && (await isStatusEditable({ proposal })),
-  };
+  // Mirrors the content-edit gate in `assertProposalUpdateAccess`.
+  const isEditable =
+    hasProposalContentEditPermission({
+      proposalRoles: roles,
+      instanceRoles: decisionRoles,
+    }) &&
+    (await isProposalContentEditOpen({
+      proposal,
+      instance: await resolvePhases({ instance: proposal.processInstance }),
+      instanceRoles: decisionRoles,
+    }));
+
+  return { access, isEditable };
 };
-
-/**
- * A draft is always editable; a submitted proposal while the phase allows
- * editing or the develop window is open.
- */
-async function isStatusEditable({
-  proposal,
-}: {
-  proposal: Proposal & { processInstance: ProcessInstance };
-}): Promise<boolean> {
-  if (proposal.status === ProposalStatus.DRAFT) {
-    return true;
-  }
-
-  const instance = await resolvePhases({ instance: proposal.processInstance });
-
-  return (
-    isPostSubmissionEditingAllowed({
-      phases: instance.phases,
-      currentPhaseId: instance.currentStateId,
-    }) || (await isDevelopWindowOpen({ instance }))
-  );
-}
