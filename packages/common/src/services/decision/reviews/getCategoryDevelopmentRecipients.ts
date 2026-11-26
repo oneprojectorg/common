@@ -1,5 +1,4 @@
-import { and, db, eq } from '@op/db/client';
-import { categoryReviewers } from '@op/db/schema';
+import { db } from '@op/db/client';
 import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../../utils';
@@ -46,19 +45,13 @@ export async function getCategoryDevelopmentRecipients({
       columns: { label: true },
     }),
     // Rows with no phase are for review only and do not count.
-    db
-      .select({
-        reviewerProfileId: categoryReviewers.reviewerProfileId,
-        isConfirmed: isCategoryReviewerDevelopConfirmed(),
-      })
-      .from(categoryReviewers)
-      .where(
-        and(
-          eq(categoryReviewers.processInstanceId, processInstanceId),
-          eq(categoryReviewers.taxonomyTermId, taxonomyTermId),
-          eq(categoryReviewers.phaseId, phaseId),
-        ),
-      ),
+    db.query.categoryReviewers.findMany({
+      where: { processInstanceId, taxonomyTermId, phaseId },
+      columns: { reviewerProfileId: true },
+      extras: {
+        isConfirmed: (table) => isCategoryReviewerDevelopConfirmed(table),
+      },
+    }),
     countAdvancingByCategory({ processInstanceId }),
   ]);
 

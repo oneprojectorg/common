@@ -129,7 +129,7 @@ async function hasConfirmedEveryOwnCategory({
     .select({
       allConfirmed: sql<
         boolean | null
-      >`bool_and(${isCategoryReviewerDevelopConfirmed()})`,
+      >`bool_and(${isCategoryReviewerDevelopConfirmed(categoryReviewers)})`,
     })
     .from(categoryReviewers)
     .innerJoin(users, eq(users.profileId, categoryReviewers.reviewerProfileId))
@@ -160,7 +160,7 @@ export async function isEveryCategoryDevelopConfirmed({
     .select({
       allConfirmed: sql<
         boolean | null
-      >`bool_and(${isCategoryReviewerDevelopConfirmed()})`,
+      >`bool_and(${isCategoryReviewerDevelopConfirmed(categoryReviewers)})`,
     })
     .from(categoryReviewers)
     .where(
@@ -174,6 +174,8 @@ export async function isEveryCategoryDevelopConfirmed({
 }
 
 /** True for a category reviewer row whose develop work is confirmed. */
-export function isCategoryReviewerDevelopConfirmed(): SQL<boolean> {
-  return sql<boolean>`${categoryReviewers.data} ->> 'developConfirmedAt' IS NOT NULL`;
+export function isCategoryReviewerDevelopConfirmed(
+  table: typeof categoryReviewers,
+): SQL<boolean> {
+  return sql<boolean>`${table.data} ->> 'developConfirmedAt' IS NOT NULL`;
 }
