@@ -1,10 +1,29 @@
-import { type DbClient, and, db, eq, sql } from '@op/db/client';
-import { categoryReviewers, users } from '@op/db/schema';
+import {
+  type DbClient,
+  type SQL,
+  and,
+  count,
+  db,
+  eq,
+  exists,
+  isNull,
+  sql,
+} from '@op/db/client';
+import {
+  ProposalRelationshipType,
+  ProposalStatus,
+  categoryReviewers,
+  proposalCategories,
+  proposalRelationships,
+  proposals,
+  users,
+} from '@op/db/schema';
 import { checkPermission, permission } from 'access-zones';
 
 import { ConflictError, ValidationError } from '../../utils';
 import { type AccessUser, getProfileAccessRoles } from '../access';
 import { isDevelopWindowOpen } from './isDevelopWindowOpen';
+import { activeProposalPredicate } from './phaseEligibility';
 import type { PhaseRules } from './schemas/types';
 import { isDevelopPhase } from './utils/phaseSettings';
 
@@ -129,7 +148,7 @@ async function hasConfirmedEveryOwnCategory({
     .select({
       allConfirmed: sql<
         boolean | null
-      >`bool_and(${categoryReviewers.data} ->> 'developConfirmedAt' IS NOT NULL)`,
+      >`bool_and(${isCategoryReviewerDevelopConfirmed(categoryReviewers)})`,
     })
     .from(categoryReviewers)
     .innerJoin(users, eq(users.profileId, categoryReviewers.reviewerProfileId))
@@ -160,7 +179,7 @@ export async function isEveryCategoryDevelopConfirmed({
     .select({
       allConfirmed: sql<
         boolean | null
-      >`bool_and(${categoryReviewers.data} ->> 'developConfirmedAt' IS NOT NULL)`,
+      >`bool_and(${isCategoryReviewerDevelopConfirmed(categoryReviewers)})`,
     })
     .from(categoryReviewers)
     .where(
@@ -171,4 +190,54 @@ export async function isEveryCategoryDevelopConfirmed({
     );
 
   return result?.allConfirmed === true;
+}
+
+/** The entries `publishDevelopedProposals` publishes, grouped by category. */
+export async function countAdvancingByCategory({
+  processInstanceId,
+}: {
+  processInstanceId: string;
+}): Promise<Map<string, number>> {
+  const rows = await db
+    .select({
+      taxonomyTermId: proposalCategories.taxonomyTermId,
+      total: count(),
+    })
+    .from(proposals)
+    .innerJoin(
+      proposalCategories,
+      eq(proposalCategories.proposalId, proposals.id),
+    )
+    .where(
+      and(
+        eq(proposals.processInstanceId, processInstanceId),
+        eq(proposals.status, ProposalStatus.SUBMITTED),
+        activeProposalPredicate(proposals),
+        exists(
+          db
+            .select({ id: proposalRelationships.id })
+            .from(proposalRelationships)
+            .where(
+              and(
+                eq(proposalRelationships.processInstanceId, processInstanceId),
+                eq(proposalRelationships.targetProposalId, proposals.id),
+                eq(
+                  proposalRelationships.relationshipType,
+                  ProposalRelationshipType.DEVELOPED,
+                ),
+                isNull(proposalRelationships.deletedAt),
+              ),
+            ),
+        ),
+      ),
+    )
+    .groupBy(proposalCategories.taxonomyTermId);
+
+  return new Map(rows.map((row) => [row.taxonomyTermId, row.total]));
+}
+
+export function isCategoryReviewerDevelopConfirmed(
+  table: typeof categoryReviewers,
+): SQL<boolean> {
+  return sql<boolean>`${table.data} ->> 'developConfirmedAt' IS NOT NULL`;
 }

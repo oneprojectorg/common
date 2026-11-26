@@ -558,9 +558,28 @@ export async function createRevisionRequest(
 }
 
 /**
- * A category-reviewer row on a fresh taxonomy term. Deleting the term after the
- * test cascades to the row.
+ * A fresh taxonomy term, deleted after the test. The delete cascades to the
+ * category reviewer rows and proposal links of the term.
  */
+export async function createTestTaxonomyTerm({
+  onTestFinished,
+}: {
+  onTestFinished: (fn: () => void | Promise<void>) => void;
+}): Promise<{ id: string; label: string }> {
+  const id = randomUUID();
+  const label = `Term ${id}`;
+  await db.insert(taxonomyTerms).values({
+    id,
+    termUri: `test-term-${id}`,
+    label,
+  });
+  onTestFinished(async () => {
+    await db.delete(taxonomyTerms).where(eq(taxonomyTerms.id, id));
+  });
+  return { id, label };
+}
+
+/** A category-reviewer row on a fresh taxonomy term. */
 export async function createCategoryReviewerWithTerm({
   processInstanceId,
   reviewerProfileId,
@@ -572,18 +591,10 @@ export async function createCategoryReviewerWithTerm({
   phaseId: string | null;
   onTestFinished: (fn: () => void | Promise<void>) => void;
 }): Promise<void> {
-  const termId = randomUUID();
-  await db.insert(taxonomyTerms).values({
-    id: termId,
-    termUri: `test-term-${termId}`,
-    label: `Term ${termId}`,
-  });
-  onTestFinished(async () => {
-    await db.delete(taxonomyTerms).where(eq(taxonomyTerms.id, termId));
-  });
+  const term = await createTestTaxonomyTerm({ onTestFinished });
   await createCategoryReviewer({
     processInstanceId,
-    taxonomyTermId: termId,
+    taxonomyTermId: term.id,
     reviewerProfileId,
     phaseId,
   });
