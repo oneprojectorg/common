@@ -1,4 +1,8 @@
-import { TestReviewsDataManager } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  TestReviewsDataManager,
+  createDevelopPhaseSetup,
+} from '@op/common/testing';
 import {
   ProposalRelationshipType,
   ProposalStatus,
@@ -17,6 +21,11 @@ import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
+import {
+  attachFormSchema,
+  insertFormSchema,
+  seedCollabFragments,
+} from '../../../test/helpers/formSchemaTestUtils';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -209,7 +218,13 @@ async function developEntry({
     relationshipType: ProposalRelationshipType.DEVELOPED,
     createdAt: developedAt.toISOString(),
   });
-  return { id: proposal.id, profileId: proposal.profileId, status };
+  // The seeded document is empty, so a draft fails the template's required fields.
+  return {
+    id: proposal.id,
+    profileId: proposal.profileId,
+    status,
+    isComplete: status === ProposalStatus.DRAFT ? false : null,
+  };
 }
 
 function developedBySource(page: SourceList) {
@@ -640,5 +655,91 @@ describe.concurrent('decision.listDevelopSources developedProposals', () => {
     for (const item of result.items) {
       expect(item).not.toHaveProperty('developedProposals');
     }
+  });
+
+  it('marks a draft entry complete only when it passes the submit checks, and leaves a submitted entry unchecked', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const budgetRequired = await insertFormSchema({
+      processInstanceId: instanceId,
+      name: 'Entry',
+      schema: {
+        type: 'object',
+        required: ['title', 'budget'],
+        'x-field-order': ['title', 'budget'],
+        properties: {
+          title: { type: 'string', title: 'Title', 'x-format': 'short-text' },
+          budget: {
+            type: 'object',
+            title: 'Budget',
+            'x-format': 'money',
+            properties: {
+              amount: { type: 'number' },
+              currency: { type: 'string', default: 'USD' },
+            },
+          },
+        },
+      },
+    });
+    // The editor autosave stores the budget in proposalData too; submit reads it there.
+    const createEntry = async ({
+      title,
+      budget,
+    }: {
+      title: string;
+      budget?: { amount: number; currency: string };
+    }) => {
+      const entry = await caller.decision.createDevelopedProposal({
+        processInstanceId: instanceId,
+        sourceProposalIds: [source.id],
+        proposalData: { title },
+      });
+      testData.trackProfileForCleanup(entry.profileId);
+      await attachFormSchema(entry.id, budgetRequired.id);
+      await seedCollabFragments(entry.id, {
+        title,
+        ...(budget ? { budget: JSON.stringify(budget) } : {}),
+      });
+      if (budget) {
+        await db
+          .update(proposalsTable)
+          .set({
+            proposalData: {
+              title,
+              budget,
+              collaborationDocId: `proposal-${entry.id}`,
+            },
+          })
+          .where(eq(proposalsTable.id, entry.id));
+      }
+      return entry;
+    };
+    const budget = { amount: 500, currency: 'USD' };
+    // Sequential, so the edges keep the creation order.
+    const noBudget = await createEntry({ title: 'No budget' });
+    const complete = await createEntry({ title: 'Complete', budget });
+    const submitted = await createEntry({ title: 'Submitted', budget });
+    await caller.decision.submitDevelopedProposal({ proposalId: submitted.id });
+
+    const page = await caller.decision.listDevelopSources({
+      processInstanceId: instanceId,
+      phaseIds: ['initial'],
+    });
+
+    expect(developedBySource(page).get(source.id)).toEqual([
+      expect.objectContaining({ id: noBudget.id, isComplete: false }),
+      expect.objectContaining({ id: complete.id, isComplete: true }),
+      expect.objectContaining({
+        id: submitted.id,
+        status: ProposalStatus.SUBMITTED,
+        isComplete: null,
+      }),
+    ]);
   });
 });

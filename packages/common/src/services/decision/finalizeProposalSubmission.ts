@@ -8,21 +8,15 @@ import {
 } from '@op/db/schema';
 import { logger } from '@op/logging';
 
-import { CommonError, ValidationError } from '../../utils';
+import { CommonError } from '../../utils';
+import { assertProposalSubmittable } from './assertProposalSubmittable';
 import { lockProcessInstanceOrThrow } from './lockProcessInstance';
-import {
-  normalizeLocation,
-  normalizeProposalCategories,
-  parseProposalData,
-} from './proposalDataSchema';
+import { normalizeProposalCategories } from './proposalDataSchema';
 import { reconcileReviewAssignments } from './reconcileReviewAssignments';
-import { hasDecisionBoundaries, resolveBoundary } from './resolveBoundary';
-import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { setProposalCategories } from './setProposalCategories';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { templateCollectsLocation } from './templateLocation';
-import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 /**
  * Validates a draft proposal against its template and moves it to
@@ -41,72 +35,25 @@ export const finalizeProposalSubmission = async ({
   instance: Pick<ProcessInstance, 'id' | 'processId'> & { profileId: string };
   instanceData: DecisionInstanceData;
 }) => {
-  const proposalTemplate = await resolveProposalTemplate(
-    instanceData,
-    instance.processId,
-    existingProposal.formSchemaId,
-  );
-
-  const parsed = parseProposalData(existingProposal.proposalData);
-
-  // For collab-doc proposals the assembled fragment values are authoritative —
-  // stored proposalData may lag the last autosave.
-  let assembledData: Record<string, unknown> | null = null;
-
-  if (proposalTemplate) {
-    assembledData = await validateProposalAgainstTemplate(
-      proposalTemplate,
-      existingProposal.proposalData,
-      existingProposal.profile.name,
-      { profileId: instance.profileId },
-    );
-  }
-
-  const location =
-    normalizeLocation(
-      assembledData ? assembledData.location : parsed.location,
-    ) ?? null;
-
-  // When the template collects a location, it is mandatory. If boundaries are
-  // configured, the pin must fall inside one — the authoritative server-side
-  // enforcement of the picker's out-of-area check. When no boundaries exist,
-  // any location is valid (the pin can go anywhere).
-  if (templateCollectsLocation(proposalTemplate)) {
-    if (!location) {
-      throw new ValidationError(
-        'A project location is required to submit this proposal.',
-      );
-    }
-
-    const boundary = await resolveBoundary({
-      lat: location.lat,
-      lng: location.lng,
-      profileId: instance.profileId,
+  const { proposalTemplate, assembledData, location, collaborationDocId } =
+    await assertProposalSubmittable({
+      proposal: existingProposal,
+      instance: {
+        processId: instance.processId,
+        profileId: instance.profileId,
+        instanceData,
+      },
     });
-
-    if (
-      !boundary &&
-      (await hasDecisionBoundaries({ profileId: instance.profileId }))
-    ) {
-      throw new ValidationError(
-        'The selected location is outside the project boundary. Choose a spot within the boundary.',
-      );
-    }
-  }
-
-  if (!parsed.collaborationDocId) {
-    throw new ValidationError('Proposal is missing a collaboration document');
-  }
 
   // Stamp the latest TipTap version into proposalData so the history row
   // created by the DB trigger links back to a concrete document revision.
   // Best-effort — failures are logged and never block the submit.
   const collaborationDocVersionId = await getTipTapClient()
-    .createVersion(parsed.collaborationDocId, { name: 'Submitted' })
+    .createVersion(collaborationDocId, { name: 'Submitted' })
     .then((v) => v?.version ?? null)
     .catch((error: unknown) => {
       logger.error('[submitProposal] Failed to create TipTap version', {
-        collaborationDocId: parsed.collaborationDocId,
+        collaborationDocId,
         error,
       });
       return null;

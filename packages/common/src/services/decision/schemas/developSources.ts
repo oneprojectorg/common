@@ -26,11 +26,12 @@ export type ListDevelopSourcesInput = z.infer<
   typeof listDevelopSourcesInputSchema
 >;
 
-/** An entry developed from a source, as far as the caller may read it. */
+/** An entry developed from a source, as far as the caller may read it. `isComplete` is `null` when the entry is not a draft. */
 export const developedProposalSchema = z.object({
   id: z.uuid(),
   profileId: z.uuid(),
   status: z.enum(ProposalStatus).nullable(),
+  isComplete: z.boolean().nullable(),
 });
 
 export type DevelopedProposal = z.infer<typeof developedProposalSchema>;

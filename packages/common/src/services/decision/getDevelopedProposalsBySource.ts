@@ -1,6 +1,9 @@
 import { db } from '@op/db/client';
-import { ProposalRelationshipType } from '@op/db/schema';
+import { ProposalRelationshipType, ProposalStatus } from '@op/db/schema';
+import pMap from 'p-map';
 
+import { NotFoundError, ValidationError } from '../../utils';
+import { assertProposalSubmittable } from './assertProposalSubmittable';
 import {
   type ProposalReadContext,
   isProposalReadable,
@@ -18,6 +21,9 @@ import {
  * Readability is `getProposal`'s gate (`isProposalReadable`): a draft only for
  * members of the entry's own profile, a hidden or flagged entry also for an
  * instance admin.
+ *
+ * `isComplete` runs the submit checks on each draft entry (one document read
+ * each); it is `null` for an entry that is not a draft.
  */
 export async function getDevelopedProposalsBySource({
   processInstanceId,
@@ -45,14 +51,33 @@ export async function getDevelopedProposalsBySource({
     },
     columns: { sourceProposalId: true },
     with: {
-      targetProposal: { columns: { id: true, profileId: true, status: true } },
+      targetProposal: {
+        columns: {
+          id: true,
+          profileId: true,
+          status: true,
+          formSchemaId: true,
+          proposalData: true,
+        },
+        with: { profile: { columns: { name: true } } },
+      },
     },
     orderBy: { sourceProposalId: 'asc', createdAt: 'asc', id: 'asc' },
   });
 
+  const completeness = await getDraftCompleteness({
+    processInstanceId,
+    proposals: edges.map(({ targetProposal }) => targetProposal),
+  });
+
   for (const { sourceProposalId, targetProposal } of edges) {
     // The status column types as `string`; the parse narrows it to the enum.
-    const entry = developedProposalSchema.parse(targetProposal);
+    const entry = developedProposalSchema.parse({
+      id: targetProposal.id,
+      profileId: targetProposal.profileId,
+      status: targetProposal.status,
+      isComplete: completeness.get(targetProposal.id) ?? null,
+    });
     const entries = bySource.get(sourceProposalId);
     if (entries) {
       entries.push(entry);
@@ -62,4 +87,56 @@ export async function getDevelopedProposalsBySource({
   }
 
   return bySource;
+}
+
+/** Whether each draft can be submitted, by proposal id. Non-drafts have no key. */
+async function getDraftCompleteness({
+  processInstanceId,
+  proposals,
+}: {
+  processInstanceId: string;
+  proposals: Array<{
+    id: string;
+    status: string | null;
+    formSchemaId: string | null;
+    proposalData: unknown;
+    profile: { name: string };
+  }>;
+}): Promise<Map<string, boolean>> {
+  const drafts = proposals.filter(
+    (proposal) => proposal.status === ProposalStatus.DRAFT,
+  );
+  if (drafts.length === 0) {
+    return new Map();
+  }
+
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: processInstanceId },
+    columns: { processId: true, profileId: true, instanceData: true },
+  });
+  if (!instance?.profileId) {
+    throw new NotFoundError('Process instance', processInstanceId);
+  }
+  const { profileId } = instance;
+
+  const results = await pMap(
+    drafts,
+    async (proposal) => {
+      try {
+        await assertProposalSubmittable({
+          proposal,
+          instance: { ...instance, profileId },
+        });
+        return [proposal.id, true] as const;
+      } catch (error) {
+        if (error instanceof ValidationError) {
+          return [proposal.id, false] as const;
+        }
+        throw error;
+      }
+    },
+    { concurrency: 10 },
+  );
+
+  return new Map(results);
 }
