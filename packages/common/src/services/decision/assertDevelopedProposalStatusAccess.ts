@@ -1,18 +1,20 @@
 import { db } from '@op/db/client';
 import { ProposalRelationshipType } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
-import { getProfileAccessUser } from '../access';
+import { getProfileAccessRoles, getProfileAccessUser } from '../access';
 import { assertProposalDevelopAccess } from './assertProposalDevelopAccess';
 import { assertDevelopUnlocked } from './developLock';
 import { getPhases } from './instancePhases';
 
 /**
  * Asserts the caller may develop in the current phase, is not held by the
- * develop lock (`assertDevelopUnlocked`) and authors this developed proposal.
+ * develop lock (`assertDevelopUnlocked`) and authors this developed proposal
+ * or is an admin of the decision.
  */
-export async function assertDevelopedProposalAuthor<
+export async function assertDevelopedProposalStatusAccess<
   TInstance extends {
     id: string;
     profileId: string | null;
@@ -66,9 +68,22 @@ export async function assertDevelopedProposalAuthor<
 
   // An author holds a membership on the proposal's own profile.
   if (!author) {
-    throw new UnauthorizedError(
-      'Only an author of this proposal can change its status',
-    );
+    // `assertProposalDevelopAccess` already loaded these roles in this request.
+    const instanceRoles = await getProfileAccessRoles({
+      user: { id: user.id },
+      profileId: instance.profileId,
+    });
+
+    if (
+      !checkPermission(
+        [{ profile: permission.ADMIN }, { decisions: permission.ADMIN }],
+        instanceRoles,
+      )
+    ) {
+      throw new UnauthorizedError(
+        'Only an author of this proposal or an admin of the decision can change its status',
+      );
+    }
   }
 
   await assertDevelopUnlocked({ instance: { ...instance, phases }, user });

@@ -3,7 +3,7 @@ import { ProposalStatus } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils';
-import { assertDevelopedProposalAuthor } from './assertDevelopedProposalAuthor';
+import { assertDevelopedProposalStatusAccess } from './assertDevelopedProposalStatusAccess';
 import { finalizeProposalSubmission } from './finalizeProposalSubmission';
 import { activeProposalPredicate } from './phaseEligibility';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -44,7 +44,7 @@ export const submitDevelopedProposal = async ({
     );
   }
 
-  const instance = await assertDevelopedProposalAuthor({
+  const instance = await assertDevelopedProposalStatusAccess({
     proposal,
     instance: proposal.processInstance,
     user,

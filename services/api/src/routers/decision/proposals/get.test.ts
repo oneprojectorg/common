@@ -1,5 +1,10 @@
 import { mockCollab, textFragment } from '@op/collab/testing';
-import { TestDecisionsDataManager } from '@op/common/testing';
+import {
+  TestDecisionsDataManager,
+  addResultsPhase,
+  createDevelopPhaseSetup,
+  createDevelopProposalsMember,
+} from '@op/common/testing';
 import { db } from '@op/db/client';
 import {
   ProposalStatus,
@@ -232,6 +237,140 @@ describe.concurrent('getProposal', () => {
     });
 
     expect(result.isEditable).toBe(true);
+  });
+
+  it('marks an advanced entry editable for a decision admin who is not its member while the develop window is open, and not for a non-member without admin', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    await addResultsPhase({ instanceId });
+    const [author, otherDeveloper] = await Promise.all([
+      createDevelopProposalsMember({ testData, setup }),
+      createDevelopProposalsMember({ testData, setup }),
+    ]);
+    const [authorCaller, otherCaller, adminCaller] = await Promise.all([
+      createAuthenticatedCaller(author.email),
+      createAuthenticatedCaller(otherDeveloper.email),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+    const entry = await authorCaller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: { title: 'Developed' },
+    });
+    testData.trackProfileForCleanup(entry.profileId);
+    await authorCaller.decision.submitDevelopedProposal({
+      proposalId: entry.id,
+    });
+
+    const [adminView, otherView] = await Promise.all([
+      adminCaller.decision.getProposal({ profileId: entry.profileId }),
+      otherCaller.decision.getProposal({ profileId: entry.profileId }),
+    ]);
+
+    expect(adminView.isEditable).toBe(true);
+    expect(otherView.isEditable).toBe(false);
+  });
+
+  it('reports isEditable as the update gate decides once editing is closed for the phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+    const [author, otherMember] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+    const proposal = await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Submitted' },
+    });
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
+    const [adminCaller, otherCaller] = await Promise.all([
+      createAuthenticatedCaller(setup.userEmail),
+      createAuthenticatedCaller(otherMember.email),
+    ]);
+
+    const [adminView, otherView] = await Promise.all([
+      adminCaller.decision.getProposal({ profileId: proposal.profileId }),
+      otherCaller.decision.getProposal({ profileId: proposal.profileId }),
+    ]);
+
+    expect(adminView.isEditable).toBe(true);
+    await expect(
+      adminCaller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: { title: 'Edited by an admin' },
+      }),
+    ).resolves.toMatchObject({ id: proposal.id });
+    expect(otherView.isEditable).toBe(false);
+    await expect(
+      otherCaller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: { title: 'Edited by a member' },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('marks no proposal editable in the results phase, not even for a decision admin, as the update refuses it', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+    const author = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const proposal = await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Submitted' },
+    });
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
+    await db
+      .update(processInstances)
+      .set({ currentStateId: 'final' })
+      .where(eq(processInstances.id, instance.instance.id));
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    const adminView = await adminCaller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(adminView.isEditable).toBe(false);
+    await expect(
+      adminCaller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: { title: 'Edited in the results phase' },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 
   // Mirrors the server `assertPostWriteAccess` comment gate — a decision

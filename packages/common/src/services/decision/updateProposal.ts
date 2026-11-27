@@ -1,12 +1,9 @@
 import { getTipTapClient, invalidateCachedDocumentFragments } from '@op/collab';
 import { and, db, eq, isNull } from '@op/db/client';
 import {
-  ProposalReviewRequestState,
   ProposalStatus,
   type Visibility,
   profiles,
-  proposalReviewAssignments,
-  proposalReviewRequests,
   proposals,
 } from '@op/db/schema';
 import { logger } from '@op/logging';
@@ -25,7 +22,11 @@ import { assertUserByAuthId } from '../assert';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
 import { getPhases } from './instancePhases';
-import { isDevelopWindowOpen } from './isDevelopWindowOpen';
+import {
+  hasDecisionAdminPermission,
+  hasProposalContentEditPermission,
+  resolveProposalContentEditAccess,
+} from './proposalContentEditAccess';
 import type {
   CheckpointVersion,
   ProposalDataInput,
@@ -36,7 +37,6 @@ import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { type PhaseInstanceData, isLastPhase } from './schemas/instanceData';
 import { setProposalCategories } from './setProposalCategories';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
-import { isPostSubmissionEditingAllowed } from './utils/phaseSettings';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 export interface UpdateProposalInput {
@@ -309,62 +309,23 @@ export async function assertProposalUpdateAccess({
     profileId: proposal.profileId,
   });
 
-  if (
-    !checkPermission({ profile: permission.UPDATE }, proposalRoles) &&
-    !checkPermission({ decisions: permission.UPDATE }, instanceRoles)
-  ) {
+  const contentEditAccess = await resolveProposalContentEditAccess({
+    canEditContent: hasProposalContentEditPermission({
+      proposalRoles,
+      instanceRoles,
+    }),
+    isDecisionAdmin: hasDecisionAdminPermission({ instanceRoles }),
+    proposal,
+    instance: { ...processInstance, phases: instancePhases },
+  });
+
+  if (contentEditAccess === 'forbidden') {
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  if (
-    proposal.status === ProposalStatus.DRAFT ||
-    isPostSubmissionEditingAllowed({
-      phases: instancePhases,
-      currentPhaseId: processInstance.currentStateId,
-    })
-  ) {
-    return;
-  }
-
-  const isInstanceAdmin = checkPermission(
-    [{ profile: permission.ADMIN }, { decisions: permission.ADMIN }],
-    instanceRoles,
-  );
-
-  if (isInstanceAdmin) {
-    return;
-  }
-
-  // An advanced entry stays editable until the develop window closes.
-  const instance = { ...processInstance, phases: instancePhases };
-  if (await isDevelopWindowOpen({ instance })) {
-    return;
-  }
-
-  // An open revision request is itself the invitation to edit, and the editor
-  // autosaves system fields through here on the way to `resubmit`.
-  if (!(await hasOpenRevisionRequest(proposal.id))) {
+  if (contentEditAccess === 'closed') {
     throw new UnauthorizedError('Editing proposals is closed for this phase');
   }
-}
-
-async function hasOpenRevisionRequest(proposalId: string): Promise<boolean> {
-  const [openRequest] = await db
-    .select({ id: proposalReviewRequests.id })
-    .from(proposalReviewRequests)
-    .innerJoin(
-      proposalReviewAssignments,
-      eq(proposalReviewRequests.assignmentId, proposalReviewAssignments.id),
-    )
-    .where(
-      and(
-        eq(proposalReviewAssignments.proposalId, proposalId),
-        eq(proposalReviewRequests.state, ProposalReviewRequestState.REQUESTED),
-      ),
-    )
-    .limit(1);
-
-  return openRequest !== undefined;
 }
 
 async function createCheckpointVersion(

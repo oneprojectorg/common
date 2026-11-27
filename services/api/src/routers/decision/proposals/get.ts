@@ -1,4 +1,4 @@
-import { Channels, getPermissionsOnProposal, getProposal } from '@op/common';
+import { Channels, getProposal, getProposalAccess } from '@op/common';
 import { proposalSchema } from '@op/common/client';
 import { logger } from '@op/logging';
 import { z } from 'zod';
@@ -30,7 +30,7 @@ export const getProposalRouter = router({
       });
 
       // Fetch permissions
-      const { access, isEditable } = await getPermissionsOnProposal({
+      const { access, isEditable } = await getProposalAccess({
         user,
         proposal,
       }).catch((error) => {

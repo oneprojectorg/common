@@ -168,6 +168,36 @@ describe.concurrent('unsubmitDevelopedProposal', () => {
     expect(stored?.status).toBe(ProposalStatus.SUBMITTED);
   });
 
+  it('lets a decision admin who is not an author un-advance another person’s entry', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const author = await createDevelopProposalsMember({ testData, setup });
+    const [authorCaller, adminCaller] = await Promise.all([
+      createAuthenticatedCaller(author.email),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+    const draft = await authorCaller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: { title: 'Developed' },
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+    await authorCaller.decision.submitDevelopedProposal({
+      proposalId: draft.id,
+    });
+
+    const unsubmitted = await adminCaller.decision.unsubmitDevelopedProposal({
+      proposalId: draft.id,
+    });
+
+    expect(unsubmitted.status).toBe(ProposalStatus.DRAFT);
+  });
+
   it('refuses a soft-deleted entry as not found', async ({
     task,
     onTestFinished,
