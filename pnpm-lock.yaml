@@ -1679,9 +1679,6 @@ importers:
       '@op/db':
         specifier: workspace:*
         version: link:../../services/db
-      '@op/supabase':
-        specifier: workspace:*
-        version: link:../../services/supabase
       '@op/typescript-config':
         specifier: workspace:*
         version: link:../../configs/typescript-config
