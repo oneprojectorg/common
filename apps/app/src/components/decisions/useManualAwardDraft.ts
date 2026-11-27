@@ -32,9 +32,12 @@ const useSyncedAwardEdits = createSyncedLocalStorage<AwardEdits>({
     Object.keys(edits).length === 0 ? null : JSON.stringify(edits),
 });
 
+/** Award edits for one visit to the phase; see `useManualSelection`. */
 export function useManualAwardDraft(
   instanceId: string,
   phaseId: string,
+  visitId?: string | null,
 ): AwardDraft {
-  return useSyncedAwardEdits(storageKey(instanceId, phaseId));
+  const key = storageKey(instanceId, phaseId);
+  return useSyncedAwardEdits(visitId ? `${key}:${visitId}` : key);
 }

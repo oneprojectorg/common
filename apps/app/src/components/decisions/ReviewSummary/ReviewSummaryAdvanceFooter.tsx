@@ -20,6 +20,8 @@ import { type AwardProposal, useProposalAwards } from '../useProposalAwards';
 interface ReviewSummaryAdvanceFooterProps {
   instanceId: string;
   phaseId: string | undefined;
+  /** The current phase's inbound transition; scopes the drafts to this visit. */
+  visitId: string | null | undefined;
   /** Source for the requested amount when the selection awards money. */
   proposal: AwardProposal;
   /** Resolved display title — the accessible name on the award controls. */
@@ -36,6 +38,7 @@ interface ReviewSummaryAdvanceFooterProps {
 export function ReviewSummaryAdvanceFooter({
   instanceId,
   phaseId,
+  visitId,
   proposal,
   proposalTitle,
   awardsAmounts,
@@ -47,8 +50,9 @@ export function ReviewSummaryAdvanceFooter({
   const [selectedIds, setSelectedIds] = useManualSelection(
     instanceId,
     phaseId ?? '',
+    visitId,
   );
-  const awardDraft = useManualAwardDraft(instanceId, phaseId ?? '');
+  const awardDraft = useManualAwardDraft(instanceId, phaseId ?? '', visitId);
   const proposals = useMemo(() => [proposal], [proposal]);
   const awards = useProposalAwards({
     proposals,

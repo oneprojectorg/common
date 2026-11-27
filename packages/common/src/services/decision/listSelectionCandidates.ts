@@ -11,8 +11,13 @@ import { isLegacyInstanceData } from './isLegacyInstance';
 import { listProposals } from './listProposals';
 import type { Proposal } from './schemas/proposal';
 
+export interface SelectionCandidate extends Proposal {
+  /** The inbound selection pipeline chose it; the transition awaits approval. */
+  selectedByPipeline: boolean;
+}
+
 export interface SelectionCandidates {
-  items: Proposal[];
+  items: SelectionCandidate[];
   /** Size of the whole eligible pool, before `categoryId` narrows it. */
   totalCandidates: number;
 }
@@ -68,6 +73,12 @@ export async function listSelectionCandidates({
     return { items: [], totalCandidates: 0 };
   }
 
+  const pipelineSelectedIds = await resolveHeldSelection({
+    processInstanceId,
+    currentStateId: instance.currentStateId,
+    db,
+  });
+
   // Resolved unconditionally: `totalCandidates` describes the unfiltered pool
   // even when the filter matches nothing.
   const [phaseCandidateIds, categoryRows] = await Promise.all([
@@ -111,7 +122,42 @@ export async function listSelectionCandidates({
     user,
   });
 
-  return { items, totalCandidates };
+  return {
+    items: items.map((item) => ({
+      ...item,
+      selectedByPipeline: pipelineSelectedIds.has(item.id),
+    })),
+    totalCandidates,
+  };
+}
+
+/**
+ * The proposals the pipeline attached to the latest inbound transition while
+ * it awaits approval. Empty once confirmed, or when the phase was entered
+ * without a pipeline.
+ */
+async function resolveHeldSelection({
+  processInstanceId,
+  currentStateId,
+  db,
+}: {
+  processInstanceId: string;
+  currentStateId: string | null;
+  db: DbClient;
+}): Promise<Set<string>> {
+  if (!currentStateId) {
+    return new Set();
+  }
+  const inbound = await db.query.stateTransitionHistory.findFirst({
+    where: { processInstanceId, toStateId: currentStateId },
+    orderBy: { transitionedAt: 'desc' },
+    columns: { selectionConfirmedAt: true },
+    with: { transitionProposals: { columns: { proposalId: true } } },
+  });
+  if (!inbound || inbound.selectionConfirmedAt !== null) {
+    return new Set();
+  }
+  return new Set(inbound.transitionProposals.map((row) => row.proposalId));
 }
 
 async function resolvePreviousPhaseId({

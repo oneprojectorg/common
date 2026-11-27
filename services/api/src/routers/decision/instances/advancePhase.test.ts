@@ -1,7 +1,9 @@
 import {
   advancePhase,
   getProposalIdsForPhase,
+  resolveManualSelectionStatus,
   resolvePhases,
+  revertPhase,
 } from '@op/common';
 import {
   TestDecisionsDataManager,
@@ -426,6 +428,72 @@ describe.concurrent('advancePhase', () => {
     expect(result.selectionAwaitingApproval).toBe(false);
   });
 
+  it('starts a new visit when a reverted phase is entered again', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      status: ProcessStatus.PUBLISHED,
+      processSchema: schemaWithPipeline,
+    });
+    const instanceId = setup.instance.instance.id;
+    await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Reverted ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+    await holdPhaseSelection(instanceId, 'submission');
+    const reload = async () => {
+      const row = await db.query.processInstances.findFirst({
+        where: { id: instanceId },
+      });
+      if (!row) {
+        throw new Error('Failed to reload instance');
+      }
+      return row;
+    };
+    const selectionStatus = async () =>
+      resolveManualSelectionStatus({
+        instance: await resolvePhases({ instance: await reload() }),
+      });
+    const advance = async () =>
+      callAdvancePhase(
+        { setup, dbInstance: await reload() },
+        { fromPhaseId: 'submission', toPhaseId: 'review' },
+      );
+
+    expect(await advance()).toMatchObject({
+      conflict: false,
+      selectionAwaitingApproval: true,
+    });
+    const firstVisit = (await selectionStatus()).inboundTransitionId;
+    if (!firstVisit) {
+      throw new Error('Expected an inbound transition');
+    }
+
+    await revertPhase({ instanceId, fromPhaseId: 'review' });
+
+    expect(
+      await db.query.decisionTransitionProposals.findMany({
+        where: { transitionHistoryId: firstVisit },
+      }),
+    ).toEqual([]);
+    expect(await selectionStatus()).toEqual({
+      selectionsAreConfirmed: true,
+      inboundTransitionId: null,
+    });
+
+    await advance();
+    const secondVisit = await selectionStatus();
+    expect(secondVisit.selectionsAreConfirmed).toBe(false);
+    expect(secondVisit.inboundTransitionId).toEqual(expect.any(String));
+    expect(secondVisit.inboundTransitionId).not.toBe(firstVisit);
+  });
+
   it('holds the selection for the admin when the departing phase needs approval', async ({
     task,
     onTestFinished,
@@ -493,6 +561,9 @@ describe.concurrent('advancePhase', () => {
       processInstanceId: instanceId,
     });
     expect(candidates.totalCandidates).toBe(3);
+    expect(
+      candidates.items.filter((item) => item.selectedByPipeline),
+    ).toHaveLength(2);
 
     // The admin's list replaces the held selection.
     await caller.decision.submitManualSelection({

@@ -71,6 +71,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       phases,
       access,
       selectionsAreConfirmed: manualSelectionStatus.selectionsAreConfirmed,
+      inboundTransitionId: manualSelectionStatus.inboundTransitionId,
     };
   } catch (error) {
     if (error instanceof NotFoundError || error instanceof UnauthorizedError) {

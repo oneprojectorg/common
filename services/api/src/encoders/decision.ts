@@ -385,6 +385,7 @@ const processInstanceWithSchemaEncoderBase = createSelectSchema(
     participantCount: z.number().optional(),
     access: decisionAccessEncoder.optional(),
     selectionsAreConfirmed: z.boolean().optional(),
+    inboundTransitionId: z.string().nullish(),
   });
 
 export const processInstanceWithSchemaEncoder = z.preprocess(
