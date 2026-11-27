@@ -23,7 +23,6 @@
     "@axe-core/playwright": "^4.11.2",
     "@op/common": "workspace:^",
     "@op/db": "workspace:*",
-    "@op/supabase": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "@playwright/test": "^1.58.0",
     "@supabase/supabase-js": "catalog:",
