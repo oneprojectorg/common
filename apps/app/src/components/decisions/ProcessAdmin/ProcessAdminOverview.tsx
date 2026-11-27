@@ -17,7 +17,13 @@ import { Header2 } from '@op/sense/Header';
 import { ProfileAvatar } from '@op/sense/ProfileAvatar';
 import { StatusBadge } from '@op/sense/StatusBadge';
 import { useRouter } from 'next/navigation';
-import { Suspense, useEffect, useRef, type ReactNode } from 'react';
+import {
+  Suspense,
+  useEffect,
+  useRef,
+  type ComponentProps,
+  type ReactNode,
+} from 'react';
 import { LuArrowLeft, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -28,16 +34,15 @@ import { ButtonLink } from '@/components/ButtonLink';
 import { DecisionHero } from '../DecisionHero';
 import { DecisionHeroBanner } from '../DecisionHeroBanner';
 import { OverviewAbout } from '../DecisionOverview';
-import { DecisionPhaseTimeline } from '../DecisionPhaseTimeline';
 import {
   OverviewPinnedResourcesSuspense,
   PinnedResourcesError,
   PinnedResourcesSkeleton,
 } from '../OverviewPinnedResources';
-import { toProcessPhases } from '../toProcessPhases';
 import { ProcessAdminBanner } from './ProcessAdminBanner';
 import { ProcessAdminLaunchButton } from './ProcessAdminLaunchButton';
 import { ProcessAdminOverviewSkeleton } from './ProcessAdminOverviewSkeleton';
+import { ProcessAdminPhaseTimeline } from './ProcessAdminPhaseTimeline';
 import { ProcessAdminTitle } from './ProcessAdminTitle';
 import {
   type ProcessAdminStatus,
@@ -130,7 +135,8 @@ function ProcessAdminOverviewSuspense({
           <div className="flex min-w-0 flex-1 flex-col gap-10">
             <ProcessAdminPhaseRail
               slug={slug}
-              instance={instance}
+              phases={instance.phases}
+              currentStateId={instance.currentStateId}
               isOpen={isOpen}
             />
             {instance.profileId ? (
@@ -300,27 +306,24 @@ function ProcessAdminHero({
 
 function ProcessAdminPhaseRail({
   slug,
-  instance,
+  phases,
+  currentStateId,
   isOpen,
-}: {
-  slug: string;
-  instance: ProcessInstance;
-  isOpen: boolean;
-}) {
+}: Pick<
+  ComponentProps<typeof ProcessAdminPhaseTimeline>,
+  'slug' | 'phases' | 'currentStateId'
+> & { isOpen: boolean }) {
   const t = useTranslations('decisions');
-  const phases = toProcessPhases(instance.instanceData.phases);
 
   return (
     <section className="flex flex-col gap-4">
       <Header2 className="text-label">{t('processOverviewHeading')}</Header2>
       {phases.length > 0 ? (
-        <DecisionPhaseTimeline
+        <ProcessAdminPhaseTimeline
+          slug={slug}
           phases={phases}
-          currentPhaseId={instance.currentStateId ?? ''}
+          currentStateId={currentStateId}
           hasStarted={isOpen}
-          instanceId={instance.id}
-          isAdmin={false}
-          decisionSlug={slug}
         />
       ) : (
         <AdminEmptyState

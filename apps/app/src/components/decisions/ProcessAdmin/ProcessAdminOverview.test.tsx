@@ -112,14 +112,6 @@ vi.mock('@op/api/client', () => ({
   },
 }));
 
-// The timeline owns the phase-advance mutation; this test only needs to know
-// whether it rendered and what it was told.
-vi.mock('../DecisionPhaseTimeline', () => ({
-  DecisionPhaseTimeline: ({ hasStarted }: { hasStarted: boolean }) => (
-    <div data-testid="phase-timeline" data-started={String(hasStarted)} />
-  ),
-}));
-
 // The i18n Link prefetches through the app router and an IntersectionObserver,
 // neither of which a unit test has.
 vi.mock('next/navigation', async (importOriginal) => ({
@@ -165,6 +157,7 @@ const profile = ({
   status = ProcessStatus.PUBLISHED,
   description = null,
   phases = [],
+  currentStateId = null,
   steward = null,
   heroImage,
   isPrivate = false,
@@ -174,6 +167,7 @@ const profile = ({
   status?: string;
   description?: string | null;
   phases?: object[];
+  currentStateId?: string | null;
   steward?: object | null;
   heroImage?: string;
   isPrivate?: boolean;
@@ -184,8 +178,9 @@ const profile = ({
     profileId: 'profile-1',
     status,
     description,
-    currentStateId: null,
+    currentStateId,
     steward,
+    phases,
     instanceData: {
       phases,
       config: { isPrivate },
@@ -212,9 +207,16 @@ const succeedSave = (saved: unknown) =>
 const failSave = () => act(() => updateInstance.fail());
 
 const phase = {
+  id: 'row-submit',
   phaseId: 'submit',
   name: 'Submit',
   startDate: '2026-01-01T00:00:00.000Z',
+};
+const votePhase = {
+  id: 'row-vote',
+  phaseId: 'vote',
+  name: 'Vote',
+  startDate: '2026-02-01T00:00:00.000Z',
 };
 
 afterEach(() => {
@@ -232,7 +234,6 @@ describe('ProcessAdminOverview', () => {
     expect(screen.getByText('No phases yet')).toBeTruthy();
     expect(screen.getByText('No pinned resources')).toBeTruthy();
     expect(screen.getByText('No description yet')).toBeTruthy();
-    expect(screen.queryByTestId('phase-timeline')).toBeNull();
   });
 
   it('lists the pinned resources in place of their empty state', () => {
@@ -281,11 +282,29 @@ describe('ProcessAdminOverview', () => {
   });
 
   it('renders the phase timeline when the process has phases', () => {
-    seed({ phases: [phase] });
+    seed({ phases: [phase, votePhase], currentStateId: 'vote' });
     renderOverview(true);
 
-    expect(screen.getByTestId('phase-timeline').dataset.started).toBe('true');
+    expect(screen.getByText('Submit')).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: /Vote/ }).getAttribute('href'),
+    ).toBe(`/decisions/${SLUG}/current`);
     expect(screen.queryByText('No phases yet')).toBeNull();
+  });
+
+  it('updates the rail when a refetch renames a phase or advances the current one', () => {
+    seed({ phases: [phase, votePhase], currentStateId: 'submit' });
+    const { rerender } = renderOverview(true);
+
+    seed({
+      phases: [{ ...phase, name: 'Ideas' }, votePhase],
+      currentStateId: 'vote',
+    });
+    rerender(overview(true));
+
+    expect(screen.getByText('Ideas')).toBeTruthy();
+    expect(screen.queryByText('Submit')).toBeNull();
+    expect(screen.getByRole('link', { name: /Vote/ })).toBeTruthy();
   });
 
   it('links to the proposals once the process is open', () => {
@@ -304,7 +323,8 @@ describe('ProcessAdminOverview', () => {
     renderOverview(false);
 
     expect(screen.queryByRole('link', { name: 'Browse proposals' })).toBeNull();
-    expect(screen.getByTestId('phase-timeline').dataset.started).toBe('false');
+    expect(screen.getByText('Submit')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /Submit/ })).toBeNull();
   });
 
   it.each([
