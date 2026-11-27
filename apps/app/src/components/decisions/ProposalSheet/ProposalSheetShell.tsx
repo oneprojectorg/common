@@ -13,7 +13,7 @@ import {
 import { Sheet, SheetContent, SheetTitle } from '@op/sense/Sheet';
 import { Skeleton, SkeletonText } from '@op/sense/Skeleton';
 import { type ReactNode, Suspense, useContext } from 'react';
-import { LuExpand, LuTriangleAlert, LuX } from 'react-icons/lu';
+import { LuMaximize2, LuTriangleAlert, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -46,14 +46,14 @@ export function ProposalSheetShell({ children }: { children: ReactNode }) {
         side="inline-end"
         // sense labels its built-in close "Close" in English.
         showCloseButton={false}
-        className="w-full gap-0 p-0 sm:max-w-2xl"
+        className="w-full gap-0 p-0 sm:max-w-148"
       >
         {/* The proposal's H1 arrives with the query, so the dialog needs a static name. */}
         <SheetTitle className="sr-only">
           {t('decisions.proposals.proposalLabel')}
         </SheetTitle>
 
-        <div className="flex shrink-0 items-center justify-end gap-1 border-b px-4 py-3">
+        <div className="flex shrink-0 items-center justify-end gap-1 px-4 pt-4">
           {shownProfileId ? (
             <>
               {/* Reporting needs the proposal's own id, so it waits on the query. */}
@@ -73,19 +73,21 @@ export function ProposalSheetShell({ children }: { children: ReactNode }) {
                 }
                 variant="ghost"
                 size="icon-sm"
+                className="text-muted-foreground hover:text-foreground"
                 aria-label={t('decisions.proposals.openFullProposalAction')}
               >
-                <LuExpand className="size-4" />
+                <LuMaximize2 className="size-4" />
               </ButtonLink>
             </>
           ) : null}
           <Button
             variant="ghost"
             size="icon-sm"
+            className="text-muted-foreground hover:text-foreground"
             onClick={state.close}
             aria-label={t('Close')}
           >
-            <LuX className="size-5" />
+            <LuX className="size-4" />
           </Button>
         </div>
 
