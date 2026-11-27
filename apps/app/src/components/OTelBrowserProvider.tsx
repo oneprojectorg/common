@@ -3,6 +3,7 @@
 import { logger } from '@op/logging/client';
 import { useEffect, useRef } from 'react';
 
+import { isChunkLoadError } from '../lib/chunkLoadError';
 import { setErrorSpanFlusher } from '../lib/otelErrorTracking';
 
 /**
@@ -96,6 +97,17 @@ async function initOTelBrowser() {
       }
     });
   } catch (error) {
+    // A chunk that does not load only turns tracing off for this session, so
+    // it is not an exception to triage. Each deploy and chunk id would
+    // otherwise open a new Error Tracking issue.
+    if (isChunkLoadError(error)) {
+      logger.info('[OTel] Browser tracing chunk failed to load', {
+        error,
+        context: 'otel_browser_init',
+      });
+      return;
+    }
+
     logger.warn('[OTel] Failed to initialize browser tracing', {
       error,
       context: 'otel_browser_init',
