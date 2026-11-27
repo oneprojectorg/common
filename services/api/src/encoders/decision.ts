@@ -621,6 +621,10 @@ export const processInstanceWithPhasesEncoder = z.preprocess(
   }),
 );
 
+export const decisionProfileWithPhasesEncoder = baseProfileEncoder.extend({
+  processInstance: processInstanceWithPhasesEncoder,
+});
+
 // name lives on the phase's profile; the service validates both schemas.
 export const phaseDataInputEncoder = instancePhaseDataInputEncoder
   .omit({ phaseId: true, name: true })

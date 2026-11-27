@@ -6,7 +6,8 @@ import { permission } from 'access-zones';
 import { UnauthorizedError } from '../../utils';
 import type { AccessUser } from '../access/cacheKeys';
 import { assertProfileAccess } from '../assert';
-import { type InstanceWithPhases, resolvePhases } from './instancePhases';
+import { type Phase, toPhases } from './instancePhases';
+import { listPhases } from './phaseHelpers';
 
 const decisionProfileQueryConfig = {
   with: {
@@ -31,9 +32,9 @@ type LoadedDecisionProfile = NonNullable<
 >;
 
 type DecisionProfileItem = Omit<LoadedDecisionProfile, 'processInstance'> & {
-  processInstance: InstanceWithPhases<
-    NonNullable<LoadedDecisionProfile['processInstance']>
-  >;
+  processInstance: NonNullable<LoadedDecisionProfile['processInstance']> & {
+    readonly phases: Phase[];
+  };
 };
 
 // Short TTL on purpose (mirrors the resources list cache): @op/cache
@@ -92,8 +93,8 @@ export const getDecisionBySlug = async ({
   // listDecisionProfiles, and the SMS SHOW path (getSmsDecisionDescription) counts
   // its ballot itself. Keeping the hot-path slug fetch aggregate-free saves a
   // proposals table scan per view.
-  const [processInstance] = await Promise.all([
-    resolvePhases({ instance }),
+  const [storedPhases] = await Promise.all([
+    listPhases({ db, processInstanceId: instance.id }),
     assertProfileAccess({
       user,
       profileId: profile.id,
@@ -104,6 +105,11 @@ export const getDecisionBySlug = async ({
       notMemberMessage: 'User does not have access to this process',
     }),
   ]);
-
-  return { ...profile, processInstance };
+  return {
+    ...profile,
+    processInstance: {
+      ...instance,
+      phases: toPhases({ instance, storedPhases }),
+    },
+  };
 };

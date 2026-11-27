@@ -7,7 +7,7 @@ import {
 import { collapseRoles } from 'access-zones';
 import { z } from 'zod';
 
-import { decisionProfileWithSchemaEncoder } from '../../../encoders/decision';
+import { decisionProfileWithPhasesEncoder } from '../../../encoders/decision';
 import { openProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
@@ -19,7 +19,7 @@ export const getDecisionBySlugRouter = router({
     rateLimit: { windowSize: 10, maxRequests: 100 },
   })
     .input(inputSchema)
-    .output(decisionProfileWithSchemaEncoder)
+    .output(decisionProfileWithPhasesEncoder)
     .query(async ({ input, ctx }) => {
       const { user } = ctx;
       const { slug } = input;
@@ -29,9 +29,7 @@ export const getDecisionBySlugRouter = router({
         user,
       });
 
-      const parsed = decisionProfileWithSchemaEncoder.parse(result);
-
-      const { profileId } = parsed.processInstance;
+      const { profileId, id } = result.processInstance;
       if (!profileId) {
         throw new Error('Decision profile ID is missing');
       }
@@ -43,14 +41,12 @@ export const getDecisionBySlugRouter = router({
 
       const decisionsBitField = collapseRoles(roles)['decisions'] ?? 0;
 
-      ctx.registerQueryChannels([
-        Channels.decisionInstance(parsed.processInstance.id),
-      ]);
+      ctx.registerQueryChannels([Channels.decisionInstance(id)]);
 
-      return decisionProfileWithSchemaEncoder.parse({
-        ...parsed,
+      return decisionProfileWithPhasesEncoder.parse({
+        ...result,
         processInstance: {
-          ...parsed.processInstance,
+          ...result.processInstance,
           access: fromDecisionBitField(decisionsBitField),
         },
       });

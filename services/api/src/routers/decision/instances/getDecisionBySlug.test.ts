@@ -1,4 +1,7 @@
+import type { ProposalTemplateSchema, SelectionPipeline } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
+import { db, eq } from '@op/db/client';
+import { processPhases } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -18,6 +21,13 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+function expectNoIdsInInstanceData(phases: object[] | undefined) {
+  expect(phases?.length).toBeGreaterThan(0);
+  for (const phase of phases ?? []) {
+    expect(phase).not.toHaveProperty('id');
+  }
 }
 
 describe.concurrent('getDecisionBySlug', () => {
@@ -143,6 +153,115 @@ describe.concurrent('getDecisionBySlug', () => {
 
     const after = await caller.decision.getDecisionBySlug({ slug });
     expect(after.processInstance.name).toBe(newName);
+  });
+
+  it('returns each phase with its row id, in order', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const storedPhases = await db.query.processPhases.findMany({
+      where: { processInstanceId: setup.instance.instance.id },
+      columns: { id: true },
+      with: { profile: { columns: { name: true } } },
+      orderBy: { sortOrder: 'asc' },
+    });
+    await Promise.all(
+      storedPhases.map(({ id }, index) =>
+        db
+          .update(processPhases)
+          .set({ sortOrder: storedPhases.length - 1 - index })
+          .where(eq(processPhases.id, id)),
+      ),
+    );
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getDecisionBySlug({
+      slug: setup.instance.slug,
+    });
+
+    expect(storedPhases.length).toBeGreaterThan(1);
+    expect(
+      result.processInstance.phases.map(({ id, name }) => [id, name]),
+    ).toEqual(
+      [...storedPhases].reverse().map(({ id, profile }) => [id, profile.name]),
+    );
+    expectNoIdsInInstanceData(result.processInstance.instanceData.phases);
+  });
+
+  it("returns each phase's whole selection pipeline and proposal template", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const selectionPipeline: SelectionPipeline = {
+      version: '1.0.0',
+      blocks: [
+        {
+          id: 'shortlisted',
+          type: 'filter',
+          condition: {
+            operator: 'equals',
+            left: { field: 'status' },
+            right: { value: 'approved' },
+          },
+        },
+      ],
+    };
+    const proposalTemplate: ProposalTemplateSchema = {
+      type: 'object',
+      properties: { title: { type: 'string' } },
+    };
+    await testData.leaveOnlyPhaseRows(setup.instance.instance.id, {
+      selectionPipeline,
+      proposalTemplate,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getDecisionBySlug({
+      slug: setup.instance.slug,
+    });
+
+    expect(result.processInstance.phases[0]).toMatchObject({
+      selectionPipeline,
+      proposalTemplate,
+    });
+  });
+
+  it('returns a null id for phases a decision has not stored yet', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    await testData.removePhaseRows(setup.instance.instance.id);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getDecisionBySlug({
+      slug: setup.instance.slug,
+    });
+
+    expect(result.processInstance.phases.length).toBeGreaterThan(0);
+    expect(
+      result.processInstance.phases.map(({ id, phaseId }) => [id, phaseId]),
+    ).toEqual(
+      setup.instance.instance.instanceData.phases.map(({ phaseId }) => [
+        null,
+        phaseId,
+      ]),
+    );
+    expectNoIdsInInstanceData(result.processInstance.instanceData.phases);
   });
 });
 
