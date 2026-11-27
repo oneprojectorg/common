@@ -1,7 +1,18 @@
-import { type SQL, and, db, desc, eq, exists, isNull } from '@op/db/client';
+import {
+  type SQL,
+  and,
+  db,
+  desc,
+  eq,
+  exists,
+  isNull,
+  notExists,
+  sql,
+} from '@op/db/client';
 import {
   ProcessStatus,
   categoryReviewers,
+  decisionTransitionProposals,
   processInstances,
   stateTransitionHistory,
 } from '@op/db/schema';
@@ -250,6 +261,20 @@ function developWindowOpenWhere({
           eq(latestTransition.id, latestTransitionId),
           eq(latestTransition.toStateId, phaseId),
           isNull(latestTransition.selectionConfirmedAt),
+          // A transition the previous deployment wrote during the rollout
+          // has no selectionConfirmedAt; its stamp or attachments settle it.
+          sql`coalesce(jsonb_typeof(${latestTransition.transitionData} -> 'manualSelection'), 'null') = 'null'`,
+          notExists(
+            db
+              .select({ id: decisionTransitionProposals.transitionHistoryId })
+              .from(decisionTransitionProposals)
+              .where(
+                eq(
+                  decisionTransitionProposals.transitionHistoryId,
+                  latestTransition.id,
+                ),
+              ),
+          ),
         ),
       ),
   );

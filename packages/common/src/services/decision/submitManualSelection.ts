@@ -1,5 +1,9 @@
 import { db, desc, eq } from '@op/db/client';
-import { ProcessStatus, stateTransitionHistory } from '@op/db/schema';
+import {
+  ProcessStatus,
+  decisionTransitionProposals,
+  stateTransitionHistory,
+} from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
@@ -206,8 +210,15 @@ export async function submitManualSelection({
       );
     }
 
-    // Can't overwrite a selection that is already settled.
-    if (latestRow.selectionConfirmedAt !== null) {
+    // Can't overwrite a selection that is already settled. A transition the
+    // previous deployment wrote during the rollout has no
+    // selectionConfirmedAt; its attachments still settle it.
+    const [attachedRow] = await tx
+      .select({ proposalId: decisionTransitionProposals.proposalId })
+      .from(decisionTransitionProposals)
+      .where(eq(decisionTransitionProposals.transitionHistoryId, latestRow.id))
+      .limit(1);
+    if (latestRow.selectionConfirmedAt !== null || attachedRow) {
       throw new ValidationError(
         'Manual selection is not available for this instance',
       );

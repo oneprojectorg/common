@@ -1,10 +1,15 @@
-import { advancePhase, resolvePhases } from '@op/common';
+import {
+  advancePhase,
+  resolveManualSelectionStatus,
+  resolvePhases,
+} from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
   decisionTransitionProposals,
   processInstances,
+  stateTransitionHistory,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -236,6 +241,57 @@ describe.concurrent('advancePhase', () => {
     expect(joinRows.length).toBe(1);
     expect(joinRows[0]!.proposalId).toBe(proposal.id);
     expect(joinRows[0]!.transitionHistoryId).toBe(result.transitionHistoryId);
+  });
+
+  it('reads a transition with attachments and no confirmation as settled', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // The shape the previous deployment writes during a rollout.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: 'Proposal A' },
+    });
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    await caller.decision.submitProposal({ proposalId: proposal.id });
+    await db
+      .update(processInstances)
+      .set({ status: ProcessStatus.PUBLISHED })
+      .where(eq(processInstances.id, instanceId));
+    const loadInstance = async () => {
+      const row = await db.query.processInstances.findFirst({
+        where: { id: instanceId },
+      });
+      if (!row) {
+        throw new Error('Failed to reload instance');
+      }
+      return row;
+    };
+
+    const result = await callAdvancePhase(
+      { setup, dbInstance: await loadInstance() },
+      { fromPhaseId: 'initial', toPhaseId: 'final' },
+    );
+    if (result.conflict) {
+      throw new Error('unreachable');
+    }
+    await db
+      .update(stateTransitionHistory)
+      .set({ selectionConfirmedAt: null })
+      .where(eq(stateTransitionHistory.id, result.transitionHistoryId));
+
+    await expect(
+      resolveManualSelectionStatus({
+        instance: await resolvePhases({ instance: await loadInstance() }),
+      }),
+    ).resolves.toEqual({ selectionsAreConfirmed: true });
   });
 
   it('does not write join rows when there are no selected proposals', async ({

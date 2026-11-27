@@ -2,6 +2,7 @@ import { db } from '@op/db/client';
 import type { DbClient } from '@op/db/client';
 
 import { isLegacyInstanceData } from './isLegacyInstance';
+import type { TransitionData } from './schemas/transitionData';
 
 export type InstanceForStatusResolution = {
   id: string;
@@ -58,7 +59,12 @@ export async function resolveManualSelectionStatus({
   const latestRow = await dbClient.query.stateTransitionHistory.findFirst({
     where: { processInstanceId: instance.id },
     orderBy: { transitionedAt: 'desc' },
-    columns: { toStateId: true, selectionConfirmedAt: true },
+    columns: {
+      id: true,
+      toStateId: true,
+      transitionData: true,
+      selectionConfirmedAt: true,
+    },
   });
 
   if (!latestRow || latestRow.toStateId !== currentStateId) {
@@ -66,6 +72,22 @@ export async function resolveManualSelectionStatus({
   }
 
   if (latestRow.selectionConfirmedAt !== null) {
+    return { selectionsAreConfirmed: true };
+  }
+
+  // A transition the previous deployment wrote during the rollout has no
+  // selectionConfirmedAt; its stamp or attachments still settle it.
+  if (
+    (latestRow.transitionData as TransitionData | null | undefined)
+      ?.manualSelection
+  ) {
+    return { selectionsAreConfirmed: true };
+  }
+  const attached = await dbClient.query.decisionTransitionProposals.findFirst({
+    where: { transitionHistoryId: latestRow.id },
+    columns: { transitionHistoryId: true },
+  });
+  if (attached) {
     return { selectionsAreConfirmed: true };
   }
 

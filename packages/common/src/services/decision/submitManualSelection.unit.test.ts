@@ -164,6 +164,8 @@ function happyPathResults() {
         selectionConfirmedAt: null,
       },
     ],
+    // attachedRow (no proposals attached yet)
+    [],
     // UPDATE stateTransitionHistory
     undefined,
     // latestHistoryRows (one per unique proposal)
