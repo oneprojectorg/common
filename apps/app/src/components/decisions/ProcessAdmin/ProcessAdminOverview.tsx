@@ -27,7 +27,6 @@ import { ButtonLink } from '@/components/ButtonLink';
 
 import { DecisionHero } from '../DecisionHero';
 import { DecisionHeroBanner } from '../DecisionHeroBanner';
-import { OverviewAbout } from '../DecisionOverview';
 import { DecisionPhaseTimeline } from '../DecisionPhaseTimeline';
 import {
   OverviewPinnedResourcesSuspense,
@@ -35,10 +34,13 @@ import {
   PinnedResourcesSkeleton,
 } from '../OverviewPinnedResources';
 import { toProcessPhases } from '../toProcessPhases';
+import { AdminEmptyState } from './AdminEmptyState';
+import { ProcessAdminAbout } from './ProcessAdminAbout';
 import { ProcessAdminBanner } from './ProcessAdminBanner';
 import { ProcessAdminLaunchButton } from './ProcessAdminLaunchButton';
 import { ProcessAdminOverviewSkeleton } from './ProcessAdminOverviewSkeleton';
 import { ProcessAdminSettingsDialog } from './ProcessAdminSettingsDialog';
+import { ProcessAdminStewardMenu } from './ProcessAdminSteward';
 import { ProcessAdminTitle } from './ProcessAdminTitle';
 import { ProcessAdminsDialog } from './ProcessAdminsDialog';
 import {
@@ -154,6 +156,10 @@ function ProcessAdminOverviewSuspense({
             ) : null}
           </div>
           <ProcessAdminAbout
+            slug={slug}
+            instanceId={instance.id}
+            isDraft={status === 'draft'}
+            body={instance.instanceData.overview?.body}
             description={instance.description}
             aboutSlot={aboutSlot}
           />
@@ -250,6 +256,33 @@ function ProcessAdminHero({
   const steward = instance.steward;
   const stewardSlug = canLinkToProfile ? steward?.slug : undefined;
 
+  // A draft changes its steward in place, from the profiles the admin
+  // administers; the static name stands in until that list has loaded.
+  const renderStewardName = (chunks: ReactNode) => {
+    const plain = stewardSlug ? (
+      <Link href={`/profile/${stewardSlug}`} className="underline">
+        <bdi>{chunks}</bdi>
+      </Link>
+    ) : (
+      <bdi>{chunks}</bdi>
+    );
+    if (status !== 'draft' || !steward) {
+      return plain;
+    }
+    return (
+      <APIErrorBoundary fallbacks={{ default: () => plain }}>
+        <Suspense fallback={plain}>
+          <ProcessAdminStewardMenu
+            slug={slug}
+            instance={instance}
+            name={steward.name}
+            fallback={plain}
+          />
+        </Suspense>
+      </APIErrorBoundary>
+    );
+  };
+
   const stewardLine = steward ? (
     <p className="flex items-center justify-center gap-1.5">
       <ProfileAvatar
@@ -258,17 +291,10 @@ function ProcessAdminHero({
         alt=""
         size="sm"
       />
-      <span>
+      <span className="flex items-center gap-1">
         {t.rich('processAdmin.stewardedBy', {
           name: steward.name,
-          steward: (chunks) =>
-            stewardSlug ? (
-              <Link href={`/profile/${stewardSlug}`} className="underline">
-                <bdi>{chunks}</bdi>
-              </Link>
-            ) : (
-              <bdi>{chunks}</bdi>
-            ),
+          steward: renderStewardName,
         })}
       </span>
     </p>
@@ -345,50 +371,6 @@ function ProcessAdminPhaseRail({
         />
       )}
     </section>
-  );
-}
-
-function ProcessAdminAbout({
-  description,
-  aboutSlot,
-}: {
-  description: string | null | undefined;
-  aboutSlot: ReactNode;
-}) {
-  const t = useTranslations('decisions.processAdmin');
-
-  return (
-    <section className="flex min-w-0 flex-col gap-3 md:w-80 md:shrink-0 lg:w-140">
-      <Header2 className="text-label">{t('aboutHeading')}</Header2>
-      {aboutSlot || description ? (
-        <OverviewAbout
-          bodySlot={aboutSlot}
-          fallbackText={description ?? undefined}
-        />
-      ) : (
-        <AdminEmptyState
-          title={t('noAboutTitle')}
-          description={t('noAboutDescription')}
-        />
-      )}
-    </section>
-  );
-}
-
-function AdminEmptyState({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <Empty className="border border-dashed">
-      <EmptyHeader>
-        <EmptyTitle>{title}</EmptyTitle>
-        <EmptyDescription>{description}</EmptyDescription>
-      </EmptyHeader>
-    </Empty>
   );
 }
 
