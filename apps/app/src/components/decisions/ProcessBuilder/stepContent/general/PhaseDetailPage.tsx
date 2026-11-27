@@ -28,6 +28,7 @@ import {
 import { Header1 } from '@op/sense/Header';
 import { Input } from '@op/sense/Input';
 import { RequiredAsterisk } from '@op/sense/RequiredAsterisk';
+import { RichTextViewer } from '@op/sense/RichTextEditor';
 import {
   Select,
   SelectContent,
@@ -41,7 +42,7 @@ import { Textarea } from '@op/sense/Textarea';
 import { cn } from '@op/sense/lib/utils';
 import { useQueryState } from 'nuqs';
 import { usePostHog } from 'posthog-js/react';
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -49,10 +50,12 @@ import { RichTextEditorWithToolbar } from '@/components/RichTextEditor/RichTextE
 import { ToggleRow } from '@/components/layout/split/form/ToggleRow';
 
 import { useProcessBuilderAutosave } from '../../ProcessBuilderAutosaveContext';
+import { LockNote } from '../../components/LockNote';
 import { SaveStatusIndicator } from '../../components/SaveStatusIndicator';
 import type { SectionProps } from '../../contentRegistry';
 import { isPhaseSection, sectionIdToPhaseId } from '../../navigationConfig';
 import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
+import { usePastPhaseLock } from '../../usePastPhaseLock';
 
 export function PhaseDetailPage({
   instanceId,
@@ -110,6 +113,12 @@ function PhaseDetailForm({
     (s) => s.instances[decisionProfileId]?.phases,
   );
   const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
+  const lockState = usePastPhaseLock(instanceId).getLock(phaseId);
+  const isPast = lockState === 'past';
+  const isCurrent = lockState === 'current';
+  const lockNoteId = useId();
+  const headingId = useId();
+  const additionalInfoLabelId = useId();
 
   const posthog = usePostHog();
   // Open reviews opt-in is confirmed via a dialog (enabling it changes reviewer
@@ -159,7 +168,7 @@ function PhaseDetailForm({
   // Safe to read `phase` from the closure because every caller updates once
   // per event — if that ever changes, this needs a ref, not an updater.
   const updatePhase = (updates: Partial<PhaseDefinition>) => {
-    if (!phase) {
+    if (!phase || isPast || (isCurrent && 'startDate' in updates)) {
       return;
     }
     const updated = { ...phase, ...updates };
@@ -173,7 +182,7 @@ function PhaseDetailForm({
 
   const utils = trpc.useUtils();
   const updateRules = (updates: Partial<PhaseRules>) => {
-    if (!phase) {
+    if (!phase || isPast) {
       return;
     }
     const newRules = { ...phase.rules, ...updates };
@@ -200,6 +209,9 @@ function PhaseDetailForm({
   // Validation
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const markTouched = (field: string) => {
+    if (isPast) {
+      return;
+    }
     setTouchedFields((prev) => new Set(prev).add(field));
   };
 
@@ -260,10 +272,12 @@ function PhaseDetailForm({
               total: phaseCount,
             })}
           </p>
-          <Header1 className="text-headline">
-            {phase.name?.trim()
-              ? phase.name
-              : t('decisions.processBuilder.addPhaseAction')}
+          <Header1 id={headingId} className="text-headline">
+            {phase.name?.trim() ? (
+              <bdi>{phase.name}</bdi>
+            ) : (
+              t('decisions.processBuilder.addPhaseAction')
+            )}
           </Header1>
         </div>
         <SaveStatusIndicator
@@ -272,7 +286,17 @@ function PhaseDetailForm({
         />
       </div>
 
-      <div className="space-y-8">
+      <div
+        className="space-y-8"
+        role={isPast ? 'group' : undefined}
+        aria-labelledby={isPast ? headingId : undefined}
+        aria-describedby={isPast ? lockNoteId : undefined}
+      >
+        {isPast && (
+          <LockNote id={lockNoteId} data-testid="past-phase-lock-note">
+            {t('decisions.processBuilder.pastPhaseLockedNote')}
+          </LockNote>
+        )}
         <PhaseField
           id="phase-name"
           label={t('decisions.processBuilder.phaseShortNameLabel')}
@@ -283,6 +307,7 @@ function PhaseDetailForm({
           errorMessage={getErrorMessage('name')}
           description={t('decisions.processBuilder.phaseShortNameHint')}
           maxLength={50}
+          readOnly={isPast}
         />
         <PhaseField
           id="phase-headline"
@@ -294,6 +319,7 @@ function PhaseDetailForm({
           errorMessage={getErrorMessage('headline')}
           description={t('decisions.processBuilder.phaseHeadlineHint')}
           maxLength={50}
+          readOnly={isPast}
         />
         <PhaseField
           id="phase-description"
@@ -307,28 +333,55 @@ function PhaseDetailForm({
           errorMessage={getErrorMessage('description')}
           description={t('decisions.processBuilder.phaseDescriptionHint')}
           maxLength={250}
+          readOnly={isPast}
         />
         <div className="space-y-2">
-          <label className="block font-strong">
+          <p id={additionalInfoLabelId} className="block font-strong">
             {t('decisions.processBuilder.phaseAdditionalInfoLabel')}
-          </label>
-          <RichTextEditorWithToolbar
-            content={phase.additionalInfo ?? ''}
-            onChange={(content) => updatePhase({ additionalInfo: content })}
-            toolbarPosition="bottom"
-            className="rounded-lg border border-input"
-            editorClassName="min-h-24 p-3"
-          />
+          </p>
+          <div role="group" aria-labelledby={additionalInfoLabelId}>
+            {isPast ? (
+              <RichTextViewer
+                content={phase.additionalInfo ?? ''}
+                className="rounded-lg border border-input bg-muted"
+                editorClassName="min-h-24 p-3"
+              />
+            ) : (
+              <RichTextEditorWithToolbar
+                content={phase.additionalInfo ?? ''}
+                onChange={(content) => updatePhase({ additionalInfo: content })}
+                toolbarPosition="bottom"
+                className="rounded-lg border border-input"
+                editorClassName="min-h-24 p-3"
+              />
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">
             {t('decisions.processBuilder.phaseAdditionalInfoHint')}
           </p>
         </div>
-        <div className="flex flex-wrap gap-4">
+        <div
+          className="flex flex-wrap gap-4"
+          role={isCurrent ? 'group' : undefined}
+          aria-labelledby={
+            isCurrent ? 'phase-start-date-description' : undefined
+          }
+        >
           <div className="flex-1">
             <DatePicker
+              id="phase-start-date"
               label={t('decisions.processBuilder.startDateLabel')}
               value={safeParseLocal(phase.startDate)}
               maxDate={safeParseLocal(phase.endDate)}
+              readOnly={isPast || isCurrent}
+              placeholder={
+                isPast || isCurrent ? t('Not set') : t('Select date')
+              }
+              description={
+                isCurrent
+                  ? t('decisions.processBuilder.currentPhaseStartLockedNote')
+                  : undefined
+              }
               onChange={(date) => {
                 if (date) {
                   updatePhase({ startDate: date.toISOString() });
@@ -357,6 +410,8 @@ function PhaseDetailForm({
               required
               value={safeParseLocal(phase.endDate)}
               minDate={safeParseLocal(phase.startDate)}
+              readOnly={isPast}
+              placeholder={isPast ? t('Not set') : t('Select date')}
               onChange={(date) => {
                 if (date) {
                   updatePhase({ endDate: date.toISOString() });
@@ -373,6 +428,7 @@ function PhaseDetailForm({
           description={t('decisions.processBuilder.proposalSubmissionHint')}
         >
           <Switch
+            readOnly={isPast}
             checked={phase.rules?.proposals?.submit ?? false}
             onCheckedChange={(val) =>
               updateRules({
@@ -387,6 +443,7 @@ function PhaseDetailForm({
             description={t('decisions.processBuilder.hideProposalsHint')}
           >
             <Switch
+              readOnly={isPast}
               checked={phase.rules?.proposals?.defaults?.hidden ?? false}
               onCheckedChange={(val) =>
                 updateRules({
@@ -407,6 +464,7 @@ function PhaseDetailForm({
           description={t('decisions.processBuilder.proposalEditingHint')}
         >
           <Switch
+            readOnly={isPast}
             checked={phase.rules?.proposals?.edit ?? false}
             onCheckedChange={(val) =>
               updateRules({
@@ -420,6 +478,7 @@ function PhaseDetailForm({
           description={t('decisions.processBuilder.proposalReviewHint')}
         >
           <Switch
+            readOnly={isPast}
             checked={isReviewPhase(phase)}
             onCheckedChange={(val) => {
               const nextReviews: PhaseRules['reviews'] = {
@@ -442,6 +501,7 @@ function PhaseDetailForm({
             description={t('decisions.processBuilder.openReviewsHint')}
           >
             <Switch
+              readOnly={isPast}
               checked={phase.rules?.reviews?.openReviews ?? false}
               onCheckedChange={(val) => {
                 // Turning ON is confirmed via a dialog; turning OFF is immediate.
@@ -462,6 +522,7 @@ function PhaseDetailForm({
           description={t('decisions.processBuilder.votingHint')}
         >
           <Switch
+            readOnly={isPast}
             checked={isVotingPhase(phase)}
             onCheckedChange={(val) => {
               const nextVoting: PhaseRules['voting'] = {
@@ -483,6 +544,7 @@ function PhaseDetailForm({
             description={t('decisions.processBuilder.votingLimitHint')}
           >
             <VoteLimitSelect
+              readOnly={isPast}
               maxVotes={phase.rules?.voting?.maxVotesPerMember}
               onChange={(maxVotesPerMember) =>
                 updateRules({
@@ -497,6 +559,7 @@ function PhaseDetailForm({
           description={t('decisions.processBuilder.commentsHint')}
         >
           <Switch
+            readOnly={isPast}
             checked={allowsComments(phase)}
             onCheckedChange={(val) =>
               updateRules({
@@ -546,9 +609,11 @@ const VOTE_LIMIT_OPTIONS = ['none', '1', '2', '3', '4', '5', '10'] as const;
 function VoteLimitSelect({
   maxVotes,
   onChange,
+  readOnly,
 }: {
   maxVotes: number | undefined;
   onChange: (maxVotes: number | undefined) => void;
+  readOnly?: boolean;
 }) {
   const t = useTranslations();
   const selectedKey = maxVotes === undefined ? 'none' : String(maxVotes);
@@ -570,6 +635,7 @@ function VoteLimitSelect({
   return (
     <Select
       value={selectedKey}
+      readOnly={readOnly}
       // Value→label map so SelectValue renders the label, not the raw id.
       items={Object.fromEntries(options.map((key) => [key, labelFor(key)]))}
       onValueChange={(key) => {
@@ -609,6 +675,7 @@ function PhaseField({
   maxLength,
   multiline,
   rows,
+  readOnly,
 }: {
   id: string;
   label: string;
@@ -621,6 +688,7 @@ function PhaseField({
   maxLength?: number;
   multiline?: boolean;
   rows?: number;
+  readOnly?: boolean;
 }) {
   const isInvalid = !!errorMessage;
   return (
@@ -637,6 +705,7 @@ function PhaseField({
           maxLength={maxLength}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
+          readOnly={readOnly}
           aria-invalid={isInvalid || undefined}
         />
       ) : (
@@ -646,6 +715,7 @@ function PhaseField({
           maxLength={maxLength}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
+          readOnly={readOnly}
           aria-invalid={isInvalid || undefined}
         />
       )}
