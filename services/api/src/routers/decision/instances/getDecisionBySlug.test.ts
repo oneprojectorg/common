@@ -23,10 +23,11 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-function expectNoIdsInInstanceData(phases: object[] | undefined) {
+function expectNoRowFieldsInInstanceData(phases: object[] | undefined) {
   expect(phases?.length).toBeGreaterThan(0);
   for (const phase of phases ?? []) {
     expect(phase).not.toHaveProperty('id');
+    expect(phase).not.toHaveProperty('slug');
   }
 }
 
@@ -155,7 +156,7 @@ describe.concurrent('getDecisionBySlug', () => {
     expect(after.processInstance.name).toBe(newName);
   });
 
-  it('returns each phase with its row id, in order', async ({
+  it('returns each phase with its row id and profile slug, in order', async ({
     task,
     onTestFinished,
   }) => {
@@ -167,7 +168,7 @@ describe.concurrent('getDecisionBySlug', () => {
     const storedPhases = await db.query.processPhases.findMany({
       where: { processInstanceId: setup.instance.instance.id },
       columns: { id: true },
-      with: { profile: { columns: { name: true } } },
+      with: { profile: { columns: { name: true, slug: true } } },
       orderBy: { sortOrder: 'asc' },
     });
     await Promise.all(
@@ -186,11 +187,17 @@ describe.concurrent('getDecisionBySlug', () => {
 
     expect(storedPhases.length).toBeGreaterThan(1);
     expect(
-      result.processInstance.phases.map(({ id, name }) => [id, name]),
+      result.processInstance.phases.map(({ id, slug, name }) => [
+        id,
+        slug,
+        name,
+      ]),
     ).toEqual(
-      [...storedPhases].reverse().map(({ id, profile }) => [id, profile.name]),
+      [...storedPhases]
+        .reverse()
+        .map(({ id, profile }) => [id, profile.slug, profile.name]),
     );
-    expectNoIdsInInstanceData(result.processInstance.instanceData.phases);
+    expectNoRowFieldsInInstanceData(result.processInstance.instanceData.phases);
   });
 
   it("returns each phase's whole selection pipeline and proposal template", async ({
@@ -236,7 +243,7 @@ describe.concurrent('getDecisionBySlug', () => {
     });
   });
 
-  it('returns a null id for phases a decision has not stored yet', async ({
+  it('returns a null id and slug for phases a decision has not stored yet', async ({
     task,
     onTestFinished,
   }) => {
@@ -254,14 +261,19 @@ describe.concurrent('getDecisionBySlug', () => {
 
     expect(result.processInstance.phases.length).toBeGreaterThan(0);
     expect(
-      result.processInstance.phases.map(({ id, phaseId }) => [id, phaseId]),
+      result.processInstance.phases.map(({ id, slug, phaseId }) => [
+        id,
+        slug,
+        phaseId,
+      ]),
     ).toEqual(
       setup.instance.instance.instanceData.phases.map(({ phaseId }) => [
+        null,
         null,
         phaseId,
       ]),
     );
-    expectNoIdsInInstanceData(result.processInstance.instanceData.phases);
+    expectNoRowFieldsInInstanceData(result.processInstance.instanceData.phases);
   });
 });
 

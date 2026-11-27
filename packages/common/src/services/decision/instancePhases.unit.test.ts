@@ -9,8 +9,7 @@ vi.mock('@op/db/client', () => ({
   inArray: () => undefined,
 }));
 
-const { attachPhaseRows, toPhases, toPhaseInstanceData } =
-  await import('./instancePhases');
+const { attachPhaseRows, toPhases } = await import('./instancePhases');
 
 const blobPhases = [
   { phaseId: 'submission', name: 'Blob submission', startDate: '2026-01-01' },
@@ -42,16 +41,18 @@ const storedPhases: ProcessPhaseWithProfile[] = [
 ];
 
 describe('toPhases', () => {
-  it('builds each phase from its stored phase and keeps its id, in order', () => {
+  it('builds each phase from its stored phase and keeps its id and slug, in order', () => {
     expect(toPhases({ instance, storedPhases })).toEqual([
       {
         id: '00000000-0000-4000-8000-000000000001',
+        slug: 'submission-slug',
         phaseId: 'submission',
         name: 'Stored submission',
         startDate: '2026-02-01',
       },
       {
         id: '00000000-0000-4000-8000-000000000002',
+        slug: 'review-slug',
         phaseId: 'review-slug',
         name: 'Stored review',
         description: 'No stored phaseId',
@@ -59,9 +60,9 @@ describe('toPhases', () => {
     ]);
   });
 
-  it('falls back to the blob phases with a null id when there are no stored phases', () => {
+  it('falls back to the blob phases with a null id and slug when there are no stored phases', () => {
     expect(toPhases({ instance, storedPhases: [] })).toEqual(
-      blobPhases.map((phase) => ({ ...phase, id: null })),
+      blobPhases.map((phase) => ({ ...phase, id: null, slug: null })),
     );
   });
 
@@ -75,27 +76,22 @@ describe('toPhases', () => {
   });
 });
 
-describe('toPhaseInstanceData', () => {
-  it('drops only the id', () => {
-    expect(
-      toPhaseInstanceData({
-        id: 'phase-1',
-        phaseId: 'submission',
-        name: 'Submission',
-      }),
-    ).toEqual({ phaseId: 'submission', name: 'Submission' });
-  });
-});
-
 describe('attachPhaseRows', () => {
   it('attaches the stored phases without ids', () => {
     const result = attachPhaseRows({ instance, storedPhases });
 
-    expect(result.phases.map(({ phaseId }) => phaseId)).toEqual([
-      'submission',
-      'review-slug',
+    expect(result.phases).toEqual([
+      {
+        phaseId: 'submission',
+        name: 'Stored submission',
+        startDate: '2026-02-01',
+      },
+      {
+        phaseId: 'review-slug',
+        name: 'Stored review',
+        description: 'No stored phaseId',
+      },
     ]);
-    expect(result.phases.every((phase) => !('id' in phase))).toBe(true);
     expect(result.id).toBe('instance-1');
   });
 

@@ -607,11 +607,12 @@ export const phaseDataEncoder = instancePhaseDataEncoder
     proposalTemplate: z.custom<ProposalTemplateSchema>(isJsonObject).optional(),
   });
 
-/** A phase with the id the phase endpoints take; `null` while the decision still reads instanceData.phases. */
+/** A phase with the id the phase endpoints take and its profile slug; both `null` while the decision still reads instanceData.phases. */
 const phaseEncoder = phaseDataEncoder.extend({
   phaseId: z.string(),
   name: z.string().optional(),
   id: z.uuid().nullable(),
+  slug: z.string().nullable(),
 });
 
 export const processInstanceWithPhasesEncoder = z.preprocess(
