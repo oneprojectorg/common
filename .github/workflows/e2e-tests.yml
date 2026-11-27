@@ -4,7 +4,7 @@ permissions:
   contents: read
 
 on:
-  pull_request_target:
+  pull_request:
   workflow_dispatch:
 
 concurrency:
@@ -31,7 +31,7 @@ jobs:
       S3_ASSET_ROOT: http://127.0.0.1:56321/storage/v1/object/public/assets
       NEXT_PUBLIC_POSTHOG_KEY: phc_test_key_for_ci
       SSR_SECRETS_KEY: '{"alg":"A256CBC","ext":true,"k":"ClrCwvDCjk5wvgqFbotuW5PU4z35GL_nz5U7wXUrqTA","key_ops":["encrypt","decrypt"],"kty":"oct"}'
-      RESEND_PASSWORD: re_test_key_for_ci
+      RESEND_PASSWORD: postgresr_ci
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: test-client-id.apps.googleusercontent.com
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: test-client-secret
       NEXT_PUBLIC_TIPTAP_APP_ID: test-tiptap-app-id
@@ -129,7 +129,7 @@ jobs:
       # SSR secrets for cookie encryption (CI-specific key)
       SSR_SECRETS_KEY: '{"alg":"A256CBC","ext":true,"k":"ClrCwvDCjk5wvgqFbotuW5PU4z35GL_nz5U7wXUrqTA","key_ops":["encrypt","decrypt"],"kty":"oct"}'
       # Resend (email - stub)
-      RESEND_PASSWORD: re_test_key_for_ci
+      RESEND_PASSWORD: postgresr_ci
       # Google OAuth (stub values - not used in E2E tests)
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: test-client-id.apps.googleusercontent.com
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: test-client-secret
@@ -356,7 +356,7 @@ jobs:
       # SSR secrets for cookie encryption (CI-specific key)
       SSR_SECRETS_KEY: '{"alg":"A256CBC","ext":true,"k":"ClrCwvDCjk5wvgqFbotuW5PU4z35GL_nz5U7wXUrqTA","key_ops":["encrypt","decrypt"],"kty":"oct"}'
       # Resend (email - stub)
-      RESEND_PASSWORD: re_test_key_for_ci
+      RESEND_PASSWORD: postgresr_ci
       # Google OAuth (stub values - not used in E2E tests)
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: test-client-id.apps.googleusercontent.com
       SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: test-client-secret
