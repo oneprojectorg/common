@@ -1,6 +1,6 @@
 import { and, db, eq } from '@op/db/client';
 import { resourceCollectionItems } from '@op/db/schema';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest';
 
 import {
   createMemberCaller,
@@ -237,6 +237,107 @@ describe('resources.createLink', () => {
         linkUrl: PUBLIC_URL,
       }),
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+  });
+});
+
+describe('resources.createLink optional title', () => {
+  const originalFetch = globalThis.fetch;
+  const originalKey = process.env.IFRAMELY_KEY;
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    if (originalKey === undefined) {
+      delete process.env.IFRAMELY_KEY;
+    } else {
+      process.env.IFRAMELY_KEY = originalKey;
+    }
+  });
+
+  it('resolves title from link preview when not provided', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+    });
+
+    process.env.IFRAMELY_KEY = 'test-key';
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            meta: { title: 'Preview Title From Website' },
+          }),
+          { status: 200 },
+        ),
+    );
+
+    const row = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      linkUrl: PUBLIC_URL,
+      // title intentionally omitted
+    });
+
+    expect(row.type).toBe('link');
+    expect(row.title).toBe('Preview Title From Website');
+    expect(row.linkUrl).toBe(PUBLIC_URL);
+  });
+
+  it('falls back to hostname when preview fails and title not provided', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+    });
+
+    process.env.IFRAMELY_KEY = 'test-key';
+    globalThis.fetch = vi.fn(async () => new Response(null, { status: 500 }));
+
+    const row = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      linkUrl: PUBLIC_URL,
+      // title intentionally omitted
+    });
+
+    expect(row.type).toBe('link');
+    // Should use hostname from PUBLIC_URL (example.com)
+    expect(row.title).toBe('example.com');
+    expect(row.linkUrl).toBe(PUBLIC_URL);
+  });
+
+  it('uses provided title even when preview is available', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+    });
+
+    process.env.IFRAMELY_KEY = 'test-key';
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            meta: { title: 'Preview Title' },
+          }),
+          { status: 200 },
+        ),
+    );
+
+    const row = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      linkUrl: PUBLIC_URL,
+      title: 'User Provided Title',
+    });
+
+    expect(row.type).toBe('link');
+    // Should use user-provided title, not preview
+    expect(row.title).toBe('User Provided Title');
+    expect(row.linkUrl).toBe(PUBLIC_URL);
   });
 });
 
