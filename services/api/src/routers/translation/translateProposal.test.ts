@@ -232,7 +232,7 @@ describe('translation.translateProposal', () => {
       translated: {
         title: '[ES] Community Garden Project',
         default:
-          '[ES] <p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>',
+          '[ES] <p>A proposal for a garden</p>',
       },
     });
 
@@ -245,7 +245,7 @@ describe('translation.translateProposal', () => {
       expect.objectContaining({ tagHandling: 'html' }),
     );
     expect(mockTranslateText).toHaveBeenCalledWith(
-      '<p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>',
+      '<p>A proposal for a garden</p>',
       null,
       'ES',
       expect.objectContaining({ tagHandling: 'html' }),
@@ -383,13 +383,13 @@ describe('translation.translateProposal', () => {
       translated: {
         title: '[ES-CACHED] Community Garden Project',
         default:
-          '[ES] <p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>',
+          '[ES] <p>A proposal for a garden</p>',
       },
     });
 
     // Only the body (cache miss) should have been sent to DeepL
     expect(mockTranslateText).toHaveBeenCalledWith(
-      '<p xmlns="http://www.w3.org/1999/xhtml">A proposal for a garden</p>',
+      '<p>A proposal for a garden</p>',
       null,
       'ES',
       expect.objectContaining({ tagHandling: 'html' }),
@@ -441,9 +441,9 @@ describe('translation.translateProposal', () => {
     await translationData.seedTranslation({
       contentKey: `proposal:${proposal.id}:default`,
       sourceText:
-        '<p xmlns="http://www.w3.org/1999/xhtml">Already translated body</p>',
+        '<p>Already translated body</p>',
       translatedText:
-        '[ES-CACHED] <p xmlns="http://www.w3.org/1999/xhtml">Already translated body</p>',
+        '[ES-CACHED] <p>Already translated body</p>',
       sourceLocale: 'EN',
       targetLocale: 'ES',
     });
@@ -473,7 +473,7 @@ describe('translation.translateProposal', () => {
       translated: {
         title: '[ES-CACHED] Fully Cached Proposal',
         default:
-          '[ES-CACHED] <p xmlns="http://www.w3.org/1999/xhtml">Already translated body</p>',
+          '[ES-CACHED] <p>Already translated body</p>',
       },
     });
   });
