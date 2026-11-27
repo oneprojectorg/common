@@ -1,4 +1,7 @@
-import { evaluateExpression } from '../expressionEvaluator';
+import {
+  evaluateExpression,
+  proposalExpressionContext,
+} from '../expressionEvaluator';
 import type {
   BlockExecutionResult,
   BlockExecutor,
@@ -12,10 +15,7 @@ export class FilterBlock implements BlockExecutor<FilterBlockType> {
     context: ExecutionContext,
   ): BlockExecutionResult {
     const filteredProposals = context.proposals.filter((proposal) => {
-      const proposalContext = {
-        ...context,
-        record: proposal,
-      };
+      const proposalContext = proposalExpressionContext(context, proposal);
 
       const result = evaluateExpression(block.condition, proposalContext);
       return Boolean(result);

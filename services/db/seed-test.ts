@@ -158,22 +158,10 @@ const simpleVoting = {
           },
         },
       },
+      // Pass every proposal in Voting on to Results.
       selectionPipeline: {
         version: '1.0.0',
-        blocks: [
-          {
-            id: 'sort-by-likes',
-            type: 'sort',
-            name: 'Sort by likes count',
-            sortBy: [{ field: 'voteData.likesCount', order: 'desc' }],
-          },
-          {
-            id: 'limit-by-votes',
-            type: 'limit',
-            name: 'Take top N (based on maxVotesPerMember config)',
-            count: { variable: 'maxVotesPerMember' },
-          },
-        ],
+        blocks: [],
       },
     },
     {

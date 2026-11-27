@@ -2,6 +2,7 @@
  * Process schemas used by pipeline / transition tests.
  */
 import type { DecisionSchemaDefinition } from '../../src/services/decision/schemas/types';
+import { rankedChoiceBudgetPipeline } from '../../src/services/decision/selectionPipeline/rankedChoiceBudgetPipeline';
 
 /**
  * Two phases; the first advances on its end date, so publishing schedules a transition.
@@ -173,6 +174,57 @@ export const fourPhaseDateSchema = {
       rules: {
         advancement: { method: 'date' },
       },
+    },
+  ],
+} satisfies DecisionSchemaDefinition;
+
+export const schemaWithRankedBudgetPipeline = {
+  id: 'ranked-budget-pipeline-schema',
+  version: '1.0.0',
+  name: 'Ranked Budget Pipeline Process',
+  proposalTemplate: {
+    type: 'object',
+    properties: {
+      title: { type: 'string', 'x-format': 'short-text' },
+      budget: {
+        type: 'object',
+        'x-format': 'money',
+        properties: {
+          amount: { type: 'number' },
+          currency: { type: 'string', default: 'USD' },
+        },
+      },
+    },
+  },
+  phases: [
+    {
+      id: 'submission',
+      name: 'Submission',
+      rules: {
+        proposals: { submit: true },
+        voting: { submit: false },
+        advancement: { method: 'manual', needsApproval: false },
+      },
+      selectionPipeline: { version: '1.0.0', blocks: [] },
+    },
+    {
+      id: 'voting',
+      name: 'Voting',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: true, ranked: true },
+        advancement: { method: 'manual', needsApproval: false },
+      },
+      settings: {
+        type: 'object' as const,
+        properties: { budget: { type: 'number' as const, minimum: 0 } },
+      },
+      selectionPipeline: rankedChoiceBudgetPipeline,
+    },
+    {
+      id: 'results',
+      name: 'Results',
+      rules: { proposals: { submit: false }, voting: { submit: false } },
     },
   ],
 } satisfies DecisionSchemaDefinition;

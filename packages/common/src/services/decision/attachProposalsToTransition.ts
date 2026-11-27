@@ -6,18 +6,21 @@ import { CommonError } from '../../utils';
 /**
  * Attaches proposals to a phase's inbound transition, each pinned to its
  * latest history snapshot. This attachment is what puts a proposal in the
- * phase — see `getProposalsForPhase`.
+ * phase — see `getProposalsForPhase`. `metadata` carries what the selection
+ * pipeline computed per proposal; an admin's attachment has none.
  */
 export async function attachProposalsToTransition({
   dbClient,
   processInstanceId,
   transitionHistoryId,
   proposalIds,
+  metadata,
 }: {
   dbClient: DbClient;
   processInstanceId: string;
   transitionHistoryId: string;
   proposalIds: string[];
+  metadata?: ReadonlyMap<string, Record<string, unknown>>;
 }): Promise<void> {
   if (proposalIds.length === 0) {
     return;
@@ -49,6 +52,7 @@ export async function attachProposalsToTransition({
       transitionHistoryId,
       proposalId,
       proposalHistoryId: historyId,
+      metadata: metadata?.get(proposalId) ?? null,
     })),
   );
 }

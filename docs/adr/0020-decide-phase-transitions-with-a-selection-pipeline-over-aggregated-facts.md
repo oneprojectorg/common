@@ -43,9 +43,11 @@ Each calculation is a block in the phase's selection pipeline:
 - Budget: a `budget` block walks proposals in order and accepts each one
   whose cost fits the remaining budget. It skips the others.
 
-The service stores each proposal's outcome per transition: selected or
-skipped, position, scores, cost and remaining budget. An admin can still
-advance a skipped proposal by hand.
+The service stores what the pipeline computed for each selected proposal,
+such as its points, position, cost and the budget still available before
+it, on its attachment to the transition. A proposal the pipeline did not
+select is not attached and keeps nothing; an admin can still advance it by
+hand.
 
 A phase whose advancement rule needs approval runs its pipeline and attaches
 the selected proposals to the transition as usual, but marks the transition

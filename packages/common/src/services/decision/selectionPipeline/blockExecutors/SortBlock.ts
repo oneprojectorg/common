@@ -1,4 +1,7 @@
-import { evaluateExpression } from '../expressionEvaluator';
+import {
+  evaluateExpression,
+  proposalExpressionContext,
+} from '../expressionEvaluator';
 import type {
   BlockExecutionResult,
   BlockExecutor,
@@ -13,8 +16,8 @@ export class SortBlock implements BlockExecutor<SortBlockType> {
   ): BlockExecutionResult {
     const sortedProposals = [...context.proposals].sort((a, b) => {
       for (const sortCriteria of block.sortBy) {
-        const aContext = { ...context, record: a };
-        const bContext = { ...context, record: b };
+        const aContext = proposalExpressionContext(context, a);
+        const bContext = proposalExpressionContext(context, b);
 
         const aValue =
           typeof sortCriteria.field === 'string'

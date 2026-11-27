@@ -8,19 +8,22 @@ import {
 
 import { ConflictError } from '../../utils';
 import { attachProposalsToTransition } from './attachProposalsToTransition';
+import { getPhaseProposalCosts } from './getPhaseProposalCosts';
 import { getProposalsForPhase } from './getProposalsForPhase';
-import type { InstanceWithPhases } from './instancePhases';
+import { type InstanceWithPhases, getPhases } from './instancePhases';
 import type { TransitionData } from './schemas/transitionData';
 import {
   aggregateProposalMetrics,
   executeSelectionPipeline,
 } from './selectionPipeline';
+import { getPipelineMetadata } from './selectionPipeline/getPipelineMetadata';
 import type { ExecutionContext } from './selectionPipeline/types';
+import { usesBudgetBlock } from './selectionPipeline/usesBudgetBlock';
 import { needsSelectionApproval } from './utils/phaseSettings';
 
 export interface AdvancePhaseInput {
   db: DbClient;
-  /** Pre-loaded instance row. State writes use optimistic locks; the departing phase config comes from `phases`. */
+  /** Pre-loaded instance row. State writes use optimistic locks; the departing phase is re-read under the lock. */
   instance: InstanceWithPhases<{ id: string }>;
   fromPhaseId: string;
   toPhaseId: string;
@@ -91,6 +94,8 @@ export async function advancePhase(
     .select({
       currentStateId: processInstances.currentStateId,
       status: processInstances.status,
+      instanceData: processInstances.instanceData,
+      processId: processInstances.processId,
     })
     .from(processInstances)
     .where(eq(processInstances.id, instanceId))
@@ -117,7 +122,22 @@ export async function advancePhase(
     phaseId: fromPhaseId,
   });
 
-  const selectionPipeline = departingPhase.selectionPipeline;
+  // The caller's snapshot may predate a settings or pipeline edit; re-read the phase under the lock.
+  const lockedPhases = await getPhases({
+    db,
+    instance: { id: instanceId, instanceData: lockedInstance.instanceData },
+  });
+  const lockedDepartingPhase = lockedPhases.find(
+    (phase) => phase.phaseId === fromPhaseId,
+  );
+
+  if (!lockedDepartingPhase) {
+    throw new Error(
+      `Phase ${fromPhaseId} not found in phases for instance ${instanceId}`,
+    );
+  }
+
+  const selectionPipeline = lockedDepartingPhase.selectionPipeline;
 
   const allProposals = await getProposalsForPhase({
     instanceId,
@@ -126,17 +146,32 @@ export async function advancePhase(
 
   // Default to pass-none; phases opt into pass-all via an empty-blocks pipeline.
   let selectedProposalIds: string[] = [];
+  let selectedMetadata: Map<string, Record<string, unknown>> | undefined;
 
   if (selectionPipeline) {
-    const proposalMetrics = await aggregateProposalMetrics(allProposals, db);
+    const [proposalMetrics, proposalCosts] = await Promise.all([
+      aggregateProposalMetrics(allProposals, db),
+      usesBudgetBlock(selectionPipeline.blocks)
+        ? getPhaseProposalCosts({
+            instanceData: lockedInstance.instanceData,
+            processId: lockedInstance.processId,
+            phase: lockedDepartingPhase,
+            proposals: allProposals,
+          })
+        : undefined,
+    ]);
     const context: ExecutionContext = {
       proposals: allProposals,
       voteData: proposalMetrics,
-      variables: {},
+      proposalCosts,
+      variables: lockedDepartingPhase.settings ?? {},
       outputs: {},
     };
     const selected = await executeSelectionPipeline(selectionPipeline, context);
     selectedProposalIds = selected.map((p) => p.id);
+    selectedMetadata = new Map(
+      selected.map((p) => [p.id, getPipelineMetadata(p)]),
+    );
   }
 
   // An empty selection has nothing to approve; holding it would block the phase
@@ -144,11 +179,12 @@ export async function advancePhase(
   const selectionAwaitingApproval =
     selectionPipeline !== undefined &&
     selectedProposalIds.length > 0 &&
-    needsSelectionApproval(departingPhase);
+    needsSelectionApproval(lockedDepartingPhase);
   // A selection that needs no approval is settled as it is made, empty or not;
   // any other waits for an admin.
   const selectionConfirmedAt =
-    selectionPipeline !== undefined && !needsSelectionApproval(departingPhase)
+    selectionPipeline !== undefined &&
+    !needsSelectionApproval(lockedDepartingPhase)
       ? new Date(now)
       : null;
 
@@ -206,6 +242,7 @@ export async function advancePhase(
     processInstanceId: instanceId,
     transitionHistoryId: insertedTransition.id,
     proposalIds: selectedProposalIds,
+    metadata: selectedMetadata,
   });
 
   return {

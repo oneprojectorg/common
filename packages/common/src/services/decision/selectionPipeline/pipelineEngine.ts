@@ -14,11 +14,11 @@ export async function executeSelectionPipeline(
   context: ExecutionContext,
 ): Promise<Proposal[]> {
   try {
-    // Initialize variables from pipeline
+    // The pipeline's variables are defaults; the phase settings override them.
     if (pipeline.variables) {
       context.variables = {
-        ...context.variables,
         ...pipeline.variables,
+        ...context.variables,
       };
     }
 
@@ -82,6 +82,9 @@ export async function executeSelectionPipeline(
 
     return currentProposals;
   } catch (error) {
+    if (error instanceof CommonError) {
+      throw error;
+    }
     logger.error('Error executing pipeline', { error });
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
