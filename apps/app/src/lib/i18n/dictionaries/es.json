@@ -2075,7 +2075,8 @@
       "processNameTooShort": "El nombre debe tener al menos {min} caracteres.",
       "saveError": "No se guardó tu cambio.",
       "addBannerAction": "Añadir banner",
-      "launchAction": "Lanzar proceso"
+      "launchAction": "Lanzar proceso",
+      "editPhases": "Editar fases"
     }
   },
   "loadingProgress": "Cargando...",

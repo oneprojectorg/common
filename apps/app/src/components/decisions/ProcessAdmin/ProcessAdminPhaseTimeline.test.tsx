@@ -87,6 +87,41 @@ describe('ProcessAdminPhaseTimeline', () => {
     expect(screen.queryByRole('link')).toBeNull();
   });
 
+  it('links every phase to its editor while editing', () => {
+    renderTimeline({ currentStateId: 'vote', isEditing: true });
+
+    const links = screen.getAllByRole('link');
+    expect(links).toHaveLength(2);
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(['#', '#']);
+  });
+
+  it('links every phase to its editor on a draft that has not started', () => {
+    renderTimeline({
+      currentStateId: 'submit',
+      hasStarted: false,
+      isEditing: true,
+    });
+
+    expect(
+      screen.getAllByRole('link').map((link) => link.getAttribute('href')),
+    ).toEqual(['#', '#']);
+  });
+
+  it('links the current phase to its editor instead of the current page while editing', () => {
+    renderTimeline({ currentStateId: 'vote', isEditing: true });
+
+    expect(
+      screen.getByRole('link', { name: /Vote/ }).getAttribute('href'),
+    ).toBe('#');
+  });
+
+  it('names each editor link from the phase it shows', () => {
+    renderTimeline({ currentStateId: 'vote', isEditing: true });
+
+    expect(screen.getByRole('link', { name: /^Submit.+ - .+$/ })).toBeTruthy();
+    expect(screen.getByRole('link', { name: /^Vote.+$/ })).toBeTruthy();
+  });
+
   it('renders phases that have no row id yet', () => {
     renderTimeline({
       phases: [submit, vote].map((phase) => ({ ...phase, id: null })),

@@ -115,3 +115,63 @@ export const Advanceable: Story = {
     </Row>
   ),
 };
+
+export const Editing: Story = {
+  render: () => (
+    <ol className="flex w-96 flex-col gap-2">
+      <li>
+        <PhaseCard
+          state="completed"
+          name="Submissions"
+          startDate="2026-06-01"
+          endDate="2026-06-14"
+          editLink={<a href="#" />}
+        />
+      </li>
+      <li>
+        <PhaseCard
+          state="current"
+          name="Review"
+          startDate="2026-06-15"
+          endDate="2026-06-28"
+          isNowOpen
+          editLink={<a href="#" />}
+        />
+      </li>
+      <li>
+        <PhaseCard
+          state="upcoming"
+          name="Voting"
+          needsSetup
+          isLead
+          blurb="Members vote on the shortlisted proposals."
+          editLink={<a href="#" />}
+        />
+      </li>
+      <li>
+        <PhaseCard
+          state="upcoming"
+          name="Results"
+          needsSetup
+          blurb="Share the outcome with everyone."
+          editLink={<a href="#" />}
+        />
+      </li>
+    </ol>
+  ),
+};
+
+export const Setup: Story = {
+  render: () => (
+    <Row>
+      <PhaseCard
+        state="upcoming"
+        name="Voting"
+        needsSetup
+        isLead
+        blurb="Members vote on the shortlisted proposals."
+        editLink={<a href="#" />}
+      />
+    </Row>
+  ),
+};

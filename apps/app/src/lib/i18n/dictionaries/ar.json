@@ -2075,7 +2075,8 @@
       "processNameTooShort": "يجب أن يتكون الاسم من {min} أحرف على الأقل.",
       "saveError": "لم يتم حفظ تغييرك.",
       "addBannerAction": "إضافة بانر",
-      "launchAction": "إطلاق العملية"
+      "launchAction": "إطلاق العملية",
+      "editPhases": "تعديل المراحل"
     }
   },
   "loadingProgress": "جارٍ التحميل...",
