@@ -6,8 +6,12 @@ import {
 import type { Metadata } from 'next';
 import { cache } from 'react';
 
-import { getTranslations } from '@/lib/i18n';
+import { type Locale, getTranslations } from '@/lib/i18n';
 
+import {
+  type LegacySearchParams,
+  redirectConvertedProposal,
+} from '../../redirectConvertedInstance';
 import { LegacyProposalViewClient } from './ProposalViewClient';
 
 // cache() dedupes the read across generateMetadata + page render (one request),
@@ -19,15 +23,26 @@ const fetchProposal = cache(async (profileId: string) => {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{
     profileId: string;
     slug: string;
     id: string;
-    locale: string;
+    locale: Locale;
   }>;
+  searchParams: Promise<LegacySearchParams>;
 }): Promise<Metadata> {
-  const { profileId, locale } = await params;
+  const { profileId, slug, id, locale } = await params;
+
+  // Redirecting here, before the loading boundary streams, gives link unfurlers a real 307; browsers still redirect client-side.
+  await redirectConvertedProposal({
+    id,
+    slug,
+    locale,
+    profileId,
+    searchParams: await searchParams,
+  });
 
   try {
     const [t, proposal] = await Promise.all([
@@ -45,10 +60,24 @@ export async function generateMetadata({
 
 const ProposalViewPage = async ({
   params,
+  searchParams,
 }: {
-  params: Promise<{ profileId: string; slug: string; id: string }>;
+  params: Promise<{
+    profileId: string;
+    slug: string;
+    id: string;
+    locale: Locale;
+  }>;
+  searchParams: Promise<LegacySearchParams>;
 }) => {
-  const { profileId, slug, id } = await params;
+  const { profileId, slug, id, locale } = await params;
+  await redirectConvertedProposal({
+    id,
+    slug,
+    locale,
+    profileId,
+    searchParams: await searchParams,
+  });
   const { queryClient } = await createServerUtils();
 
   // Swallow failures: this only warms the cache — the client suspense query

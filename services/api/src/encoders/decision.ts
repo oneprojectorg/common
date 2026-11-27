@@ -392,6 +392,11 @@ export const processInstanceWithSchemaEncoder = z.preprocess(
   processInstanceWithSchemaEncoderBase,
 );
 
+/** Slug a converted legacy instance is served at; null while it is still legacy */
+export const convertedInstanceSlugEncoder = z.object({
+  slug: z.string().nullable(),
+});
+
 /** Decision profile encoder  */
 export const decisionProfileWithSchemaEncoder = baseProfileEncoder.extend({
   processInstance: processInstanceWithSchemaEncoder,
