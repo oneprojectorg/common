@@ -117,6 +117,26 @@ export const assertPhaseRowInvariants = ({
   }
 };
 
+export const assertPhaseRowDates = ({
+  rows,
+  previousRows,
+}: {
+  rows: ProcessPhaseWithProfile[];
+  previousRows: ProcessPhaseWithProfile[];
+}): void => {
+  const previousById = new Map(previousRows.map((row) => [row.id, row]));
+  for (const row of rows) {
+    if (
+      hasPhaseDatesChanged({
+        stored: previousById.get(row.id)?.data,
+        merged: row.data,
+      })
+    ) {
+      assertPhaseEndsOnOrAfterStart({ data: row.data, phaseLabel: row.name });
+    }
+  }
+};
+
 export const toInstanceDataPhase = (
   phase: ProcessPhaseWithProfile,
 ): PhaseInstanceData => ({
@@ -203,6 +223,55 @@ export const readPhaseSettings = (data: unknown): PhaseSettingsFields => {
       settingsSchema: data.settingsSchema,
     }),
   };
+};
+
+export const assertPhaseEndsOnOrAfterStart = ({
+  data,
+  phaseLabel,
+}: {
+  data: unknown;
+  phaseLabel: string;
+}): void => {
+  if (
+    !isJsonObject(data) ||
+    typeof data.startDate !== 'string' ||
+    typeof data.endDate !== 'string'
+  ) {
+    return;
+  }
+  if (Date.parse(data.endDate) < Date.parse(data.startDate)) {
+    throw new ValidationError(
+      `Phase "${phaseLabel}" cannot end before it starts`,
+      { endDate: 'End the phase on or after its start date' },
+    );
+  }
+};
+
+const hasPhaseDatesChanged = ({
+  stored,
+  merged,
+}: {
+  stored: unknown;
+  merged: unknown;
+}): boolean => {
+  const before = isJsonObject(stored) ? stored : {};
+  const after = isJsonObject(merged) ? merged : {};
+  return (
+    !isSameInstant(before.startDate, after.startDate) ||
+    !isSameInstant(before.endDate, after.endDate)
+  );
+};
+
+const isSameInstant = (a: unknown, b: unknown): boolean => {
+  if (typeof a !== 'string' || typeof b !== 'string') {
+    return a === b;
+  }
+  const parsedA = Date.parse(a);
+  const parsedB = Date.parse(b);
+  if (Number.isNaN(parsedA) || Number.isNaN(parsedB)) {
+    return a === b;
+  }
+  return parsedA === parsedB;
 };
 
 export const getPhaseAsDecisionAdmin = async ({

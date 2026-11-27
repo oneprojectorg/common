@@ -8,6 +8,7 @@ import {
 } from './lockProcessInstance';
 import {
   type ProcessPhaseWithProfile,
+  assertPhaseRowDates,
   assertPhaseRowInvariants,
   listPhases,
   phaseIdOf,
@@ -82,6 +83,7 @@ export const writePhasesInTx = async <T>({
     previousPhaseIds: before.map(phaseIdOf),
     instance: locked,
   });
+  assertPhaseRowDates({ rows: listed, previousRows: before });
   const phases = await renumberPhases({
     tx,
     rows: listed,

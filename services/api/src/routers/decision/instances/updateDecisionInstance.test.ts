@@ -696,6 +696,92 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(firstPhase?.settings?.maxProposalsPerMember).toBe(10);
   });
 
+  it('rejects a save that ends a phase before it starts, writing nothing', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [
+        { phaseId: 'initial', startDate: DAY_2, endDate: DAY_3 },
+        { phaseId: 'final' },
+      ],
+    });
+    const before = await loadPhaseState(instanceId);
+
+    const reversedSaves = [
+      [{ phaseId: 'initial', endDate: DAY_1 }, { phaseId: 'final' }],
+      [
+        { phaseId: 'initial', startDate: DAY_3, endDate: DAY_2 },
+        { phaseId: 'final' },
+      ],
+      [
+        { phaseId: 'initial' },
+        { phaseId: 'added', name: 'Added', startDate: DAY_2, endDate: DAY_1 },
+        { phaseId: 'final' },
+      ],
+    ];
+
+    for (const phases of reversedSaves) {
+      await expect(
+        caller.decision.updateDecisionInstance({ instanceId, phases }),
+      ).rejects.toMatchObject({
+        cause: {
+          name: 'ValidationError',
+          message: expect.stringContaining('cannot end before it starts'),
+        },
+      });
+    }
+    expect(await loadPhaseState(instanceId)).toEqual(before);
+  });
+
+  it('still saves a decision whose stored phase dates are already reversed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const reversed = { startDate: DAY_2, endDate: DAY_1 };
+    const [initial] = await loadPhaseRows(instanceId);
+    if (!initial) {
+      throw new Error('Expected the template phase rows');
+    }
+    await db
+      .update(processPhases)
+      .set({ data: { ...initial.data, ...reversed } })
+      .where(eq(processPhases.id, initial.id));
+
+    const moved = { startDate: DAY_2, endDate: DAY_3 };
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [
+        { phaseId: 'initial', ...reversed, description: 'Pitch an idea' },
+        { phaseId: 'final', ...moved },
+      ],
+    });
+
+    const saved = await loadInstancePhases(instanceId);
+    expect(saved.find((phase) => phase.phaseId === 'initial')).toMatchObject({
+      ...reversed,
+      description: 'Pitch an idea',
+    });
+    expect(saved.find((phase) => phase.phaseId === 'final')).toMatchObject(
+      moved,
+    );
+  });
+
   it('inserts every phase row on a save of a decision that has none', async ({
     task,
     onTestFinished,
@@ -2132,3 +2218,7 @@ describe.concurrent('voting enrolment rule', () => {
     expect(after.instanceData?.phases).toEqual(before.instanceData?.phases);
   });
 });
+
+const DAY_1 = '2026-12-01T00:00:00.000Z';
+const DAY_2 = '2026-12-02T00:00:00.000Z';
+const DAY_3 = '2026-12-03T00:00:00.000Z';

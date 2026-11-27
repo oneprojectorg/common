@@ -1,5 +1,7 @@
 import { MAX_PHASES_PER_DECISION } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
+import { db, eq } from '@op/db/client';
+import { processPhases } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
@@ -83,6 +85,119 @@ describe.concurrent('reorderPhases', () => {
       },
     });
     expect(result.items[1]?.data).toEqual({});
+  });
+
+  it('accepts a phase that starts and ends on the same day', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phases, instanceId, adminCaller } = await setupPhases(
+      task,
+      onTestFinished,
+    );
+    const [review, vote, results] = phases;
+    const sameDay = {
+      startDate: '2026-10-01T00:00:00.000Z',
+      endDate: '2026-10-01T00:00:00.000Z',
+    };
+
+    const result = await adminCaller.decision.reorderPhases({
+      instanceId,
+      phases: [
+        { phaseId: vote.id, ...sameDay },
+        { phaseId: review.id },
+        { phaseId: results.id },
+      ],
+    });
+
+    expect(result.items[0]).toMatchObject({ id: vote.id, data: sameDay });
+  });
+
+  it('refuses dates that end a phase before it starts and keeps the order', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phases, instanceId, adminCaller } = await setupPhases(
+      task,
+      onTestFinished,
+    );
+    const [review, vote, results] = phases;
+    await adminCaller.decision.updatePhase({
+      phaseId: results.id,
+      data: { startDate: '2026-11-08T00:00:00.000Z' },
+    });
+
+    const reversedPlacements = [
+      {
+        phaseId: vote.id,
+        startDate: '2026-10-07T00:00:00.000Z',
+        endDate: '2026-10-01T00:00:00.000Z',
+      },
+      { phaseId: results.id, endDate: '2026-11-01T00:00:00.000Z' },
+    ];
+
+    const before = await loadPhaseRows(instanceId);
+
+    for (const placement of reversedPlacements) {
+      await expect(
+        adminCaller.decision.reorderPhases({
+          instanceId,
+          phases: [
+            ...phases
+              .filter((phase) => phase.id !== placement.phaseId)
+              .reverse()
+              .map((phase) => ({ phaseId: phase.id })),
+            placement,
+          ],
+        }),
+      ).rejects.toMatchObject({
+        cause: {
+          name: 'ValidationError',
+          message: expect.stringContaining('cannot end before it starts'),
+        },
+      });
+    }
+
+    expect(await loadPhaseRows(instanceId)).toEqual(before);
+    expect(before.map((row) => row.id)).toEqual([
+      review.id,
+      vote.id,
+      results.id,
+    ]);
+  });
+
+  it('still reorders a phase whose stored dates are already reversed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { phases, instanceId, adminCaller } = await setupPhases(
+      task,
+      onTestFinished,
+    );
+    const [review, vote, results] = phases;
+    const reversed = {
+      startDate: '2026-10-07T00:00:00.000Z',
+      endDate: '2026-10-01T00:00:00.000Z',
+    };
+    await db
+      .update(processPhases)
+      .set({ data: reversed })
+      .where(eq(processPhases.id, vote.id));
+
+    const result = await adminCaller.decision.reorderPhases({
+      instanceId,
+      phases: [
+        { phaseId: vote.id, ...reversed },
+        { phaseId: results.id },
+        { phaseId: review.id },
+      ],
+    });
+
+    expect(result.items.map((phase) => phase.id)).toEqual([
+      vote.id,
+      results.id,
+      review.id,
+    ]);
   });
 
   it('refuses a list that leaves out, repeats or adds a phase', async ({
