@@ -58,17 +58,42 @@ export const attachBlobPhases = <T extends InstanceWithData>({
   phases: [...getInstancePhases(instance.instanceData)],
 });
 
+// `id` is `null` while the decision still reads instanceData.phases.
+export type Phase = PhaseInstanceData & { id: string | null };
+
+export const toPhases = ({
+  instance,
+  storedPhases,
+}: {
+  instance: InstanceWithData;
+  storedPhases: ProcessPhaseWithProfile[];
+}): Phase[] =>
+  storedPhases.length > 0
+    ? storedPhases.map((phase) => ({
+        ...toInstanceDataPhase(phase),
+        id: phase.id,
+      }))
+    : getInstancePhases(instance.instanceData).map((phase) => ({
+        ...phase,
+        id: null,
+      }));
+
 // For a writer that already holds the instance's rows.
 export const attachPhaseRows = <T extends InstanceWithData>({
   instance,
-  phases,
+  storedPhases,
 }: {
   instance: T;
-  phases: ProcessPhaseWithProfile[];
-}): InstanceWithPhases<T> =>
-  phases.length > 0
-    ? { ...instance, phases: phases.map(toInstanceDataPhase) }
-    : attachBlobPhases({ instance });
+  storedPhases: ProcessPhaseWithProfile[];
+}): InstanceWithPhases<T> => ({
+  ...instance,
+  phases: toPhases({ instance, storedPhases }).map(toPhaseInstanceData),
+});
+
+export const toPhaseInstanceData = ({
+  id: _,
+  ...phase
+}: Phase): PhaseInstanceData => phase;
 
 export const resolvePhasesForAll = async <T extends InstanceWithData>({
   instances,
@@ -100,7 +125,7 @@ export const resolveProfilePhases = async <
   return {
     ...profile,
     processInstance: phases
-      ? attachPhaseRows({ instance, phases })
+      ? attachPhaseRows({ instance, storedPhases: phases })
       : await resolvePhases({ instance, db }),
   };
 };

@@ -607,6 +607,20 @@ export const phaseDataEncoder = instancePhaseDataEncoder
     proposalTemplate: z.custom<ProposalTemplateSchema>(isJsonObject).optional(),
   });
 
+/** A phase with the id the phase endpoints take; `null` while the decision still reads instanceData.phases. */
+const phaseEncoder = phaseDataEncoder.extend({
+  phaseId: z.string(),
+  name: z.string().optional(),
+  id: z.uuid().nullable(),
+});
+
+export const processInstanceWithPhasesEncoder = z.preprocess(
+  withPhasesInInstanceData,
+  processInstanceWithSchemaEncoderBase.extend({
+    phases: z.array(phaseEncoder),
+  }),
+);
+
 // name lives on the phase's profile; the service validates both schemas.
 export const phaseDataInputEncoder = instancePhaseDataInputEncoder
   .omit({ phaseId: true, name: true })

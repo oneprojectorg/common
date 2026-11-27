@@ -45,7 +45,7 @@ export async function updateTransitionsForProcess({
     const expectedTransitions = resolveTransitionPhaseRowIds({
       phases,
       transitions: buildExpectedTransitions(
-        attachPhaseRows({ instance: processInstance, phases }),
+        attachPhaseRows({ instance: processInstance, storedPhases: phases }),
       ),
     });
 

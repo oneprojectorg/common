@@ -43,7 +43,7 @@ export async function createTransitionsForProcess({
     const transitionsToCreate = resolveTransitionPhaseRowIds({
       phases: rows,
       transitions: buildExpectedTransitions(
-        attachPhaseRows({ instance: processInstance, phases: rows }),
+        attachPhaseRows({ instance: processInstance, storedPhases: rows }),
       ),
     });
 
