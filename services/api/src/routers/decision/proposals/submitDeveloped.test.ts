@@ -1,5 +1,6 @@
 import {
   TestDecisionsDataManager,
+  createDecisionsAdmin,
   createDevelopPhaseSetup,
   createDevelopProposalsMember,
 } from '@op/common/testing';
@@ -103,6 +104,36 @@ describe.concurrent('submitDevelopedProposal', () => {
       columns: { status: true },
     });
     expect(stored?.status).toBe(ProposalStatus.DRAFT);
+  });
+
+  it('lets an admin of the decision who is not the creator advance the draft', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source } = await createDevelopPhaseSetup({
+      testData,
+    });
+    const [developer, decisionsAdmin] = await Promise.all([
+      createDevelopProposalsMember({ testData, setup }),
+      createDecisionsAdmin({ testData, setup }),
+    ]);
+    const [developerCaller, adminCaller] = await Promise.all([
+      createAuthenticatedCaller(developer.email),
+      createAuthenticatedCaller(decisionsAdmin.email),
+    ]);
+    const draft = await developerCaller.decision.createDevelopedProposal({
+      processInstanceId: instanceId,
+      sourceProposalIds: [source.id],
+      proposalData: { title: 'Developed' },
+    });
+    testData.trackProfileForCleanup(draft.profileId);
+
+    const submitted = await adminCaller.decision.submitDevelopedProposal({
+      proposalId: draft.id,
+    });
+
+    expect(submitted.status).toBe(ProposalStatus.SUBMITTED);
   });
 
   it('refuses a caller with Develop Proposals who is not an author', async ({
