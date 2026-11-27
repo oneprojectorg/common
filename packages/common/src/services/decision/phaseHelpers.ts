@@ -31,7 +31,11 @@ import {
   PHASE_NAME_TOO_LONG,
   phaseNameLengthSchema,
 } from './schemas/phaseName';
-import { MAX_PHASES_PER_DECISION } from './utils/phaseOrder';
+import {
+  MAX_PHASES_PER_DECISION,
+  getPhaseIndex,
+  getPhaseName,
+} from './utils/phaseOrder';
 
 // phaseId and name live on the phase's profile.
 export type PhaseData = Omit<PhaseInstanceData, 'phaseId' | 'name'>;
@@ -115,6 +119,98 @@ export const assertPhaseRowInvariants = ({
       phases: 'Move the decision to another phase first',
     });
   }
+};
+
+/**
+ * On a decision past draft, refuses a write that rewrites its history: the
+ * phases up to the current one keep their order, a past phase keeps every
+ * field, and the current phase keeps its start date.
+ */
+export const assertPastPhasesUnchanged = ({
+  before,
+  after,
+  currentStateId,
+}: {
+  before: readonly PhaseInstanceData[];
+  after: readonly PhaseInstanceData[];
+  currentStateId: string | null;
+}): void => {
+  if (currentStateId === null) {
+    return;
+  }
+
+  const currentIndex = getPhaseIndex({ phases: before }, currentStateId);
+  if (currentIndex === -1) {
+    throw new ValidationError(
+      'The current phase is missing, so phases cannot be edited',
+      { phases: 'Move the decision to an existing phase first' },
+    );
+  }
+
+  const isPrefixKept = before
+    .slice(0, currentIndex + 1)
+    .every(({ phaseId }, index) => after[index]?.phaseId === phaseId);
+  if (!isPrefixKept) {
+    throw new ValidationError(
+      'Phases up to the current phase cannot be removed, added or reordered',
+      { phases: 'Change only the phases after the current phase' },
+    );
+  }
+
+  for (const [index, phase] of before.slice(0, currentIndex).entries()) {
+    if (!isDeepStrictEqual(lockedFields(phase), lockedFields(after[index]))) {
+      throw new ValidationError(
+        `The past phase "${getPhaseName(phase)}" cannot be edited`,
+        { phases: 'Past phases are locked' },
+      );
+    }
+  }
+
+  const current = before[currentIndex];
+  if (
+    !Object.is(
+      toInstant(current?.startDate),
+      toInstant(after[currentIndex]?.startDate),
+    )
+  ) {
+    throw new ValidationError(
+      'The start date of the current phase cannot be changed',
+      { phases: 'The current phase has already started' },
+    );
+  }
+};
+
+// A phase's fields, with absent, null and empty values dropped and dates
+// compared as instants, so a resave of the same values is no change.
+const lockedFields = (phase: PhaseInstanceData | undefined): unknown =>
+  phase &&
+  normalize(
+    Object.fromEntries(
+      Object.entries(phase).map(([key, value]) =>
+        key === 'startDate' || key === 'endDate'
+          ? [key, toInstant(value)]
+          : [key, value],
+      ),
+    ),
+  );
+
+const toInstant = (value: unknown): number | undefined =>
+  typeof value === 'string' ? Date.parse(value) : undefined;
+
+const normalize = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(normalize);
+  }
+  if (value === '') {
+    return undefined;
+  }
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+  const entries = Object.entries(value)
+    .map(([key, nested]) => [key, normalize(nested)] as const)
+    .filter(([, nested]) => nested !== undefined && nested !== null);
+  return entries.length === 0 ? undefined : Object.fromEntries(entries);
 };
 
 export const toInstanceDataPhase = (
@@ -313,7 +409,7 @@ export const reconcilePhases = async ({
   for (const [sortOrder, phase] of phases.entries()) {
     const current = existingByPhaseId.get(phase.phaseId);
     const { name: _name, ...data } = phase;
-    const name = getPhaseProfileName(phase);
+    const name = getPhaseName(phase);
 
     if (!current) {
       const inserted = await insertPhase({
@@ -369,7 +465,7 @@ export const reconcilePhases = async ({
 export const phaseIdOf = (phase: ProcessPhaseWithProfile): string =>
   phase.data.phaseId ?? phase.slug;
 
-export const assertPhaseCountFits = (count: number): void => {
+const assertPhaseCountFits = (count: number): void => {
   if (count > MAX_PHASES_PER_DECISION) {
     throw new ValidationError(
       `A decision can have at most ${MAX_PHASES_PER_DECISION} phases`,
@@ -403,7 +499,7 @@ export const assertPhaseNamesFit = (
   phases: readonly InstanceDataPhase[],
 ): void => {
   for (const phase of phases) {
-    const name = getPhaseProfileName(phase);
+    const name = getPhaseName(phase);
     if (!phaseNameLengthSchema.safeParse(name).success) {
       throw new ValidationError(PHASE_NAME_TOO_LONG, {
         name: `Shorten "${name.slice(0, 24)}…"`,
@@ -411,9 +507,6 @@ export const assertPhaseNamesFit = (
     }
   }
 };
-
-const getPhaseProfileName = ({ phaseId, name }: InstanceDataPhase): string =>
-  name?.trim() || phaseId;
 
 const insertPhaseProfile = async ({
   tx,

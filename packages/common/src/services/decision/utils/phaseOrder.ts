@@ -12,6 +12,15 @@ export interface PhaseSource<Phase extends { phaseId: string }> {
   phases?: readonly Phase[];
 }
 
+/** A phase's name, or its id when the name is blank. */
+export const getPhaseName = ({
+  phaseId,
+  name,
+}: {
+  phaseId: string;
+  name?: string | null;
+}): string => name?.trim() || phaseId;
+
 /** Index of `phaseId` in the instance's phase ordering; `-1` when absent. */
 export function getPhaseIndex(
   source: PhaseSource<{ phaseId: string }>,

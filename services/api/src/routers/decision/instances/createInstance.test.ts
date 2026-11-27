@@ -3,7 +3,7 @@ import {
   PROCESS_NAME_MAX_LENGTH,
   PROCESS_NAME_MIN_LENGTH,
 } from '@op/common';
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { TestDecisionsDataManager, loadPhaseRows } from '@op/common/testing';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -14,7 +14,6 @@ import {
 import {
   expectRowsMatchPhases,
   loadInstanceData,
-  loadPhaseRows,
 } from '../../../test/helpers/phaseTestUtils';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 

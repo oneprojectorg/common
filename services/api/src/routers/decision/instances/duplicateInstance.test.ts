@@ -1,6 +1,6 @@
 import { type DecisionInstanceData, simpleVoting } from '@op/common';
 import type { DecisionSchemaDefinition } from '@op/common';
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { TestDecisionsDataManager, loadPhaseRows } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
 import {
   ProcessStatus,
@@ -21,7 +21,6 @@ import {
   expectNothingNamed,
   expectRowsMatchPhases,
   loadInstanceData,
-  loadPhaseRows,
 } from '../../../test/helpers/phaseTestUtils';
 import { createWizardDraft } from '../../../test/helpers/wizardDraftTestUtils';
 import {

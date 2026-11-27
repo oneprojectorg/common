@@ -1,4 +1,4 @@
-import { TestDecisionsDataManager } from '@op/common/testing';
+import { TestDecisionsDataManager, loadPhaseRows } from '@op/common/testing';
 import { db, eq } from '@op/db/client';
 import {
   EntityType,
@@ -16,7 +16,6 @@ import {
   listPhaseIds,
   loadBlobPhases,
   loadInstancePhases,
-  loadPhaseRows,
   loadTransitionLinks,
   setupPublishedDateDecision,
   setupPublishedDecisionAtThirdPhase,
@@ -530,7 +529,34 @@ describe.concurrent('createPhase', () => {
     ]);
   });
 
-  it('schedules no transition out of a phase the decision has left when a phase is inserted before the current one', async ({
+  it('refuses a phase inserted before the current one and keeps the phases and transitions', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instanceId, adminCaller, rows } =
+      await setupPublishedDecisionAtThirdPhase(task, onTestFinished);
+    const rowsBefore = await loadPhaseRows(instanceId);
+    const linksBefore = await loadTransitionLinks(instanceId);
+
+    await expect(
+      adminCaller.decision.createPhase({
+        instanceId,
+        name: 'Added',
+        sortOrder: rows.voting.sortOrder,
+      }),
+    ).rejects.toMatchObject({
+      cause: {
+        name: 'ValidationError',
+        message:
+          'Phases up to the current phase cannot be removed, added or reordered',
+      },
+    });
+
+    expect(await loadPhaseRows(instanceId)).toEqual(rowsBefore);
+    expect(await loadTransitionLinks(instanceId)).toEqual(linksBefore);
+  });
+
+  it('adds a phase after the current one of a published decision', async ({
     task,
     onTestFinished,
   }) => {
@@ -540,26 +566,16 @@ describe.concurrent('createPhase', () => {
     const added = await adminCaller.decision.createPhase({
       instanceId,
       name: 'Added',
-      sortOrder: rows.voting.sortOrder,
+      sortOrder: rows.results.sortOrder,
     });
     testData.trackProfileForCleanup(added.profileId);
 
     expect(await loadPhaseRows(instanceId)).toMatchObject([
       { id: rows.submission.id },
       { id: rows.review.id },
-      { id: added.id },
       { id: rows.voting.id },
+      { id: added.id },
       { id: rows.results.id },
-    ]);
-    expect(
-      await loadTransitionLinks(instanceId, { pendingOnly: true }),
-    ).toMatchObject([
-      {
-        fromStateId: 'voting',
-        toStateId: 'results',
-        fromPhaseId: rows.voting.id,
-        toPhaseId: rows.results.id,
-      },
     ]);
   });
 
