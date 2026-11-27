@@ -231,8 +231,7 @@ describe('translation.translateProposal', () => {
       sourceLocale: 'EN',
       translated: {
         title: '[ES] Community Garden Project',
-        default:
-          '[ES] <p>A proposal for a garden</p>',
+        default: '[ES] <p>A proposal for a garden</p>',
       },
     });
 
@@ -382,8 +381,7 @@ describe('translation.translateProposal', () => {
       sourceLocale: 'EN',
       translated: {
         title: '[ES-CACHED] Community Garden Project',
-        default:
-          '[ES] <p>A proposal for a garden</p>',
+        default: '[ES] <p>A proposal for a garden</p>',
       },
     });
 
@@ -440,10 +438,8 @@ describe('translation.translateProposal', () => {
 
     await translationData.seedTranslation({
       contentKey: `proposal:${proposal.id}:default`,
-      sourceText:
-        '<p>Already translated body</p>',
-      translatedText:
-        '[ES-CACHED] <p>Already translated body</p>',
+      sourceText: '<p>Already translated body</p>',
+      translatedText: '[ES-CACHED] <p>Already translated body</p>',
       sourceLocale: 'EN',
       targetLocale: 'ES',
     });
@@ -472,8 +468,7 @@ describe('translation.translateProposal', () => {
       sourceLocale: 'EN',
       translated: {
         title: '[ES-CACHED] Fully Cached Proposal',
-        default:
-          '[ES-CACHED] <p>Already translated body</p>',
+        default: '[ES-CACHED] <p>Already translated body</p>',
       },
     });
   });
