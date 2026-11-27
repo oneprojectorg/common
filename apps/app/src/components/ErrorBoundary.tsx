@@ -1,5 +1,7 @@
 'use client';
 
+import { isUnauthenticatedError } from '@/utils/isUnauthenticatedError';
+import { logger } from '@op/logging/client';
 import posthog from 'posthog-js';
 import React, { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
@@ -28,6 +30,11 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    if (isUnauthenticatedError(error)) {
+      logger.info('Error boundary caught a request without a session');
+      return;
+    }
+
     console.error('Uncaught error:', error, errorInfo);
     posthog.captureException(error, {
       ...(errorInfo.componentStack && {

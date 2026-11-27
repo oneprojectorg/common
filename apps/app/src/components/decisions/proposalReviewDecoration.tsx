@@ -1,6 +1,7 @@
 'use client';
 
 import { chunk } from '@/utils/chunk';
+import { isUnauthenticatedError } from '@/utils/isUnauthenticatedError';
 import { trpc } from '@op/api/client';
 import {
   type Proposal,
@@ -136,7 +137,11 @@ export function ProposalReviewDecorationProvider({
 
   useEffect(() => {
     for (const result of results) {
-      if (result.error && !loggedErrors.current.has(result.error)) {
+      if (
+        result.error &&
+        !isUnauthenticatedError(result.error) &&
+        !loggedErrors.current.has(result.error)
+      ) {
         loggedErrors.current.add(result.error);
         logger.error(
           'Failed to load review aggregates for a page of proposals',
