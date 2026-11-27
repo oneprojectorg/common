@@ -16,6 +16,7 @@ import ErrorBoundary from '../ErrorBoundary';
 import { LocaleChooser } from '../LocaleChooser';
 import { SearchInput } from '../SearchInput';
 import { CreateMenu } from './CreateMenu';
+import { NotificationsMenu } from './NotificationsMenu';
 import { UserAvatarMenu } from './UserAvatarMenu';
 
 export { UserAvatarMenu };
@@ -59,6 +60,7 @@ const HeaderActions = () => {
   return (
     <ClientOnly>
       {user && <CreateMenu />}
+      {user && !user.isAnonymous && <NotificationsMenu />}
       <LocaleChooser />
       {user && (
         <ErrorBoundary

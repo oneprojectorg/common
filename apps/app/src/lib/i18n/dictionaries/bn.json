@@ -103,6 +103,15 @@
   "somethingWentWrong": "আমাদের দিক থেকে কিছু একটা ভুল হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন",
   "startTypingPlaceholder": "টাইপ করা শুরু করুন...",
   "removingProgress": "মুছে ফেলা হচ্ছে...",
+  "notifications": {
+    "emptyState": "আপনি সব দেখে ফেলেছেন",
+    "loadError": "বিজ্ঞপ্তি লোড করা যায়নি",
+    "markAllReadAction": "সব পঠিত হিসেবে চিহ্নিত করুন",
+    "openLabel": "বিজ্ঞপ্তি খুলুন",
+    "panelTitle": "বিজ্ঞপ্তি",
+    "proposalCommentSummary": "<name>{commenterName}</name> <title>{proposalTitle}</title>-এ মন্তব্য করেছেন",
+    "unreadCountLabel": "{count}টি অপঠিত"
+  },
   "onboarding": {
     "personalDetailsTitle": "আপনার ব্যক্তিগত বিবরণ যোগ করুন",
     "personalDetailsSubtitle": "আপনার সম্পর্কে আমাদেরকে বলুন যাতে অন্যরা আপনাকে খুঁজে পেতে পারে।",
