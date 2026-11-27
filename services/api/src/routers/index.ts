@@ -5,6 +5,7 @@ import { customFormsRouter } from './customForms';
 import { decisionRouter } from './decision';
 import individualRouter from './individual';
 import { moderationRouter } from './moderation';
+import { notificationsRouter } from './notifications';
 import { organizationRouter } from './organization';
 import { platformRouter } from './platform';
 import { postsRouter } from './posts';
@@ -24,6 +25,7 @@ export const appRouter = router({
   customForm: customFormsRouter,
   decision: decisionRouter,
   moderation: moderationRouter,
+  notifications: notificationsRouter,
   platform: platformRouter,
   resources: resourcesRouter,
   translation: translationRouter,
