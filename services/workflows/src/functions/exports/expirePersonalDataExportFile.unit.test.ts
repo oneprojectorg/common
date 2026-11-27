@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@op/common', () => ({
   PERSONAL_DATA_EXPORT_FILE_LIFETIME_MS: 60 * 60 * 1000,
+  PERSONAL_DATA_EXPORT_MAX_RUN_MS: 30 * 60 * 1000,
   expirePersonalDataExport: vi.fn(),
 }));
 
@@ -18,7 +19,7 @@ const data = {
 };
 
 describe('expirePersonalDataExportFile', () => {
-  it('holds the file for its lifetime, then expires it', async () => {
+  it('holds the file for its lifetime past the longest run, then expires it', async () => {
     const { ctx, error } = await new InngestTestEngine({
       function: expirePersonalDataExportFile,
     }).execute({
@@ -28,7 +29,7 @@ describe('expirePersonalDataExportFile', () => {
     });
 
     expect(error).toBeUndefined();
-    expect(ctx.step.sleep).toHaveBeenCalledWith('hold-file', 60 * 60 * 1000);
+    expect(ctx.step.sleep).toHaveBeenCalledWith('hold-file', 90 * 60 * 1000);
     expect(expirePersonalDataExport).toHaveBeenCalledWith(data);
   });
 });

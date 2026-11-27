@@ -1,5 +1,8 @@
 export {
   PERSONAL_DATA_EXPORT_FILE_LIFETIME_MS,
+  PERSONAL_DATA_EXPORT_MAX_EXECUTION_MS,
+  PERSONAL_DATA_EXPORT_MAX_QUEUE_MS,
+  PERSONAL_DATA_EXPORT_MAX_RUN_MS,
   personalDataExportCacheKey,
   personalDataExportFileName,
   personalDataExportFilePath,
