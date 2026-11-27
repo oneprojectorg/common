@@ -135,6 +135,13 @@ vi.mock('@/hooks/useCanLinkToProfile', () => ({
   useCanLinkToProfile: () => false,
 }));
 vi.mock('@op/logging/client', () => ({ logger }));
+vi.mock('./ProcessAdminsDialog', () => ({
+  ProcessAdminsDialog: ({ profileId }: { profileId: string }) => (
+    <button type="button" data-profile-id={profileId}>
+      Manage admins
+    </button>
+  ),
+}));
 vi.mock('@op/sense/Toast', () => ({ toast }));
 
 vi.mock('@/components/Resources/PinnedResourceCard', () => ({
@@ -169,8 +176,10 @@ const profile = ({
   heroImage,
   isPrivate = false,
   name = 'Community Fund',
+  profileId = 'profile-1',
 }: {
   name?: string;
+  profileId?: string | null;
   status?: string;
   description?: string | null;
   phases?: object[];
@@ -181,7 +190,7 @@ const profile = ({
   name,
   processInstance: {
     id: 'instance-1',
-    profileId: 'profile-1',
+    profileId,
     status,
     description,
     currentStateId: null,
@@ -404,16 +413,36 @@ describe('ProcessAdminOverview', () => {
     ).toContain(`/decisions/${SLUG}/edit`);
   });
 
-  it('gives a draft an inert launch, not the public view', () => {
+  it('gives a draft its admins and an inert launch, not the public view', () => {
     seed({ status: ProcessStatus.DRAFT });
     renderOverview();
 
+    expect(screen.getByRole('button', { name: 'Manage admins' })).toBeTruthy();
     expect(
       screen
         .getByRole('button', { name: 'Launch process' })
         .getAttribute('aria-disabled'),
     ).toBe('true');
     expect(screen.queryByRole('link', { name: 'View process' })).toBeNull();
+  });
+
+  it('opens the admins of the process it shows', () => {
+    seed({ status: ProcessStatus.DRAFT, profileId: 'profile-7' });
+    renderOverview();
+
+    expect(
+      screen
+        .getByRole('button', { name: 'Manage admins' })
+        .getAttribute('data-profile-id'),
+    ).toBe('profile-7');
+  });
+
+  it('keeps the launch but offers no admins when the process has no profile', () => {
+    seed({ status: ProcessStatus.DRAFT, profileId: null });
+    renderOverview();
+
+    expect(screen.queryByRole('button', { name: 'Manage admins' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Launch process' })).toBeTruthy();
   });
 
   it('gives a live process the public view, not a launch', () => {
@@ -424,6 +453,7 @@ describe('ProcessAdminOverview', () => {
       screen.getByRole('link', { name: 'View process' }).getAttribute('href'),
     ).toContain(`/decisions/${SLUG}`);
     expect(screen.queryByRole('button', { name: 'Launch process' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Manage admins' })).toBeNull();
   });
 
   it('edits a draft title in place and keeps a live title read-only', () => {

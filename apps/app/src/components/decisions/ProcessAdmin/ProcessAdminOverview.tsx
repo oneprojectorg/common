@@ -39,6 +39,7 @@ import { ProcessAdminBanner } from './ProcessAdminBanner';
 import { ProcessAdminLaunchButton } from './ProcessAdminLaunchButton';
 import { ProcessAdminOverviewSkeleton } from './ProcessAdminOverviewSkeleton';
 import { ProcessAdminTitle } from './ProcessAdminTitle';
+import { ProcessAdminsDialog } from './ProcessAdminsDialog';
 import {
   type ProcessAdminStatus,
   STATUS_BADGE_VARIANT,
@@ -161,7 +162,6 @@ function ProcessAdminOverviewSuspense({
   );
 }
 
-// A draft cannot launch from here yet; a live process links to what participants see.
 function ProcessAdminTopBar({
   slug,
   process,
@@ -183,7 +183,15 @@ function ProcessAdminTopBar({
 
   let actions: ReactNode = null;
   if (process && status === 'draft') {
-    actions = <ProcessAdminLaunchButton />;
+    const { instance } = process;
+    actions = (
+      <>
+        {instance.profileId ? (
+          <ProcessAdminsDialog profileId={instance.profileId} />
+        ) : null}
+        <ProcessAdminLaunchButton />
+      </>
+    );
   } else if (process) {
     actions = (
       <ButtonLink href={`/decisions/${slug}`} variant="link">
