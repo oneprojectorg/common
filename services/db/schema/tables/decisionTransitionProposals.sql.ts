@@ -3,6 +3,7 @@ import type { InferModel } from 'drizzle-orm';
 import {
   foreignKey,
   index,
+  jsonb,
   pgTable,
   timestamp,
   unique,
@@ -32,6 +33,12 @@ export const decisionTransitionProposals = pgTable(
     proposalId: uuid('proposal_id').notNull(),
 
     proposalHistoryId: uuid('proposal_history_id').notNull(),
+
+    /**
+     * What the selection pipeline recorded about the proposal on this
+     * transition (points, position, cost, ...); null when an admin attached it.
+     */
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
 
     createdAt: timestamp({
       withTimezone: true,

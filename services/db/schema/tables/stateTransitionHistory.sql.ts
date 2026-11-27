@@ -32,6 +32,13 @@ export const stateTransitionHistory = pgTable(
     // Transition metadata
     transitionData: jsonb('transition_data'),
 
+    // When the selection into this phase was settled: at the transition when
+    // it needs no approval, else when an admin confirmed it. Null while
+    // waiting; any attached proposals stay out of the phase until then.
+    selectionConfirmedAt: timestamp('selection_confirmed_at', {
+      withTimezone: true,
+    }),
+
     triggeredByProfileId: uuid('triggered_by_profile_id').references(
       () => profiles.id,
       {
