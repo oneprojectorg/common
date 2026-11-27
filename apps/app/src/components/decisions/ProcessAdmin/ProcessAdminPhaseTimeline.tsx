@@ -1,20 +1,25 @@
 'use client';
 
-import type { DecisionPhase } from '@op/api/encoders';
+import type { DecisionPhase, InstanceData } from '@op/api/encoders';
+import { isPhaseReady } from '@op/common/client';
 import { PhaseCard, type PhaseCardState } from '@op/sense/PhaseCard';
 import { useLocale } from 'next-intl';
 
-import { useTranslations } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
+
+import { getAdminPhaseKind } from './adminPhaseKind';
 
 export function ProcessAdminPhaseTimeline({
   slug,
   phases,
   currentStateId,
   hasStarted,
+  templates,
   isEditing = false,
 }: {
   slug: string;
   phases: DecisionPhase[];
+  templates: Pick<InstanceData, 'proposalTemplate' | 'rubricTemplate'>;
   currentStateId: string | null | undefined;
   /** Before the first phase starts, every phase shows as upcoming. */
   hasStarted: boolean;
@@ -25,17 +30,28 @@ export function ProcessAdminPhaseTimeline({
   const currentIndex = phases.findIndex(
     (phase) => phase.phaseId === currentStateId,
   );
+  const rows = phases.map((phase, index) => {
+    const state = getPhaseState({ index, currentIndex, hasStarted });
+    return {
+      phase,
+      state,
+      needsSetup:
+        state === 'upcoming' && !isPhaseReady({ phase, decision: templates }),
+    };
+  });
+  const leadIndex = rows.findIndex((row) => row.needsSetup);
 
   return (
-    <ol className="flex flex-col gap-6">
-      {phases.map((phase, index) => {
-        const state = getPhaseState({ index, currentIndex, hasStarted });
+    <ol className="flex flex-col gap-4">
+      {rows.map(({ phase, state, needsSetup }, index) => {
+        const name = phase.name ?? '';
+        const hasEditLink = phase.slug !== null && (isEditing || needsSetup);
 
         return (
           <li key={phase.id ?? `unstored-${index}`}>
             <PhaseCard
               state={state}
-              name={phase.name ?? ''}
+              name={name}
               startDate={phase.startDate}
               endDate={phase.endDate}
               locale={locale}
@@ -46,7 +62,20 @@ export function ProcessAdminPhaseTimeline({
               href={
                 state === 'current' ? `/decisions/${slug}/current` : undefined
               }
-              editLink={isEditing ? <a href="#" /> : undefined}
+              editLink={
+                hasEditLink ? (
+                  <Link
+                    href={`/decisions/${slug}/manage/phase/${phase.slug}`}
+                  />
+                ) : undefined
+              }
+              needsSetup={needsSetup}
+              isLead={index === leadIndex}
+              setupLabel={t('processAdmin.setupAction')}
+              setupAriaLabel={t('processAdmin.setupPhaseLabel', {
+                phaseName: name,
+              })}
+              blurb={t(`processAdmin.setupBlurb${getAdminPhaseKind(phase)}`)}
             />
           </li>
         );

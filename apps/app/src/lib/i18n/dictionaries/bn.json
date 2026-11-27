@@ -2076,7 +2076,17 @@
       "saveError": "আপনার পরিবর্তন সংরক্ষণ করা হয়নি।",
       "addBannerAction": "ব্যানার যোগ করুন",
       "launchAction": "প্রক্রিয়া চালু করুন",
-      "editPhases": "পর্যায়গুলি সম্পাদনা করুন"
+      "editPhases": "পর্যায়গুলি সম্পাদনা করুন",
+      "phasePageTitle": "{phaseName} · {decisionName}",
+      "phaseNotFound": "এই পর্যায়টি আর নেই",
+      "phaseLoadError": "এই পর্যায়টি লোড করা যায়নি",
+      "setupAction": "সেটআপ",
+      "setupPhaseLabel": "সেটআপ {phaseName}",
+      "setupBlurbCollect": "লোকেরা প্রস্তাব পাঠায়",
+      "setupBlurbReview": "পর্যালোচকরা যা এসেছে তা পড়েন",
+      "setupBlurbDevelop": "বাছাই করা প্রস্তাবগুলি আরও বিকশিত হয়",
+      "setupBlurbVote": "লোকেরা সেগুলির মধ্যে থেকে বেছে নেয়",
+      "setupBlurbResults": "ফলাফল প্রকাশিত হয়"
     }
   },
   "loadingProgress": "লোড হচ্ছে...",

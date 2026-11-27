@@ -11,7 +11,6 @@ import {
   Empty,
   EmptyDescription,
   EmptyHeader,
-  EmptyMedia,
   EmptyTitle,
 } from '@op/sense/Empty';
 import { Header2 } from '@op/sense/Header';
@@ -26,7 +25,7 @@ import {
   type ComponentProps,
   type ReactNode,
 } from 'react';
-import { LuArrowLeft, LuPencil, LuTriangleAlert } from 'react-icons/lu';
+import { LuArrowLeft, LuPencil } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
@@ -43,6 +42,7 @@ import {
 } from '../OverviewPinnedResources';
 import { ProcessAdminBanner } from './ProcessAdminBanner';
 import { ProcessAdminLaunchButton } from './ProcessAdminLaunchButton';
+import { ProcessAdminLoadError } from './ProcessAdminLoadError';
 import { ProcessAdminOverviewSkeleton } from './ProcessAdminOverviewSkeleton';
 import { ProcessAdminPhaseTimeline } from './ProcessAdminPhaseTimeline';
 import { ProcessAdminTitle } from './ProcessAdminTitle';
@@ -74,23 +74,13 @@ export function ProcessAdminOverview({
   isOpen,
   aboutSlot,
 }: ProcessAdminOverviewProps) {
-  const t = useTranslations('decisions');
-
   return (
     <APIErrorBoundary
       fallbacks={{
         default: () => (
           <div className="flex min-h-dvh flex-col bg-background">
             <ProcessAdminTopBar slug={slug} />
-            <Empty className="border-0">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <LuTriangleAlert className="size-6" aria-hidden />
-                </EmptyMedia>
-                <EmptyTitle>{t('overviewLoadError')}</EmptyTitle>
-                <EmptyDescription>{t('refreshPageHint')}</EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <ProcessAdminLoadError subject="overview" />
           </div>
         ),
       }}
@@ -139,6 +129,7 @@ function ProcessAdminOverviewSuspense({
               slug={slug}
               phases={instance.phases}
               currentStateId={instance.currentStateId}
+              templates={instance.instanceData}
               isOpen={isOpen}
               isDraft={status === 'draft'}
             />
@@ -311,11 +302,12 @@ function ProcessAdminPhaseRail({
   slug,
   phases,
   currentStateId,
+  templates,
   isOpen,
   isDraft,
 }: Pick<
   ComponentProps<typeof ProcessAdminPhaseTimeline>,
-  'slug' | 'phases' | 'currentStateId'
+  'slug' | 'phases' | 'currentStateId' | 'templates'
 > & { isOpen: boolean; isDraft: boolean }) {
   const t = useTranslations('decisions');
   const tShared = useTranslations();
@@ -324,12 +316,13 @@ function ProcessAdminPhaseRail({
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-start justify-between gap-3">
         <Header2 className="text-label">{t('processOverviewHeading')}</Header2>
         {!isDraft && phases.length > 0 ? (
           <Button
-            variant="ghost"
-            size="sm"
+            variant="link"
+            size="inline"
+            className="text-label"
             onClick={() => setIsEditingLaunched((editing) => !editing)}
             aria-label={
               isEditingLaunched ? undefined : t('processAdmin.editPhases')
@@ -339,7 +332,11 @@ function ProcessAdminPhaseRail({
               tShared('Done')
             ) : (
               <>
-                <LuPencil data-icon="inline-start" aria-hidden />
+                <LuPencil
+                  data-icon="inline-start"
+                  className="size-3.5"
+                  aria-hidden
+                />
                 {tShared('Edit')}
               </>
             )}
@@ -351,6 +348,7 @@ function ProcessAdminPhaseRail({
           slug={slug}
           phases={phases}
           currentStateId={currentStateId}
+          templates={templates}
           hasStarted={isOpen}
           isEditing={isEditing}
         />

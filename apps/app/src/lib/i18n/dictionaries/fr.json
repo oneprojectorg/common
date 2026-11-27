@@ -2076,7 +2076,17 @@
       "saveError": "Votre modification n’a pas été enregistrée.",
       "addBannerAction": "Ajouter une bannière",
       "launchAction": "Lancer le processus",
-      "editPhases": "Modifier les phases"
+      "editPhases": "Modifier les phases",
+      "phasePageTitle": "{phaseName} · {decisionName}",
+      "phaseNotFound": "Cette phase n’existe plus",
+      "phaseLoadError": "Impossible de charger cette phase",
+      "setupAction": "Configurer",
+      "setupPhaseLabel": "Configurer {phaseName}",
+      "setupBlurbCollect": "Les participants envoient des propositions",
+      "setupBlurbReview": "Les évaluateurs lisent ce qui est arrivé",
+      "setupBlurbDevelop": "Les propositions retenues sont approfondies",
+      "setupBlurbVote": "Les participants choisissent entre elles",
+      "setupBlurbResults": "Le résultat est publié"
     }
   },
   "loadingProgress": "En train de charger…",

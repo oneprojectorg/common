@@ -162,8 +162,10 @@ const profile = ({
   heroImage,
   isPrivate = false,
   name = 'Community Fund',
+  proposalTemplate,
 }: {
   name?: string;
+  proposalTemplate?: object;
   status?: string;
   description?: string | null;
   phases?: object[];
@@ -184,6 +186,7 @@ const profile = ({
     instanceData: {
       phases,
       config: { isPrivate },
+      proposalTemplate,
       overview: heroImage ? { heroImage } : undefined,
     },
   },
@@ -208,16 +211,31 @@ const failSave = () => act(() => updateInstance.fail());
 
 const phase = {
   id: 'row-submit',
+  slug: 'a1b2c3d4',
   phaseId: 'submit',
   name: 'Submit',
   startDate: '2026-01-01T00:00:00.000Z',
+  endDate: '2026-01-31T00:00:00.000Z',
 };
 const votePhase = {
   id: 'row-vote',
+  slug: 'e5f6a7b8',
   phaseId: 'vote',
   name: 'Vote',
   startDate: '2026-02-01T00:00:00.000Z',
+  endDate: '2026-02-28T00:00:00.000Z',
 };
+const developPhase = {
+  id: 'row-develop',
+  slug: 'c9d0e1f2',
+  phaseId: 'develop',
+  name: 'Develop',
+  startDate: '2026-02-01T00:00:00.000Z',
+  endDate: '2026-02-28T00:00:00.000Z',
+  rules: { proposals: { develop: true } },
+};
+const editorHref = (phaseSlug: string) =>
+  `/en/decisions/${SLUG}/manage/phase/${phaseSlug}`;
 
 afterEach(() => {
   cleanup();
@@ -313,10 +331,34 @@ describe('ProcessAdminOverview', () => {
 
     expect(
       screen.getByRole('link', { name: /Submit/ }).getAttribute('href'),
-    ).toBe('#');
+    ).toBe(editorHref('a1b2c3d4'));
     expect(
       screen.getByRole('link', { name: /Vote/ }).getAttribute('href'),
-    ).toBe('#');
+    ).toBe(editorHref('e5f6a7b8'));
+  });
+
+  it('asks a live process to set up an upcoming phase that has no form yet', () => {
+    seed({
+      phases: [phase, developPhase],
+      currentStateId: 'submit',
+    });
+    renderOverview(true);
+
+    expect(
+      screen.getByRole('link', { name: 'Set up Develop' }).getAttribute('href'),
+    ).toBe(editorHref('c9d0e1f2'));
+  });
+
+  it('does not ask a live process to set up a phase that is ready', () => {
+    seed({
+      phases: [phase, developPhase],
+      currentStateId: 'submit',
+      proposalTemplate: { type: 'object', properties: { summary: {} } },
+    });
+    renderOverview(true);
+
+    expect(screen.getByText('Develop')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /^Set up/ })).toBeNull();
   });
 
   it('keeps the rail of a live process at rest', () => {
@@ -334,7 +376,7 @@ describe('ProcessAdminOverview', () => {
     await user.click(screen.getByRole('button', { name: 'Edit phases' }));
     expect(
       screen.getByRole('link', { name: /Submit/ }).getAttribute('href'),
-    ).toBe('#');
+    ).toBe(editorHref('a1b2c3d4'));
 
     await user.click(screen.getByRole('button', { name: 'Done' }));
     expect(screen.queryByRole('link', { name: /Submit/ })).toBeNull();

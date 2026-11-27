@@ -48,6 +48,10 @@ export function isReviewPhase(phase: { rules?: ReviewPhaseRules }): boolean {
   );
 }
 
+export function isSubmitPhase(phase: { rules?: PhaseRules }): boolean {
+  return phase.rules?.proposals?.submit ?? false;
+}
+
 export function isDevelopPhase(phase: { rules?: PhaseRules }): boolean {
   return phase.rules?.proposals?.develop ?? false;
 }

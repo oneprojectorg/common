@@ -2076,7 +2076,17 @@
       "saveError": "لم يتم حفظ تغييرك.",
       "addBannerAction": "إضافة بانر",
       "launchAction": "إطلاق العملية",
-      "editPhases": "تعديل المراحل"
+      "editPhases": "تعديل المراحل",
+      "phasePageTitle": "{phaseName} · {decisionName}",
+      "phaseNotFound": "لم تعد هذه المرحلة موجودة",
+      "phaseLoadError": "تعذر تحميل هذه المرحلة",
+      "setupAction": "إعداد",
+      "setupPhaseLabel": "إعداد {phaseName}",
+      "setupBlurbCollect": "يرسل الأشخاص مقترحاتهم",
+      "setupBlurbReview": "يقرأ المراجعون ما وصل",
+      "setupBlurbDevelop": "تُطوَّر المقترحات المختارة أكثر",
+      "setupBlurbVote": "يختار الأشخاص بينها",
+      "setupBlurbResults": "تُنشر النتيجة"
     }
   },
   "loadingProgress": "جارٍ التحميل...",

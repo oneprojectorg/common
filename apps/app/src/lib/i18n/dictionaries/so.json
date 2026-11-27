@@ -2076,7 +2076,17 @@
       "saveError": "Isbeddelkaaga lama kaydin.",
       "addBannerAction": "Ku dar bandhig",
       "launchAction": "Billow habraaca",
-      "editPhases": "Wax ka bedel wejiyada"
+      "editPhases": "Wax ka bedel wejiyada",
+      "phasePageTitle": "{phaseName} · {decisionName}",
+      "phaseNotFound": "Wejigan hadda ma jiro",
+      "phaseLoadError": "Lama soo dejin karin wejigan",
+      "setupAction": "Diyaari",
+      "setupPhaseLabel": "Diyaari {phaseName}",
+      "setupBlurbCollect": "Dadku waxay soo diraan soo jeedinno",
+      "setupBlurbReview": "Dib-u-eegayaashu waxay akhriyaan waxa yimid",
+      "setupBlurbDevelop": "Soo jeedinnada la doortay waa la sii horumariyaa",
+      "setupBlurbVote": "Dadku way kala doortaan",
+      "setupBlurbResults": "Natiijada waa la daabacaa"
     }
   },
   "loadingProgress": "Waa la soo rarayaa...",
