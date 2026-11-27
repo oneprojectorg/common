@@ -9,6 +9,7 @@ import { eq } from 'drizzle-orm';
 
 import { CommonError } from '../../utils';
 import { getCurrentProfileId } from '../access';
+import { writeOutboxEvent } from '../notifications';
 import { assertPostWriteAccess } from './access';
 import { resolvePostRoots } from './resolvePostRoots';
 
@@ -62,6 +63,15 @@ export const createPost = async (input: CreatePostServiceInput) => {
           .from(postsToProfiles)
           .where(eq(postsToProfiles.postId, parentPostId))
       : [];
+
+  let postKind: 'comment' | 'proposalComment' | 'decisionUpdate' | undefined;
+  if (parentPostId) {
+    postKind = 'comment';
+  } else if (proposalId && targetProfileId) {
+    postKind = 'proposalComment';
+  } else if (targetProfileId) {
+    postKind = 'decisionUpdate';
+  }
 
   const newPost = await db.transaction(async (tx) => {
     const allStorageObjects =
@@ -136,17 +146,20 @@ export const createPost = async (input: CreatePostServiceInput) => {
       await tx.insert(attachments).values(attachmentValues);
     }
 
+    if (postKind === 'proposalComment') {
+      await writeOutboxEvent({
+        eventName: Events.proposalCommentPosted.name,
+        payload: {
+          postId: newPost.id,
+          proposalId: proposalId!,
+          authorProfileId: profileId,
+        },
+        db: tx,
+      });
+    }
+
     return newPost;
   });
-
-  let postKind: 'comment' | 'proposalComment' | 'decisionUpdate' | undefined;
-  if (parentPostId) {
-    postKind = 'comment';
-  } else if (proposalId && targetProfileId) {
-    postKind = 'proposalComment';
-  } else if (targetProfileId) {
-    postKind = 'decisionUpdate';
-  }
 
   waitUntil(
     (async () => {
@@ -173,16 +186,6 @@ export const createPost = async (input: CreatePostServiceInput) => {
               data: {
                 postId: newPost.id,
                 parentPostId: parentPostId!,
-                authorProfileId: profileId,
-              },
-            });
-            break;
-          case 'proposalComment':
-            await event.send({
-              name: Events.proposalCommentPosted.name,
-              data: {
-                postId: newPost.id,
-                proposalId: proposalId!,
                 authorProfileId: profileId,
               },
             });

@@ -49,3 +49,4 @@ export * from './linkPreview';
 export * from './resources';
 export * from './translation';
 export * from './notification';
+export * from './notifications';
