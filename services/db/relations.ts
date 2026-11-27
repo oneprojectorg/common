@@ -1149,4 +1149,41 @@ export const relations = defineRelations(schema, (r) => ({
       alias: 'moderationFlag_flaggedBy',
     }),
   },
+
+  activities: {
+    actor: r.one.profiles({
+      from: r.activities.actorId,
+      to: r.profiles.id,
+      alias: 'activity_actor',
+    }),
+    notifications: r.many.notifications({
+      from: r.activities.id,
+      to: r.notifications.activityId,
+    }),
+  },
+
+  notifications: {
+    activity: r.one.activities({
+      from: r.notifications.activityId,
+      to: r.activities.id,
+      optional: false,
+    }),
+    user: r.one.authUsers({
+      from: r.notifications.authUserId,
+      to: r.authUsers.id,
+      optional: false,
+    }),
+    deliveries: r.many.notificationDeliveries({
+      from: r.notifications.id,
+      to: r.notificationDeliveries.notificationId,
+    }),
+  },
+
+  notificationDeliveries: {
+    notification: r.one.notifications({
+      from: r.notificationDeliveries.notificationId,
+      to: r.notifications.id,
+      optional: false,
+    }),
+  },
 }));

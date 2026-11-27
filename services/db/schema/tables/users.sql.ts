@@ -21,11 +21,13 @@ import { objectsInStorage } from './storage.sql';
 
 export type NotificationChannel = 'email' | 'sms';
 
-export type NotificationCategory =
-  | 'proposalsAndComments'
-  | 'thingsYouFollow'
-  | 'processUpdates'
-  | 'relationshipRequests';
+export const notificationCategories = [
+  'proposalsAndComments',
+  'thingsYouFollow',
+  'processUpdates',
+  'relationshipRequests',
+] as const;
+export type NotificationCategory = (typeof notificationCategories)[number];
 
 export type StoredNotificationPreferences = Partial<
   Record<NotificationCategory, Partial<Record<NotificationChannel, boolean>>>

@@ -122,7 +122,11 @@ export {
   ProfileRelationshipType,
   profileRelationshipTypeEnum,
 } from './tables/relationships.sql';
-export { users, usersRelations } from './tables/users.sql';
+export {
+  notificationCategories,
+  users,
+  usersRelations,
+} from './tables/users.sql';
 export type {
   CommonUser,
   NotificationCategory,
@@ -298,3 +302,15 @@ export {
   contentTranslations,
   type ContentTranslation,
 } from './tables/contentTranslations.sql';
+
+export { eventOutbox } from './tables/eventOutbox.sql';
+export type { EventOutbox, NewEventOutbox } from './tables/eventOutbox.sql';
+export { activities } from './tables/activities.sql';
+export type { Activity, NewActivity } from './tables/activities.sql';
+export { notifications } from './tables/notifications.sql';
+export type { NewNotification, Notification } from './tables/notifications.sql';
+export { notificationDeliveries } from './tables/notificationDeliveries.sql';
+export type {
+  NewNotificationDelivery,
+  NotificationDelivery,
+} from './tables/notificationDeliveries.sql';
