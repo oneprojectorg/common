@@ -31,8 +31,25 @@ import { toVerifyResult } from './phoneAuth/verifyResult';
  * stays in the consumers; this hook only owns the Supabase calls.
  */
 
+export type ClaimVerifyMode = 'claim' | 'login';
+
+export function otpTypeFor(
+  channel: 'phone',
+  mode: ClaimVerifyMode,
+): 'sms' | 'phone_change';
+export function otpTypeFor(
+  channel: 'email',
+  mode: ClaimVerifyMode,
+): 'email' | 'email_change';
+export function otpTypeFor(channel: 'email' | 'phone', mode: ClaimVerifyMode) {
+  if (channel === 'phone') {
+    return mode === 'login' ? 'sms' : 'phone_change';
+  }
+  return mode === 'login' ? 'email' : 'email_change';
+}
+
 export type ClaimEmailResult =
-  | { ok: true; needsOtp: boolean }
+  | { ok: true; needsOtp: boolean; mode: ClaimVerifyMode }
   | {
       ok: false;
       /** Supabase error code (e.g. 'email_exists') — for copy mapping. */
@@ -150,9 +167,18 @@ export function useClaimAccount() {
       }
 
       // updateUser fails with code 'email_exists' when the email already
-      // belongs to another account — getClaimEmailErrorMessage answers it
-      // with the generic copy so the reply does not confirm the account.
+      // belongs to another account — that account gets a login code instead.
       const { data, error } = await supabase.auth.updateUser({ email });
+      if (error?.code === 'email_exists') {
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email,
+          options: { shouldCreateUser: false },
+        });
+        if (otpError) {
+          return { ok: false, code: otpError.code, message: otpError.message };
+        }
+        return { ok: true, needsOtp: true, mode: 'login' };
+      }
       if (error) {
         return { ok: false, code: error.code, message: error.message };
       }
@@ -164,9 +190,9 @@ export function useClaimAccount() {
         !data.user?.new_email
       ) {
         await supabase.auth.refreshSession();
-        return { ok: true, needsOtp: false };
+        return { ok: true, needsOtp: false, mode: 'claim' };
       }
-      return { ok: true, needsOtp: true };
+      return { ok: true, needsOtp: true, mode: 'claim' };
     },
     [supabase, utils],
   );
@@ -207,6 +233,16 @@ export function useClaimAccount() {
       const { data, error } = await supabase.auth.updateUser({
         phone: parsed.data,
       });
+      if (error?.code === 'phone_exists') {
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          phone: parsed.data,
+          options: { shouldCreateUser: false },
+        });
+        if (otpError) {
+          return { ok: false, code: otpError.code, message: otpError.message };
+        }
+        return { ok: true, needsOtp: true, mode: 'login' };
+      }
       if (error) {
         return { ok: false, code: error.code, message: error.message };
       }
@@ -220,26 +256,28 @@ export function useClaimAccount() {
         !data.user?.new_phone
       ) {
         await supabase.auth.refreshSession();
-        return { ok: true, needsOtp: false };
+        return { ok: true, needsOtp: false, mode: 'claim' };
       }
-      return { ok: true, needsOtp: true };
+      return { ok: true, needsOtp: true, mode: 'claim' };
     },
     [supabase, utils],
   );
 
-  /** Confirm the OTP — the claim is a phone *change* on the anon user. */
+  /** Confirm the OTP — a phone *change* on the anon user, or a login. */
   const verifyPhoneCode = useCallback(
     async ({
       phone,
       token,
+      mode = 'claim',
     }: {
       phone: string;
       token: string;
+      mode?: ClaimVerifyMode;
     }): Promise<ClaimVerifyResult> => {
       const answer = await supabase.auth.verifyOtp({
         phone: normalizePhoneNumber(phone),
         token,
-        type: 'phone_change',
+        type: otpTypeFor('phone', mode),
       });
       const result = toVerifyResult(answer);
       if (!result.ok) {
@@ -253,19 +291,21 @@ export function useClaimAccount() {
     [supabase],
   );
 
-  /** Confirm the OTP — the claim is an email *change* on the anon user. */
+  /** Confirm the OTP — an email *change* on the anon user, or a login. */
   const verifyEmailCode = useCallback(
     async ({
       email,
       token,
+      mode = 'claim',
     }: {
       email: string;
       token: string;
+      mode?: ClaimVerifyMode;
     }): Promise<ClaimVerifyResult> => {
       const answer = await supabase.auth.verifyOtp({
         email,
         token,
-        type: 'email_change',
+        type: otpTypeFor('email', mode),
       });
       const result = toVerifyResult(answer);
       if (!result.ok) {

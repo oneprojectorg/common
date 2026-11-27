@@ -2,6 +2,7 @@
 
 import { codeFailureMessage } from '@/hooks/phoneAuth/failureMessage';
 import {
+  type ClaimVerifyMode,
   getClaimEmailErrorMessage,
   goToOnboarding,
   useClaimAccount,
@@ -43,6 +44,7 @@ export const LinkAccountPanel = () => {
   const redirectParam = searchParams.get('redirect');
 
   const [linkError, setLinkError] = useState<string | undefined>();
+  const [verifyMode, setVerifyMode] = useState<ClaimVerifyMode>('claim');
   // Guards against double-submit and drives the button loading state (link mode
   // doesn't run the login query LoginPanel relies on for this).
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,6 +82,12 @@ export const LinkAccountPanel = () => {
     goToOnboarding(redirectParam);
   }, [redirectParam]);
 
+  const goAfterLogin = useCallback(() => {
+    window.location.href = isSafeRedirectPath(redirectParam)
+      ? redirectParam
+      : '/';
+  }, [redirectParam]);
+
   // Attach the email to the anon user (see useClaimAccount). OTP sent → code
   // screen; applied immediately (confirmations off) → straight to onboarding.
   const submitEmail = async () => {
@@ -103,6 +111,7 @@ export const LinkAccountPanel = () => {
         goAfterLink();
         return;
       }
+      setVerifyMode(result.mode);
       setLoginSuccess(true);
       setIsSubmitting(false);
     } catch {
@@ -118,8 +127,12 @@ export const LinkAccountPanel = () => {
 
     setIsSubmitting(true);
     try {
-      const result = await verifyEmailCode({ email, token });
+      const result = await verifyEmailCode({ email, token, mode: verifyMode });
       if (result.ok) {
+        if (verifyMode === 'login') {
+          goAfterLogin();
+          return;
+        }
         // Freshly upgraded from anonymous — send them through onboarding.
         // isSubmitting stays true while the page unloads.
         goAfterLink();
@@ -134,7 +147,9 @@ export const LinkAccountPanel = () => {
     email,
     token,
     isSubmitting,
+    verifyMode,
     goAfterLink,
+    goAfterLogin,
     setTokenError,
     verifyEmailCode,
     t,
