@@ -20,32 +20,32 @@ catalog:
   # The coverage provider's peerDeps demand an exact vitest match, so the two
   # move in lockstep. Bump both together.
   '@vitest/coverage-istanbul': ^4.1.11
-  '@tiptap/core': ^3.15.3
-  '@tiptap/pm': ^3.15.3
-  '@tiptap/react': ^3.15.3
-  '@tiptap/starter-kit': ^3.15.3
-  # Pinned exact to match the resolved tiptap suite (3.17.1): static-renderer's
+  '@tiptap/core': ^3.30.5
+  '@tiptap/pm': ^3.30.5
+  '@tiptap/react': ^3.30.5
+  '@tiptap/starter-kit': ^3.30.5
+  # Pinned exact to match the resolved tiptap suite (3.35.0): static-renderer's
   # peerDeps demand an exact core/pm match, and a caret floats it to a newer
   # major-minor that skews against the suite. Bump in lockstep with the suite.
-  '@tiptap/static-renderer': 3.17.1
-  '@tiptap/extension-blockquote': ^3.15.3
-  '@tiptap/extension-bubble-menu': ^3.15.3
-  '@tiptap/extension-bullet-list': ^3.15.3
-  '@tiptap/extension-collaboration': ^3.15.3
-  '@tiptap/extension-collaboration-caret': ^3.15.3
-  '@tiptap/extension-details': 3.17.1
-  '@tiptap/extension-document': ^3.15.3
-  '@tiptap/extension-heading': ^3.15.3
-  '@tiptap/html': ^3.15.3
-  '@tiptap/extension-horizontal-rule': ^3.15.3
-  '@tiptap/extension-image': ^3.15.3
-  '@tiptap/extension-link': ^3.15.3
-  '@tiptap/extension-list-item': ^3.15.3
-  '@tiptap/extension-ordered-list': ^3.15.3
-  '@tiptap/extension-paragraph': ^3.15.3
-  '@tiptap/extension-placeholder': ^3.15.3
-  '@tiptap/extension-strike': ^3.15.3
-  '@tiptap/extension-text': ^3.15.3
-  '@tiptap/extension-text-align': ^3.15.3
-  '@tiptap/extension-underline': ^3.15.3
-  '@tiptap/suggestion': ^3.15.3
+  '@tiptap/static-renderer': 3.35.0
+  '@tiptap/extension-blockquote': ^3.30.5
+  '@tiptap/extension-bubble-menu': ^3.30.5
+  '@tiptap/extension-bullet-list': ^3.30.5
+  '@tiptap/extension-collaboration': ^3.30.5
+  '@tiptap/extension-collaboration-caret': ^3.30.5
+  '@tiptap/extension-details': 3.35.0
+  '@tiptap/extension-document': ^3.30.5
+  '@tiptap/extension-heading': ^3.30.5
+  '@tiptap/html': ^3.30.5
+  '@tiptap/extension-horizontal-rule': ^3.30.5
+  '@tiptap/extension-image': ^3.30.5
+  '@tiptap/extension-link': ^3.30.5
+  '@tiptap/extension-list-item': ^3.30.5
+  '@tiptap/extension-ordered-list': ^3.30.5
+  '@tiptap/extension-paragraph': ^3.30.5
+  '@tiptap/extension-placeholder': ^3.30.5
+  '@tiptap/extension-strike': ^3.30.5
+  '@tiptap/extension-text': ^3.30.5
+  '@tiptap/extension-text-align': ^3.30.5
+  '@tiptap/extension-underline': ^3.30.5
+  '@tiptap/suggestion': ^3.30.5

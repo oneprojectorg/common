@@ -393,15 +393,20 @@ export function RichTextEditorBubbleMenu({
           setIsEditingEmbed(false);
         },
       }}
-      data-testid="rich-text-bubble-menu"
-      // Style hook: the field lifts its z-index while this is mounted.
-      data-bubble-menu=""
       // Own compositor layer, or it repaints on every scroll frame.
-      className="z-50 rounded-lg border border-border bg-popover p-2 shadow-md will-change-transform"
+      className="z-50 will-change-transform"
     >
-      {/* The toolbar stays mounted while the link editor is open so the
-          menu keeps its size and anchor instead of jumping */}
-      <div className="flex flex-col gap-2">
+      {/* Attributes live on our own wrapper, not on BubbleMenu: since tiptap
+          3.30.3 it drops data-* props from its element in production builds
+          (ueberdosis/tiptap#8408). The toolbar stays mounted while the link
+          editor is open so the menu keeps its size and anchor instead of
+          jumping. */}
+      <div
+        data-testid="rich-text-bubble-menu"
+        // Style hook: the field lifts its z-index while this is mounted.
+        data-bubble-menu=""
+        className="flex flex-col gap-2 rounded-lg border border-border bg-popover p-2 shadow-md"
+      >
         <div
           className="flex flex-col gap-2"
           // Keep the editor selection: don't let toolbar clicks move focus
