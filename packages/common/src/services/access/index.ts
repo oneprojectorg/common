@@ -521,4 +521,5 @@ export * from './permissions';
 export * from './requestCache';
 export * from './utils';
 export * from './platformAdmin';
+export * from './staff';
 export * from './memberProfileIds';

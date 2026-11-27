@@ -5,6 +5,7 @@ export * from './decision';
 export * from './joinProfileRequests';
 export * from './links';
 export * from './organizations';
+export * from './platformDashboard';
 export * from './individuals';
 export * from './projects';
 export * from './roles';
