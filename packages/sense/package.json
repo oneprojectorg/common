@@ -169,6 +169,6 @@
     "storybook": "^10.6.7",
     "tailwindcss": "4.1.18",
     "typescript": "7.0.2",
-    "vite": "^6.2.0"
+    "vite": "^6.4.6"
   }
 }
