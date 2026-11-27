@@ -7,6 +7,7 @@ import { DecisionViewToggle } from '@/components/decisions/DecisionViewToggle';
 import { JoinAccountModal } from '@/components/decisions/JoinAccountModal';
 import { PhaseEntryCustomForm } from '@/components/decisions/PhaseEntryCustomForm';
 import { PromoteAccountModal } from '@/components/decisions/PromoteAccountModal';
+import { ResumePendingEngagement } from '@/components/decisions/ResumePendingEngagement';
 import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 import { getDecisionDetectionText } from '@/components/decisions/translationDetectionText';
 
@@ -110,6 +111,11 @@ const DecisionViewLayout = async ({
           <JoinAccountModal />
         </Suspense>
       ) : null}
+      <Suspense fallback={null}>
+        <ResumePendingEngagement
+          canEngage={access?.submitProposals === true || access?.admin === true}
+        />
+      </Suspense>
     </DecisionTranslationProvider>
   );
 };

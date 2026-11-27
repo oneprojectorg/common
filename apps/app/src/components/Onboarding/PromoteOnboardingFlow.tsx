@@ -27,6 +27,10 @@ import {
   ToSAcceptanceScreen,
   validator as ToSStepValidator,
 } from './ToSAcceptanceScreen';
+import {
+  VisibilityStep,
+  validator as VisibilityStepValidator,
+} from './VisibilityStep';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
 
 const ProgressInPortal = (props: ProgressComponentProps) => (
@@ -37,9 +41,9 @@ const ProgressInPortal = (props: ProgressComponentProps) => (
 
 /**
  * Onboarding for an anonymous visitor who just upgraded (see LinkAccountPanel /
- * PromoteAccountModal), reached at `/start?promote=1`. Skips org joining:
- * personal details, accept ToS, then hard-navigate back to the decision with a
- * fresh cache.
+ * PromoteAccountModal), reached at `/start?promote=1`. Skips org joining: the
+ * visibility choice (show my name / stay anonymous), accept ToS, then
+ * hard-navigate back to the decision with a fresh cache.
  */
 export const PromoteOnboardingFlow = ({
   hasHydrated,
@@ -53,6 +57,16 @@ export const PromoteOnboardingFlow = ({
   const { personalDetails } = useOnboardingFormStore();
   const trpcUtils = trpc.useUtils();
   const completeOnboarding = useCompleteOnboarding();
+  const { mutateAsync: renameProfile } =
+    trpc.account.updateUserProfile.useMutation();
+
+  // Every non-network-member lands in this flow, not only claimed visitors
+  // (see OnboardingFlow). Only a claimed anonymous account carries the signup
+  // trigger's profile flag, and only there is the visibility choice
+  // meaningful — an ordinary signup keeps the personal-details step.
+  const { data: userAccount, isPending: accountPending } =
+    trpc.account.getMyAccount.useQuery();
+  const isClaimedAnonymous = userAccount?.profile?.isAnonymous === true;
 
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get('redirect');
@@ -77,6 +91,16 @@ export const PromoteOnboardingFlow = ({
     setIsSubmitting(true);
 
     try {
+      if (
+        isClaimedAnonymous &&
+        personalDetails?.mode === 'name' &&
+        personalDetails.fullName
+      ) {
+        await renameProfile({
+          name: personalDetails.fullName,
+          isAnonymous: false,
+        });
+      }
       await completeOnboarding();
       await trpcUtils.account.getMyAccount.invalidate();
       if (!isSafeRedirectPath(redirectParam)) {
@@ -105,6 +129,9 @@ export const PromoteOnboardingFlow = ({
   }, [
     isOnline,
     completeOnboarding,
+    renameProfile,
+    isClaimedAnonymous,
+    personalDetails,
     trpcUtils,
     promoteRedirect,
     redirectParam,
@@ -124,14 +151,22 @@ export const PromoteOnboardingFlow = ({
     return Step;
   }, [handleComplete, isSubmitting]);
 
-  if (isSubmitting) {
+  if (isSubmitting || accountPending) {
     return <Spinner className="size-6" />;
   }
 
   return (
     <MultiStepForm
-      steps={[PersonalDetailsForm, ToSStep]}
-      schemas={[PersonalDetailsFormValidator, ToSStepValidator]}
+      steps={[
+        isClaimedAnonymous ? VisibilityStep : PersonalDetailsForm,
+        ToSStep,
+      ]}
+      schemas={[
+        isClaimedAnonymous
+          ? VisibilityStepValidator
+          : PersonalDetailsFormValidator,
+        ToSStepValidator,
+      ]}
       ProgressComponent={ProgressInPortal}
       getStepValues={getStepValues}
       hasHydrated={hasHydrated}

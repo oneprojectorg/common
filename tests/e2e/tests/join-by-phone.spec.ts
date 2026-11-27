@@ -182,17 +182,13 @@ test.describe('Join by phone (public decision)', () => {
       page.getByText('You do not have permission to view this page'),
     ).not.toBeVisible();
 
-    // PromoteOnboardingFlow — step 1: personal details.
+    // PromoteOnboardingFlow — step 1: the visibility choice. A claimed
+    // anonymous account carries the trigger's "Participant <n>" name, so the
+    // flow offers show-my-name / stay-anonymous instead of personal details.
     await expect(
-      page.getByRole('heading', { name: 'Add your personal details' }),
+      page.getByRole('heading', { name: "How you'll appear in this process" }),
     ).toBeVisible({ timeout: 15000 });
-    await page.getByLabel('Full Name').fill('Phone Joiner');
-    await page.getByLabel('Headline').fill('Joined by text');
-    // Onboarding asks for an email even though the auth record has none; it is
-    // the app's contact address, not the credential.
-    await page
-      .getByLabel('Email')
-      .fill(`phone-${randomUUID().slice(0, 8)}@example.com`);
+    await page.getByLabel('Full name').fill('Phone Joiner');
     await page.getByRole('button', { name: 'Continue' }).click();
 
     // Step 2: accept Terms of Service + Privacy Policy.

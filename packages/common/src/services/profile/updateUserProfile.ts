@@ -15,6 +15,7 @@ const textOrNull = (value: string | null | undefined): string | null =>
 
 export interface UpdateUserProfileInput {
   name?: string;
+  isAnonymous?: boolean;
   bio?: string | null;
   title?: string | null;
   pronouns?: string;
@@ -35,8 +36,17 @@ export const updateUserProfile = async ({
   user,
   db: dbClient = db, // Use provided db or fall back to imported client
 }: UpdateUserProfileParams) => {
-  const { name, bio, title, pronouns, username, email, website, focusAreas } =
-    input;
+  const {
+    name,
+    isAnonymous,
+    bio,
+    title,
+    pronouns,
+    username,
+    email,
+    website,
+    focusAreas,
+  } = input;
 
   // Get the current user to check if they have a profile
   const currentUser = await dbClient._query.users.findFirst({
@@ -53,6 +63,7 @@ export const updateUserProfile = async ({
   // Prepare profile data
   const profileData: any = {};
   if (name !== undefined) profileData.name = name;
+  if (isAnonymous !== undefined) profileData.isAnonymous = isAnonymous;
   if (bio !== undefined) profileData.bio = textOrNull(bio);
   if (email !== undefined) profileData.email = email;
   if (website !== undefined) profileData.website = website;
@@ -84,6 +95,7 @@ export const updateUserProfile = async ({
           type: EntityType.INDIVIDUAL,
           name: name || currentUser.name || 'Unnamed User',
           slug,
+          isAnonymous: isAnonymous ?? false,
           bio: textOrNull(bio),
           email,
           website,

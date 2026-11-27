@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
 
 import {
   TEST_USER_DEFAULT_PASSWORD,
@@ -57,7 +58,10 @@ test.describe('Walled garden — authenticated non-members', () => {
 
   const admin = createSupabaseAdminClient();
   // A real, confirmed account on a non-network domain with no allow-list entry.
-  const email = `wg-nonmember-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
+  // randomUUID like every other spec: the value is only a uniqueness token, but
+  // Math.random() here trips CodeQL's insecure-randomness taint through
+  // createUser's credential sink.
+  const email = `wg-nonmember-${randomUUID().slice(0, 8)}@example.com`;
   let userId: string | undefined;
 
   test.beforeAll(async () => {
