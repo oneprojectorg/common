@@ -14,6 +14,7 @@ import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { IconProvider } from '@/components/IconProvider';
 
 import { CookieConsentBanner } from '../components/CookieConsentBanner';
+import { DbClientProvider } from '../components/DbClientProvider';
 import { FileDropGuard } from '../components/FileDropGuard';
 import { OTelBrowserProvider } from '../components/OTelBrowserProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
@@ -98,7 +99,9 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
                         group; nest another only to give a set of triggers its own
                         delay (`delay` exists on Provider alone). */}
                     <TooltipProvider>
-                      <IconProvider>{children}</IconProvider>
+                      <DbClientProvider>
+                        <IconProvider>{children}</IconProvider>
+                      </DbClientProvider>
                     </TooltipProvider>
                   </NuqsAdapter>
                   <CookieConsentBanner />

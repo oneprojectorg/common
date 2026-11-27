@@ -158,6 +158,12 @@ export async function createRole({
     throw new NotFoundError('Zone', zoneName);
   }
 
+  // Prototype-only hook to exercise the optimistic rollback and error toast.
+  // Must be removed before any merge.
+  if (name.trim() === 'Error') {
+    throw new CommonError('Could not create role');
+  }
+
   return await db.transaction(async (tx) => {
     // Create the role
     const [role] = await tx
