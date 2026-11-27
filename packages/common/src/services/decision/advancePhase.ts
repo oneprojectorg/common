@@ -6,6 +6,7 @@ import {
   stateTransitionHistory,
 } from '@op/db/schema';
 
+import { ConflictError } from '../../utils';
 import { attachProposalsToTransition } from './attachProposalsToTransition';
 import { getProposalsForPhase } from './getProposalsForPhase';
 import type { InstanceWithPhases } from './instancePhases';
@@ -15,6 +16,7 @@ import {
   executeSelectionPipeline,
 } from './selectionPipeline';
 import type { ExecutionContext } from './selectionPipeline/types';
+import { needsSelectionApproval } from './utils/phaseSettings';
 
 export interface AdvancePhaseInput {
   db: DbClient;
@@ -40,6 +42,8 @@ export type AdvancePhaseResult =
       conflict: false;
       transitionHistoryId: string;
       selectedProposalIds: string[];
+      /** The attached proposals stay out of the phase until an admin confirms them. */
+      selectionAwaitingApproval: boolean;
     };
 
 /**
@@ -53,7 +57,8 @@ export type AdvancePhaseResult =
  * 2. Update currentStateId under an optimistic lock
  *    (currentStateId = fromPhaseId AND status = PUBLISHED).
  * 3. Mark any pending scheduled transition for the departing phase complete.
- * 4. Insert a stateTransitionHistory row.
+ * 4. Insert a stateTransitionHistory row, held for approval when the
+ *    departing phase's advancement rule says so.
  * 5. Persist selected proposals into decisionTransitionProposals.
  *
  * Returns { conflict: true } if the lock fails (concurrent advance or status change).
@@ -70,11 +75,10 @@ export async function advancePhase(
     transitionData = {},
     now = new Date().toISOString(),
   } = input;
-
   const instanceId = instance.id;
   const { phases } = instance;
-  const departingPhase = phases.find((p) => p.phaseId === fromPhaseId);
 
+  const departingPhase = phases.find((p) => p.phaseId === fromPhaseId);
   if (!departingPhase) {
     throw new Error(
       `Phase ${fromPhaseId} not found in phases for instance ${instanceId}`,
@@ -107,6 +111,12 @@ export async function advancePhase(
     };
   }
 
+  await assertInboundSelectionApproved({
+    db,
+    instanceId,
+    phaseId: fromPhaseId,
+  });
+
   const selectionPipeline = departingPhase.selectionPipeline;
 
   const allProposals = await getProposalsForPhase({
@@ -128,6 +138,19 @@ export async function advancePhase(
     const selected = await executeSelectionPipeline(selectionPipeline, context);
     selectedProposalIds = selected.map((p) => p.id);
   }
+
+  // An empty selection has nothing to approve; holding it would block the phase
+  // until a confirmation that cannot be submitted.
+  const selectionAwaitingApproval =
+    selectionPipeline !== undefined &&
+    selectedProposalIds.length > 0 &&
+    needsSelectionApproval(departingPhase);
+  // A selection that needs no approval is settled as it is made, empty or not;
+  // any other waits for an admin.
+  const selectionConfirmedAt =
+    selectionPipeline !== undefined && !needsSelectionApproval(departingPhase)
+      ? new Date(now)
+      : null;
 
   // Optimistic lock: only succeeds if currentStateId still matches fromPhaseId.
   const updated = await db
@@ -168,9 +191,7 @@ export async function advancePhase(
       toStateId: toPhaseId,
       transitionData,
       triggeredByProfileId,
-      // Attached proposals settle the selection; none leaves it to an admin.
-      selectionConfirmedAt:
-        selectedProposalIds.length > 0 ? new Date(now) : null,
+      selectionConfirmedAt,
     })
     .returning({ id: stateTransitionHistory.id });
 
@@ -191,5 +212,47 @@ export async function advancePhase(
     conflict: false,
     transitionHistoryId: insertedTransition.id,
     selectedProposalIds,
+    selectionAwaitingApproval,
   };
+}
+
+/**
+ * A held selection blocks the next advance: a scheduled transition would
+ * otherwise move on while the phase's attachments are still unconfirmed.
+ */
+async function assertInboundSelectionApproved({
+  db,
+  instanceId,
+  phaseId,
+}: {
+  db: DbClient;
+  instanceId: string;
+  phaseId: string;
+}): Promise<void> {
+  const inbound = await db.query.stateTransitionHistory.findFirst({
+    where: { processInstanceId: instanceId, toStateId: phaseId },
+    orderBy: { transitionedAt: 'desc' },
+    columns: { selectionConfirmedAt: true },
+    with: {
+      transitionProposals: { columns: { proposalId: true }, limit: 1 },
+    },
+  });
+
+  // Held: picks attached but not confirmed. A transition waiting for a manual
+  // selection has nothing attached and does not block.
+  if (
+    inbound?.selectionConfirmedAt === null &&
+    inbound.transitionProposals.length > 0
+  ) {
+    throw new SelectionAwaitingApprovalError();
+  }
+}
+
+/** The phase's inbound selection is held, so it cannot be left yet. */
+export class SelectionAwaitingApprovalError extends ConflictError {
+  constructor() {
+    super(
+      'The selection into this phase awaits approval. Confirm it before advancing.',
+    );
+  }
 }

@@ -8,7 +8,7 @@ import { logger } from '@op/logging';
 import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
-import { advancePhase } from './advancePhase';
+import { SelectionAwaitingApprovalError, advancePhase } from './advancePhase';
 import { invalidateDecisionInstance } from './decisionCache';
 import {
   type InstanceWithPhases,
@@ -20,6 +20,8 @@ import { hasPhaseEnded } from './utils/phaseOrder';
 
 export interface ProcessDecisionsTransitionsResult {
   processed: number;
+  /** Due transitions out of a phase whose inbound selection awaits approval. */
+  held: number;
   failed: number;
   errors: Array<{
     transitionId: string;
@@ -60,6 +62,7 @@ export async function processDecisionsTransitions({
 } = {}): Promise<ProcessDecisionsTransitionsResult> {
   const result: ProcessDecisionsTransitionsResult = {
     processed: 0,
+    held: 0,
     failed: 0,
     errors: [],
   };
@@ -254,6 +257,15 @@ async function advanceInstanceTransitions({
         current = await resolvePhases({ instance: refreshed });
       }
     } catch (error) {
+      if (error instanceof SelectionAwaitingApprovalError) {
+        result.held++;
+        logger.info('Transition awaits selection approval', {
+          transitionId: transition.id,
+          processInstanceId: transition.processInstanceId,
+        });
+        break;
+      }
+
       result.failed++;
       result.errors.push({
         transitionId: transition.id,

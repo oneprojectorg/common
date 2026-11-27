@@ -1,4 +1,4 @@
-import { db, desc, eq } from '@op/db/client';
+import { and, db, desc, eq, inArray } from '@op/db/client';
 import {
   ProcessStatus,
   decisionTransitionProposals,
@@ -60,7 +60,9 @@ export interface SubmitManualSelectionInput {
  * Admin-driven manual selection for the current phase's inbound transition.
  *
  * One-shot: UPDATEs the existing `stateTransitionHistory` row (stamping
- * `transitionData.manualSelection`) and attaches the chosen proposals.
+ * `transitionData.manualSelection`) and attaches the chosen proposals. A
+ * transition held for approval already carries the pipeline's selection; the
+ * admin's list replaces it.
  * `SELECT ... FOR UPDATE` serializes concurrent submits; throws `ConflictError`
  * if the latest transition is no longer into `currentStateId`.
  */
@@ -210,15 +212,13 @@ export async function submitManualSelection({
       );
     }
 
-    // Can't overwrite a selection that is already settled. A transition the
-    // previous deployment wrote during the rollout has no
-    // selectionConfirmedAt; its attachments still settle it.
-    const [attachedRow] = await tx
+    const attachedRows = await tx
       .select({ proposalId: decisionTransitionProposals.proposalId })
       .from(decisionTransitionProposals)
-      .where(eq(decisionTransitionProposals.transitionHistoryId, latestRow.id))
-      .limit(1);
-    if (latestRow.selectionConfirmedAt !== null || attachedRow) {
+      .where(eq(decisionTransitionProposals.transitionHistoryId, latestRow.id));
+
+    // Can't overwrite a selection that is already settled.
+    if (latestRow.selectionConfirmedAt !== null) {
       throw new ValidationError(
         'Manual selection is not available for this instance',
       );
@@ -268,11 +268,32 @@ export async function submitManualSelection({
       })
       .where(eq(stateTransitionHistory.id, latestRow.id));
 
+    // A held transition carries the pipeline's selection; the admin's list
+    // replaces it.
+    const submittedIds = new Set(uniqueProposalIds);
+    const alreadyAttachedIds = new Set(
+      attachedRows.map((row) => row.proposalId),
+    );
+    const removedIds = attachedRows
+      .map((row) => row.proposalId)
+      .filter((id) => !submittedIds.has(id));
+    if (removedIds.length > 0) {
+      await tx
+        .delete(decisionTransitionProposals)
+        .where(
+          and(
+            eq(decisionTransitionProposals.transitionHistoryId, latestRow.id),
+            inArray(decisionTransitionProposals.proposalId, removedIds),
+          ),
+        );
+    }
     await attachProposalsToTransition({
       dbClient: tx,
       processInstanceId,
       transitionHistoryId: latestRow.id,
-      proposalIds: uniqueProposalIds,
+      proposalIds: uniqueProposalIds.filter(
+        (id) => !alreadyAttachedIds.has(id),
+      ),
     });
 
     // Defer review-assignment generation until after the transaction commits:
@@ -293,6 +314,7 @@ export async function submitManualSelection({
           conflict: false,
           transitionHistoryId: latestRow.id,
           selectedProposalIds: uniqueProposalIds,
+          selectionAwaitingApproval: false,
         },
       };
     }

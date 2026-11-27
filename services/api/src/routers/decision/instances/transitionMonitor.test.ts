@@ -565,6 +565,49 @@ describe('processDecisionsTransitions', () => {
     expect(nextAfter?.completedAt).toBeNull();
   });
 
+  it('holds a due transition out of a phase whose selection awaits approval', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, userEmail } =
+      await createPublishedInstanceWithDueTransitions(testData, task.id, {
+        makeDue: false,
+      });
+    // A held selection has picks attached and no confirmation.
+    await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Held proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+    await advanceAlong(testData, instanceId, ['submission', 'review']);
+    await db
+      .update(stateTransitionHistory)
+      .set({ selectionConfirmedAt: null })
+      .where(
+        and(
+          eq(stateTransitionHistory.processInstanceId, instanceId),
+          eq(stateTransitionHistory.toStateId, 'review'),
+        ),
+      );
+    const next = await scheduleTransition(instanceId, 'review', hoursAgo(1));
+
+    const result = await processDecisionsTransitions({
+      processInstanceId: instanceId,
+    });
+
+    expect(result).toMatchObject({ processed: 0, held: 1, failed: 0 });
+    const [instance, nextAfter] = await Promise.all([
+      db.query.processInstances.findFirst({ where: { id: instanceId } }),
+      db.query.decisionProcessTransitions.findFirst({
+        where: { id: next.id },
+      }),
+    ]);
+    expect(instance?.currentStateId).toBe('review');
+    expect(nextAfter?.completedAt).toBeNull();
+  });
+
   it('should persist selected proposals into decisionTransitionProposals', async ({
     task,
     onTestFinished,

@@ -40,7 +40,8 @@ import { isDevelopPhase } from './utils/phaseSettings';
  * live `developed` edge) that are hidden become visible, and the inbound
  * transition gets the `manualSelection` stamp that `submitManualSelection`
  * writes, with no proposal attached. That stamp confirms the selections of
- * the phase, which closes the develop window.
+ * the phase, which closes the develop window. A pipeline selection held for
+ * approval is replaced: its attachments are removed and the hold cleared.
  */
 export async function publishDevelopedProposals({
   processInstanceId,
@@ -155,21 +156,29 @@ export async function publishDevelopedProposals({
         );
       }
 
-      const attached = await tx
-        .select({ proposalId: decisionTransitionProposals.proposalId })
-        .from(decisionTransitionProposals)
-        .where(
-          eq(decisionTransitionProposals.transitionHistoryId, latestRow.id),
-        )
-        .limit(1);
+      if (latestRow.selectionConfirmedAt === null) {
+        // Publishing is the admin's confirmation here: the developed entries
+        // replace the pipeline's held picks, as an admin's selection would.
+        await tx
+          .delete(decisionTransitionProposals)
+          .where(
+            eq(decisionTransitionProposals.transitionHistoryId, latestRow.id),
+          );
+      } else {
+        const attached = await tx
+          .select({ proposalId: decisionTransitionProposals.proposalId })
+          .from(decisionTransitionProposals)
+          .where(
+            eq(decisionTransitionProposals.transitionHistoryId, latestRow.id),
+          )
+          .limit(1);
 
-      // A settled selection, or proposals a pipeline attached, confirm the
-      // phase already; the attachments cover transitions the previous
-      // deployment wrote during the rollout without selectionConfirmedAt.
-      if (latestRow.selectionConfirmedAt !== null || attached.length > 0) {
-        throw new ValidationError(
-          'Developed proposals cannot be published for this phase',
-        );
+        // Proposals attached by a selection pipeline confirm the phase already.
+        if (attached.length > 0) {
+          throw new ValidationError(
+            'Developed proposals cannot be published for this phase',
+          );
+        }
       }
 
       const everyCategoryConfirmed = await isEveryCategoryDevelopConfirmed({

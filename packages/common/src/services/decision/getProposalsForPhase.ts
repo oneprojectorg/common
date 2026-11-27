@@ -8,6 +8,7 @@ import {
   gt,
   gte,
   inArray,
+  isNotNull,
   isNull,
   lt,
   or,
@@ -147,7 +148,8 @@ export interface AttachedPhaseProposal {
 /**
  * The proposals attached to an inbound transition that are still in the
  * phase: phase eligible (not draft, rejected or merged away) and active (not
- * deleted or moderation-detached). This is the one definition of a phase's
+ * deleted or moderation-detached). A transition held for approval has none
+ * until an admin confirms it. This is the one definition of a phase's
  * attached set; readers and the review-assignment writers all use it.
  */
 export async function getAttachedPhaseProposals({
@@ -160,6 +162,7 @@ export async function getAttachedPhaseProposals({
   const rows = await db.query.decisionTransitionProposals.findMany({
     where: {
       transitionHistoryId,
+      transitionHistory: { selectionConfirmedAt: { isNotNull: true } },
       proposal: {
         RAW: (table) =>
           and(phaseEligiblePredicate(table), activeProposalPredicate(table))!,
@@ -597,10 +600,20 @@ export async function getPhaseProposalSqlScope({
           db
             .select({ id: decisionTransitionProposals.proposalId })
             .from(decisionTransitionProposals)
-            .where(
+            .innerJoin(
+              stateTransitionHistory,
               eq(
+                stateTransitionHistory.id,
                 decisionTransitionProposals.transitionHistoryId,
-                inboundTransitionId,
+              ),
+            )
+            .where(
+              and(
+                eq(
+                  decisionTransitionProposals.transitionHistoryId,
+                  inboundTransitionId,
+                ),
+                isNotNull(stateTransitionHistory.selectionConfirmedAt),
               ),
             ),
         )

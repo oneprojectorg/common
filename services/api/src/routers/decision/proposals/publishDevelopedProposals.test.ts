@@ -4,13 +4,15 @@ import {
   createDevelopPhaseSetup,
   syncPhaseRows,
 } from '@op/common/testing';
-import { db, eq } from '@op/db/client';
+import { db, desc, eq } from '@op/db/client';
 import {
   ProposalStatus,
   Visibility,
   decisionTransitionProposals,
   processInstances,
+  proposalHistory,
   proposals,
+  stateTransitionHistory,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -224,6 +226,59 @@ describe.concurrent('publishDevelopedProposals', () => {
     expect(instance.selectionsAreConfirmed).toBe(true);
   });
 
+  it('replaces a pipeline selection held for approval', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instanceId, source, termA } = await createPublishSetup({
+      testData,
+      onTestFinished,
+    });
+    const reviewer = await createReviewer({
+      testData,
+      setup,
+      rows: [{ taxonomyTermId: termA.id, phaseId: 'final' }],
+    });
+    const advanced = await createEntry({
+      testData,
+      caller: reviewer.caller,
+      instanceId,
+      source,
+    });
+    await reviewer.caller.decision.submitDevelopedProposal({
+      proposalId: advanced.id,
+    });
+    await holdPipelineSelection({ instanceId, proposalId: source.id });
+    // A held selection leaves the develop window open.
+    await reviewer.caller.decision.confirmCategoryDevelopment({
+      processInstanceId: instanceId,
+    });
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await adminCaller.decision.publishDevelopedProposals({
+      processInstanceId: instanceId,
+    });
+
+    expect(result).toEqual({ publishedCount: 1 });
+    const [attached, latestTransition] = await Promise.all([
+      db
+        .select({ proposalId: decisionTransitionProposals.proposalId })
+        .from(decisionTransitionProposals)
+        .where(eq(decisionTransitionProposals.processInstanceId, instanceId)),
+      db.query.stateTransitionHistory.findFirst({
+        where: { processInstanceId: instanceId },
+        orderBy: { transitionedAt: 'desc' },
+        columns: { selectionConfirmedAt: true, transitionData: true },
+      }),
+    ]);
+    expect(attached).toHaveLength(0);
+    expect(latestTransition?.selectionConfirmedAt).not.toBeNull();
+    expect(latestTransition?.transitionData).toMatchObject({
+      manualSelection: { at: expect.any(String) },
+    });
+  });
+
   it('refuses a second publish, and confirm and unconfirm for reviewers and admins, after publish', async ({
     task,
     onTestFinished,
@@ -330,6 +385,44 @@ async function createEntry({
   testData.trackProfileForCleanup(entry.profileId);
 
   return entry;
+}
+
+/** Attaches `proposalId` to the inbound transition and holds it for approval. */
+async function holdPipelineSelection({
+  instanceId,
+  proposalId,
+}: {
+  instanceId: string;
+  proposalId: string;
+}): Promise<void> {
+  const [latestTransition, latestHistory] = await Promise.all([
+    db.query.stateTransitionHistory.findFirst({
+      where: { processInstanceId: instanceId },
+      orderBy: { transitionedAt: 'desc' },
+      columns: { id: true },
+    }),
+    db
+      .select({ historyId: proposalHistory.historyId })
+      .from(proposalHistory)
+      .where(eq(proposalHistory.id, proposalId))
+      .orderBy(desc(proposalHistory.historyCreatedAt))
+      .limit(1),
+  ]);
+  const historyId = latestHistory[0]?.historyId;
+  if (!latestTransition || !historyId) {
+    throw new Error(`Instance ${instanceId} has no transition to hold`);
+  }
+
+  await db.insert(decisionTransitionProposals).values({
+    processInstanceId: instanceId,
+    transitionHistoryId: latestTransition.id,
+    proposalId,
+    proposalHistoryId: historyId,
+  });
+  await db
+    .update(stateTransitionHistory)
+    .set({ selectionConfirmedAt: null })
+    .where(eq(stateTransitionHistory.id, latestTransition.id));
 }
 
 /** Sets `defaults.hidden` on the develop phase ("final"). */
