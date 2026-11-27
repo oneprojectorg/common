@@ -5,6 +5,7 @@ import {
   desc,
   eq,
   exists,
+  isNull,
   notExists,
   sql,
 } from '@op/db/client';
@@ -232,8 +233,9 @@ export function categoryDevelopRowsWhere({
 
 /**
  * The SQL twin of `isDevelopWindowOpen` once the phase is known to be a
- * develop phase: the latest transition of the instance goes into `phaseId`,
- * carries no `manualSelection` stamp and has no proposal attached.
+ * develop phase: the latest transition of the instance goes into `phaseId`
+ * and either holds a pipeline selection for approval, or carries no
+ * `manualSelection` stamp and has no proposal attached.
  */
 function developWindowOpenWhere({
   processInstanceId,
@@ -258,6 +260,9 @@ function developWindowOpenWhere({
         and(
           eq(latestTransition.id, latestTransitionId),
           eq(latestTransition.toStateId, phaseId),
+          isNull(latestTransition.selectionConfirmedAt),
+          // A transition the previous deployment wrote during the rollout
+          // has no selectionConfirmedAt; its stamp or attachments settle it.
           sql`coalesce(jsonb_typeof(${latestTransition.transitionData} -> 'manualSelection'), 'null') = 'null'`,
           notExists(
             db

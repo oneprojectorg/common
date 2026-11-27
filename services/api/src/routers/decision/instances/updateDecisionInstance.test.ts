@@ -3,6 +3,7 @@ import {
   MAX_PHASES_PER_DECISION,
   type RubricTemplateSchema,
   ValidationError,
+  getPhases,
   updateDecisionInstance,
 } from '@op/common';
 import { MAX_PHASE_NAME_LENGTH } from '@op/common/client';
@@ -447,6 +448,53 @@ describe.concurrent('updateDecisionInstance', () => {
     // The rejected writes changed nothing.
     expect(instanceData.overview?.headline).toBe('Keep me');
     expect(instanceData.overview?.description).toBe('Desc');
+  });
+
+  it('sets and clears advancement approval through the phase override', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instance.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const firstPhaseId = await getFirstPhaseId(instanceId);
+    const readFlag = async () => {
+      const row = await db.query.processInstances.findFirst({
+        where: { id: instanceId },
+      });
+      if (!row) {
+        throw new Error('Failed to reload instance');
+      }
+      return (await getPhases({ instance: row })).find(
+        (phase) => phase.phaseId === firstPhaseId,
+      )?.rules?.advancement?.needsApproval;
+    };
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [
+        {
+          phaseId: firstPhaseId,
+          rules: { advancement: { method: 'manual', needsApproval: true } },
+        },
+      ],
+    });
+    expect(await readFlag()).toBe(true);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId,
+      phases: [
+        {
+          phaseId: firstPhaseId,
+          rules: { advancement: { method: 'manual', needsApproval: false } },
+        },
+      ],
+    });
+    expect(await readFlag()).toBe(false);
   });
 
   it('should reject an empty phase headline', async ({

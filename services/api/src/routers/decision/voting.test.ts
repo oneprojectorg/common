@@ -299,6 +299,7 @@ async function attachToVotingPhase(instanceId: string, proposalIds: string[]) {
       processInstanceId: instanceId,
       fromStateId: 'submission',
       toStateId: 'voting',
+      selectionConfirmedAt: new Date(),
     })
     .returning();
 

@@ -35,7 +35,7 @@ const decisionSchemaWithReview = {
       description: 'Submit proposals',
       rules: {
         proposals: { submit: true },
-        advancement: { method: 'manual' as const },
+        advancement: { method: 'manual', needsApproval: false },
       },
       // Pass-all: every submitted proposal advances into review so the
       // assignment generator has proposals to fan out to reviewers.

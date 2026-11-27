@@ -236,7 +236,9 @@ describe.concurrent('Transition pipeline: join table population', () => {
         {
           id: 'submission',
           name: 'Submission',
-          rules: {},
+          rules: {
+            advancement: { method: 'manual' as const, needsApproval: false },
+          },
           selectionPipeline: {
             version: '1.0.0',
             blocks: [{ id: 'limit-zero', type: 'limit', count: 0 }],

@@ -31,7 +31,10 @@ const schema = {
     {
       id: 'submission',
       name: 'Submission',
-      rules: { proposals: { submit: true } },
+      rules: {
+        proposals: { submit: true },
+        advancement: { method: 'manual', needsApproval: false },
+      },
       selectionPipeline: {
         version: '1.0.0',
         blocks: [{ id: 'limit-block', type: 'limit', count: 1 }],

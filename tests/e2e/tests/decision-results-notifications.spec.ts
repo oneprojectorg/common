@@ -32,7 +32,7 @@ const intakePhase: PhaseDefinition = {
   rules: {
     proposals: { submit: true },
     voting: { submit: false },
-    advancement: { method: 'manual' },
+    advancement: { method: 'manual', needsApproval: false },
   },
   selectionPipeline: { version: '1.0.0', blocks: [] },
 };
@@ -85,7 +85,11 @@ const buildSchema = (predecessor: {
     {
       id: predecessor.id,
       name: predecessor.id,
-      rules: { advancement: { method: 'manual' }, ...predecessor.rules },
+      // Needs approval, so the empty selection waits for the admin.
+      rules: {
+        advancement: { method: 'manual' },
+        ...predecessor.rules,
+      },
       selectionPipeline: {
         version: '1.0.0',
         blocks: [{ id: 'zero', type: 'limit', count: 0 }],
@@ -159,6 +163,7 @@ async function seedOnPredecessorPhase({
       fromStateId: intakePhase.id,
       toStateId: predecessorId,
       transitionData: {},
+      selectionConfirmedAt: new Date(),
     })
     .returning();
   if (!intakeTransition) {

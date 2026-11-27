@@ -1,4 +1,5 @@
-import { db } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
+import { stateTransitionHistory } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { ConflictError, ValidationError } from '../../utils';
@@ -59,6 +60,18 @@ export async function advanceProposal({
       transitionHistoryId: advancement.transitionHistoryId,
       proposalIds: [proposalId],
     });
+
+    // The first proposal added to a phase waiting for a manual selection
+    // settles that selection, as an attachment always has.
+    await tx
+      .update(stateTransitionHistory)
+      .set({ selectionConfirmedAt: new Date() })
+      .where(
+        and(
+          eq(stateTransitionHistory.id, advancement.transitionHistoryId),
+          isNull(stateTransitionHistory.selectionConfirmedAt),
+        ),
+      );
 
     return isReviewPhase(advancement.currentPhase)
       ? {

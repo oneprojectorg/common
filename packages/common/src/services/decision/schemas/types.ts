@@ -53,13 +53,7 @@ export interface PhaseRules {
   advancement?: {
     method: 'date' | 'manual';
     endDate?: string;
-    /**
-     * An admin confirms the selection pipeline's outcome before anything
-     * attaches. Absent means yes: only `false` lets the pipeline's selection
-     * attach as the phase advances. Meaningless without a pipeline, since a
-     * phase with none already needs an admin to select by hand. Read through
-     * `needsSelectionApproval`.
-     */
+    /** Absent means true: only `false` lets the pipeline's selection attach as the phase advances. */
     needsApproval?: boolean;
   };
   /** Review enablement + settings; read via `isReviewPhase` / `getPhaseReviewSettings`. */

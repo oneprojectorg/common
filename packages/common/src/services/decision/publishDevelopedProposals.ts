@@ -132,6 +132,7 @@ export async function publishDevelopedProposals({
           toStateId: stateTransitionHistory.toStateId,
           transitionData: stateTransitionHistory.transitionData,
           triggeredByProfileId: stateTransitionHistory.triggeredByProfileId,
+          selectionConfirmedAt: stateTransitionHistory.selectionConfirmedAt,
         })
         .from(stateTransitionHistory)
         .where(eq(stateTransitionHistory.processInstanceId, processInstanceId))
@@ -162,8 +163,10 @@ export async function publishDevelopedProposals({
         )
         .limit(1);
 
-      // Proposals attached by a selection pipeline confirm the phase already.
-      if (attached.length > 0) {
+      // A settled selection, or proposals a pipeline attached, confirm the
+      // phase already; the attachments cover transitions the previous
+      // deployment wrote during the rollout without selectionConfirmedAt.
+      if (latestRow.selectionConfirmedAt !== null || attached.length > 0) {
         throw new ValidationError(
           'Developed proposals cannot be published for this phase',
         );
@@ -213,15 +216,17 @@ export async function publishDevelopedProposals({
         )
         .returning({ id: proposals.id });
 
+      const confirmedAt = new Date();
       const manualSelection: ManualSelectionAudit = {
         byProfileId,
-        at: new Date().toISOString(),
+        at: confirmedAt.toISOString(),
       };
 
       await tx
         .update(stateTransitionHistory)
         .set({
           transitionData: { ...existingTransitionData, manualSelection },
+          selectionConfirmedAt: confirmedAt,
           ...(latestRow.triggeredByProfileId == null
             ? { triggeredByProfileId: byProfileId }
             : {}),

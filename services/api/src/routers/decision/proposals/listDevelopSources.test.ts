@@ -152,6 +152,7 @@ async function transitionIntoReview({
       processInstanceId,
       fromStateId: 'submission',
       toStateId: 'review',
+      selectionConfirmedAt: new Date(),
     })
     .returning({ id: stateTransitionHistory.id });
   if (!transition) {

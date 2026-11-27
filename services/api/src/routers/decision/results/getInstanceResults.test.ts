@@ -33,13 +33,15 @@ const schemaWithZeroSelectingReview = {
     {
       id: 'submission',
       name: 'Submission',
-      rules: {},
+      rules: {
+        advancement: { method: 'manual' as const, needsApproval: false },
+      },
       selectionPipeline: { version: '1.0.0', blocks: [] },
     },
     {
       id: 'review',
       name: 'Review',
-      rules: {},
+      rules: { advancement: { method: 'manual' as const } },
       selectionPipeline: {
         version: '1.0.0',
         blocks: [{ id: 'zero', type: 'limit', count: 0 }],

@@ -72,7 +72,7 @@ const votingSchema: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: true },
         voting: { submit: false },
-        advancement: { method: 'manual' as const },
+        advancement: { method: 'manual' as const, needsApproval: false },
       },
       selectionPipeline: { version: '1.0.0', blocks: [] },
     },

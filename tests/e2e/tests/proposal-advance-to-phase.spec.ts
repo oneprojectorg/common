@@ -112,6 +112,7 @@ async function seedLeftBehind(
       fromStateId: 'submission',
       toStateId: 'review',
       transitionData: {},
+      selectionConfirmedAt: new Date(),
     })
     .returning();
   const [keptHistory] = await db

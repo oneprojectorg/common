@@ -99,7 +99,7 @@ function reviewSchema(
         rules: {
           proposals: { submit: true },
           voting: { submit: false },
-          advancement: { method: 'manual' },
+          advancement: { method: 'manual', needsApproval: false },
         },
         // Pass-all so submission→review carries every submitted proposal forward.
         selectionPipeline: { version: '1.0.0', blocks: [] },

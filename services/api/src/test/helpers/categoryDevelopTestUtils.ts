@@ -19,7 +19,14 @@ const developSchema = {
   id: 'test-category-develop-schema',
   name: 'Test Category Develop Schema',
   phases: [
-    testMinimalSchema.phases[0],
+    // Needs approval, so the develop phase opens unconfirmed.
+    {
+      ...testMinimalSchema.phases[0],
+      rules: {
+        ...testMinimalSchema.phases[0].rules,
+        advancement: { method: 'manual' },
+      },
+    },
     {
       ...testMinimalSchema.phases[1],
       rules: {

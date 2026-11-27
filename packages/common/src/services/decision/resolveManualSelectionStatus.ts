@@ -19,9 +19,9 @@ export type ManualSelectionStatus =
  * Is the current phase's inbound transition still awaiting a manual selection?
  *
  * `selectionsAreConfirmed: false` means the UI should prompt an admin to pick
- * proposals — the transition exists but has zero attachments and no
- * `manualSelection` stamp. Any other shape (legacy instance, initial phase,
- * already-stamped, already-attached) resolves to `true`.
+ * proposals — the inbound transition has no `selectionConfirmedAt`. Any other
+ * shape (legacy instance, initial phase, confirmed selection) resolves to
+ * `true`.
  */
 export async function resolveManualSelectionStatus({
   instance,
@@ -59,27 +59,34 @@ export async function resolveManualSelectionStatus({
   const latestRow = await dbClient.query.stateTransitionHistory.findFirst({
     where: { processInstanceId: instance.id },
     orderBy: { transitionedAt: 'desc' },
-    columns: { id: true, toStateId: true, transitionData: true },
+    columns: {
+      id: true,
+      toStateId: true,
+      transitionData: true,
+      selectionConfirmedAt: true,
+    },
   });
 
   if (!latestRow || latestRow.toStateId !== currentStateId) {
     return { selectionsAreConfirmed: true };
   }
 
-  const hasManualSelectionStamp = Boolean(
-    (latestRow.transitionData as TransitionData | null | undefined)
-      ?.manualSelection,
-  );
-
-  if (hasManualSelectionStamp) {
+  if (latestRow.selectionConfirmedAt !== null) {
     return { selectionsAreConfirmed: true };
   }
 
+  // A transition the previous deployment wrote during the rollout has no
+  // selectionConfirmedAt; its stamp or attachments still settle it.
+  if (
+    (latestRow.transitionData as TransitionData | null | undefined)
+      ?.manualSelection
+  ) {
+    return { selectionsAreConfirmed: true };
+  }
   const attached = await dbClient.query.decisionTransitionProposals.findFirst({
     where: { transitionHistoryId: latestRow.id },
     columns: { transitionHistoryId: true },
   });
-
   if (attached) {
     return { selectionsAreConfirmed: true };
   }

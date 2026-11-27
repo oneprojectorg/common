@@ -184,6 +184,7 @@ export async function submitManualSelection({
         toStateId: stateTransitionHistory.toStateId,
         transitionData: stateTransitionHistory.transitionData,
         triggeredByProfileId: stateTransitionHistory.triggeredByProfileId,
+        selectionConfirmedAt: stateTransitionHistory.selectionConfirmedAt,
       })
       .from(stateTransitionHistory)
       .where(eq(stateTransitionHistory.processInstanceId, processInstanceId))
@@ -209,13 +210,15 @@ export async function submitManualSelection({
       );
     }
 
-    const attachedRows = await tx
+    // Can't overwrite a selection that is already settled. A transition the
+    // previous deployment wrote during the rollout has no
+    // selectionConfirmedAt; its attachments still settle it.
+    const [attachedRow] = await tx
       .select({ proposalId: decisionTransitionProposals.proposalId })
       .from(decisionTransitionProposals)
-      .where(eq(decisionTransitionProposals.transitionHistoryId, latestRow.id));
-
-    // Can't overwrite a pipeline-driven transition that already attached proposals.
-    if (attachedRows.length > 0) {
+      .where(eq(decisionTransitionProposals.transitionHistoryId, latestRow.id))
+      .limit(1);
+    if (latestRow.selectionConfirmedAt !== null || attachedRow) {
       throw new ValidationError(
         'Manual selection is not available for this instance',
       );
@@ -258,6 +261,7 @@ export async function submitManualSelection({
       .update(stateTransitionHistory)
       .set({
         transitionData: nextTransitionData,
+        selectionConfirmedAt: new Date(now),
         ...(latestRow.triggeredByProfileId == null
           ? { triggeredByProfileId: byProfileId }
           : {}),

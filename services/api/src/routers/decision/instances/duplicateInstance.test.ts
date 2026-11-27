@@ -1,5 +1,5 @@
 import { type DecisionInstanceData, simpleVoting } from '@op/common';
-import type { DecisionSchemaDefinition } from '@op/common';
+import type { DecisionSchemaDefinition, PhaseDefinition } from '@op/common';
 import { TestDecisionsDataManager } from '@op/common/testing';
 import { db, eq, sql } from '@op/db/client';
 import {
@@ -406,6 +406,54 @@ describe.concurrent('duplicateInstance', () => {
       expect(phase.name).toBeDefined();
       expect(phase.settingsSchema).toBeUndefined();
       expect(phase.selectionPipeline).toBeUndefined();
+    }
+  });
+
+  it('keeps how each phase advances when review settings are not included', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const [firstPhase, ...otherPhases] = simpleVoting.phases;
+    const withoutApproval = (phase: PhaseDefinition): PhaseDefinition => ({
+      ...phase,
+      rules: {
+        ...phase.rules,
+        advancement: { method: 'manual', needsApproval: false },
+      },
+    });
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+      {
+        phases: [
+          withoutApproval(firstPhase),
+          ...otherPhases.map(withoutApproval),
+        ],
+      },
+    );
+    const caller = await createAuthenticatedCaller(userEmail);
+    const source = await caller.decision.createInstanceFromTemplate({
+      templateId,
+      name: `Source Instance ${task.id}`,
+    });
+    testData.trackProfileForCleanup(source.id);
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: 'No Review Settings',
+      include: { ...ALL_INCLUDED, reviewSettings: false },
+    });
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const { instanceData } = await loadInstanceData(
+      duplicate.processInstance.id,
+    );
+    expect(instanceData.phases.length).toBeGreaterThan(0);
+    for (const phase of instanceData.phases) {
+      expect(phase.rules).toEqual({
+        advancement: { method: 'manual', needsApproval: false },
+      });
     }
   });
 
