@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Bootstrap prerequisites for `pnpm docker:dev` on a fresh Debian/Ubuntu system.
-# Installs Docker (engine + compose plugin), Node.js 24, and pnpm via corepack.
+# Installs Docker (engine + compose plugin), Node.js 24, and pnpm via the pnpm installer.
 # Idempotent: safe to re-run.
 #
 # For Fedora/RHEL/Arch: install Docker and Node 24 manually with your package
-# manager, then run `sudo corepack enable && corepack prepare pnpm@9.15.4 --activate`.
+# manager, then install pnpm: https://pnpm.io/installation
 
 set -euo pipefail
 
@@ -57,10 +57,13 @@ else
   sudo apt-get install -y nodejs
 fi
 
-# --- Corepack + pnpm ---------------------------------------------------------
-log "Enabling corepack and pinning pnpm@9.15.4 (matches packageManager field)…"
-sudo corepack enable
-corepack prepare pnpm@9.15.4 --activate
+# --- pnpm --------------------------------------------------------------------
+# Corepack cannot run pnpm 12, so use the standalone installer.
+PNPM_VERSION="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && node -p "require('./package.json').packageManager.split('@')[1]")"
+log "Installing pnpm@$PNPM_VERSION (matches packageManager field)…"
+curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION="$PNPM_VERSION" sh -
+export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+export PATH="$PNPM_HOME/bin:$PATH"
 
 # --- Verify ------------------------------------------------------------------
 log "Installed versions:"

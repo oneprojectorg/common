@@ -15,9 +15,6 @@ RUN apt-get update && apt-get install -y \
     xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Enable corepack and install the exact pnpm version used in the monorepo
-RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
-
 # Install Supabase CLI via the official binary (npm global install is not supported)
 # NOTE: The supabase service container requires Docker socket passthrough so
 # the CLI can manage its own Docker containers. In docker-compose.yml, add:
@@ -42,6 +39,10 @@ WORKDIR /app
 # Copy root manifests and lockfile
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 
+# Install the pnpm version that package.json#packageManager pins. Corepack
+# cannot run pnpm 12.
+RUN npm install -g "$(node -p "require('./package.json').packageManager")"
+
 # Copy all workspace package.json files so pnpm can resolve the workspace graph
 COPY apps/app/package.json ./apps/app/
 COPY apps/api/package.json ./apps/api/
@@ -65,8 +66,8 @@ COPY services/translation/package.json ./services/translation/
 COPY services/workflows/package.json ./services/workflows/
 COPY tests/e2e/package.json ./tests/e2e/
 
-# pnpm >= 10.34.2 drops the ${...} credential from a repo .npmrc unless trusted.
-ENV NPM_CONFIG_USERCONFIG=/app/.npmrc
+# pnpm drops the ${...} credential from a repo .npmrc unless trusted.
+ENV pnpm_config_userconfig=/app/.npmrc
 
 # Install all workspace dependencies using the frozen lockfile.
 # TIPTAP_PRO_TOKEN is passed as a build secret (mounted at /run/secrets/tiptap_token)

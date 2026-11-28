@@ -7,7 +7,7 @@ It's not quite ready to fork or contribute to yet as we are working fast on it b
 
 1.  **Prerequisites**:
     - Ensure you have **Node.js v24** installed. You can use [nvm](https://github.com/nvm-sh/nvm) for easy Node.js version management: `nvm use`
-    - Enable [Corepack](https://nodejs.org/api/corepack.html) (Node.js's built-in package manager manager) by running: `corepack enable` (This ensures you use the `pnpm` version specified in the root `package.json`).
+    - Install **pnpm 12** with the [pnpm installer](https://pnpm.io/installation) or `npm install -g pnpm@latest-12`. Corepack cannot run pnpm 12; if you ran `corepack enable` before, run `corepack disable pnpm`. pnpm 12 switches to the version that the root `package.json` pins.
 2.  **Install Dependencies**: Run `pnpm install` in the project root. This will install dependencies for all workspaces.
 3.  **Environment Variables**:
     - Copy the example environment file: `cp .env.example .env.local`
@@ -38,7 +38,7 @@ Otherwise, install these manually:
 
 - **OrbStack** (preferred on macOS) or **Docker Desktop** / **colima** running — give it enough headroom: the stack steady-states at **~6–8 GB RAM** (DinD + ~12 Supabase sub-containers + the Next.js app + API + Redis).
 - **Disk space** — budget **~15–20 GB** for the base image, the DinD volume (Supabase images cached inside it), `node_modules` volumes, and Next.js build caches.
-- **Node.js 24** and **pnpm** (via `corepack enable`) — the `pnpm docker:dev` script invokes compose; if you only want the raw `docker compose up` path, Node/pnpm aren't strictly required.
+- **Node.js 24** and **pnpm 12** — the `pnpm docker:dev` script invokes compose; if you only want the raw `docker compose up` path, Node/pnpm aren't strictly required.
 - **Tiptap Pro registry credentials** — run both of these once (the registry line too, not just the token, or installs 404 against npmjs):
 
   ```bash
@@ -245,7 +245,7 @@ Adding a new Tailwind-consuming package means adding an `@source` glob to `theme
 The root `package.json` includes several scripts prefixed with `deps:` to help manage dependencies across the monorepo:
 
 - **`pnpm deps:unused`**: Runs `fallow dead-code --unused-deps` and reports the dependencies that no workspace imports. It does not change any file. Fallow sees only imports, so it also reports packages that a config file or a CLI uses (for example Storybook addons). Check each package by hand before you remove it.
-- **`pnpm deps:override`**: Identifies external dependencies used in two or more workspaces. If such a dependency is not already present in the root `package.json`, this script adds it to the root `devDependencies` and creates a corresponding entry in `pnpm.overrides`. This enforces version consistency for shared dependencies across the monorepo. It then formats all `package.json` files. **Important:** Ensure you have no uncommitted/staged changes before running.
+- **`pnpm deps:override`**: Identifies external dependencies used in two or more workspaces. If such a dependency is not already present in the root `package.json`, this script adds it to the root `devDependencies` and creates a corresponding entry in `overrides` in `pnpm-workspace.yaml`. This enforces version consistency for shared dependencies across the monorepo. It then formats all `package.json` files. **Important:** Ensure you have no uncommitted/staged changes before running.
 - **`pnpm deps:viz`**: Generates an interactive D3.js visualization of the Turborepo task dependency graph (based on the `build` task) and opens it automatically in your default browser. Useful for understanding the relationships and build order between workspaces.
 
 ## License

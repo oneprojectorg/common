@@ -71,8 +71,8 @@ function findPackageDirs(dir: string): string[] {
 }
 
 // Scans all workspaces, identifies dependencies used in multiple packages,
-// and hoists them to the root package.json devDependencies and pnpm.overrides
-// to ensure version consistency across the monorepo.
+// and hoists them to the root package.json devDependencies and to the
+// overrides in pnpm-workspace.yaml to ensure version consistency across the monorepo.
 function handleMultiuse() {
   // Read pnpm-workspace.yaml
   const workspaceConfig = yaml.load(
@@ -151,7 +151,6 @@ function handleMultiuse() {
   ) as {
     dependencies: Record<string, string>;
     devDependencies: Record<string, string>;
-    pnpm: { overrides: Record<string, string> };
   };
 
   // Combine dependencies and devDependencies from root package.json
@@ -160,21 +159,12 @@ function handleMultiuse() {
     ...rootPackageJson.devDependencies,
   };
 
-  // Ensure pnpm.overrides exists
-  if (!rootPackageJson.pnpm) {
-    rootPackageJson.pnpm = { overrides: {} };
-  }
-
-  if (!rootPackageJson.pnpm.overrides) {
-    rootPackageJson.pnpm.overrides = {};
-  }
-
   // Check which multiuse dependencies are not in the root package.json
   const missingInRoot = multiuseDependencies.filter(
     ({ dep }) => !rootDependencies[dep],
   );
 
-  // Add missing dependencies to root package.json and pnpm.overrides
+  // Add missing dependencies to root package.json and the workspace overrides
   missingInRoot.forEach(({ dep, versions }) => {
     // Choose the most common version found across workspaces, or the first one if tied.
     const mostCommonVersion = versions.reduce((a, b, _i, arr) =>
@@ -190,10 +180,6 @@ function handleMultiuse() {
 
     // Add the dependency to root devDependencies with the chosen version.
     rootPackageJson.devDependencies[dep] = mostCommonVersion;
-
-    // Add an override to ensure all workspaces use this root version.
-    // The `$dep` syntax tells pnpm to use the version of `dep` resolved at the root.
-    rootPackageJson.pnpm.overrides[dep] = `$${dep}`;
   });
 
   // Write updated root package.json
@@ -201,6 +187,8 @@ function handleMultiuse() {
     rootPackageJsonPath,
     JSON.stringify(rootPackageJson, null, 2),
   );
+
+  addWorkspaceOverrides(missingInRoot.map(({ dep }) => dep));
 
   // Print results
   console.log('Multiuse dependencies:');
@@ -214,13 +202,37 @@ function handleMultiuse() {
   });
 
   console.log(
-    '\nAdded to root package.json devDependencies and pnpm.overrides:',
+    '\nAdded to root package.json devDependencies and pnpm-workspace.yaml overrides:',
   );
   missingInRoot.forEach(({ dep }) => {
     const addedVersion = rootPackageJson.devDependencies[dep];
 
     console.log(`${dep}: ${addedVersion}`);
   });
+}
+
+// Adds a `$dep` override for each dependency, so every workspace uses the
+// version of `dep` resolved at the root. Edits lines instead of dumping the
+// parsed YAML, because a dump drops the comments in pnpm-workspace.yaml.
+function addWorkspaceOverrides(deps: string[]) {
+  if (deps.length === 0) {
+    return;
+  }
+
+  const lines = fs
+    .readFileSync('pnpm-workspace.yaml', 'utf8')
+    .trimEnd()
+    .split('\n');
+  const entries = deps.map((dep) => `  '${dep}': $${dep}`);
+  const overridesIndex = lines.indexOf('overrides:');
+
+  if (overridesIndex === -1) {
+    lines.push('overrides:', ...entries);
+  } else {
+    lines.splice(overridesIndex + 1, 0, ...entries);
+  }
+
+  fs.writeFileSync('pnpm-workspace.yaml', `${lines.join('\n')}\n`);
 }
 
 // Main script execution logic
