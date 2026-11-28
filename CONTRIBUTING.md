@@ -6,7 +6,7 @@ Thank you for your interest in contributing to OneProject! This guide will help 
 
 ### Prerequisites
 
-- Node.js 18+ (use `corepack enable` for pnpm version management)
+- Node.js 24 and pnpm 12 (see the [README](README.md#quick-start--setup))
 - Git
 
 ### Setting Up the Development Environment

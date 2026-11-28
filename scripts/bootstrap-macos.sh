@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Bootstrap prerequisites for `pnpm docker:dev` on a fresh macOS system.
-# Installs Homebrew (if missing), OrbStack, Node.js 24, and pnpm via corepack.
+# Installs Homebrew (if missing), OrbStack, Node.js 24, and pnpm via the pnpm installer.
 # OrbStack is the preferred macOS Docker runtime — lighter and faster than
 # Docker Desktop, with a drop-in `docker` / `docker compose` CLI. If Docker
 # Desktop or another daemon is already running, the install is skipped so we
@@ -87,10 +87,13 @@ else
   brew link --overwrite --force node@24
 fi
 
-# --- Corepack + pnpm ---------------------------------------------------------
-log "Enabling corepack and pinning pnpm@9.15.4 (matches packageManager field)…"
-corepack enable
-corepack prepare pnpm@9.15.4 --activate
+# --- pnpm --------------------------------------------------------------------
+# Corepack cannot run pnpm 12, so use the standalone installer.
+PNPM_VERSION="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && node -p "require('./package.json').packageManager.split('@')[1]")"
+log "Installing pnpm@$PNPM_VERSION (matches packageManager field)…"
+curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION="$PNPM_VERSION" sh -
+export PNPM_HOME="${PNPM_HOME:-$HOME/Library/pnpm}"
+export PATH="$PNPM_HOME/bin:$PATH"
 
 # --- Verify ------------------------------------------------------------------
 log "Installed versions:"
